@@ -12,3 +12,7 @@ wheels/
 # Documents Markdown
 ADDENDUM_TERRAFORM_AWS.md
 brasileirao-pyspark-rascunho.md
+
+# Dados locais (raw, bronze, silver)
+data/
+.coverage
