@@ -97,3 +97,60 @@ def mapa_times(spark):
         ],
         "nome_fonte string, nome_canonico string, uf string",
     )
+
+
+COLUNAS_FONTE_FILHAS = {
+    "gols": "partida_id,rodata,clube,atleta,minuto,tipo_de_gol",
+    "cartoes": "partida_id,rodata,clube,cartao,atleta,num_camisa,posicao,minuto",
+    "estatisticas": (
+        "partida_id,rodata,clube,chutes,chutes_no_alvo,posse_de_bola,passes,precisao_passes,"
+        "faltas,cartao_amarelo,cartao_vermelho,impedimentos,escanteios"
+    ),
+}
+PADRAO_FILHAS = {
+    "gols": {"atleta": "Pato", "minuto": "31", "tipo_de_gol": ""},
+    "cartoes": {
+        "cartao": "Amarelo",
+        "atleta": "Arboleda",
+        "num_camisa": "5",
+        "posicao": "Zagueiro",
+        "minuto": "44",
+    },
+    "estatisticas": {
+        "chutes": "15",
+        "chutes_no_alvo": "6",
+        "posse_de_bola": "55%",
+        "passes": "480",
+        "precisao_passes": "86%",
+        "faltas": "12",
+        "cartao_amarelo": "1",
+        "cartao_vermelho": "0",
+        "impedimentos": "2",
+        "escanteios": "7",
+    },
+}
+
+
+@pytest.fixture
+def bronze_filha(spark):
+    """Fábrica de DataFrames no formato de `bronze/gols`, `bronze/cartoes` ou
+    `bronze/estatisticas`. Como em `bronze_partidas`, cada dict só fixa o que o teste quer."""
+
+    def fabricar(entidade: str, *linhas: dict):
+        colunas = COLUNAS_FONTE_FILHAS[entidade].split(",")
+        padrao = {
+            "partida_id": "1",
+            "rodata": "1",
+            "clube": "Sao Paulo",
+            **PADRAO_FILHAS[entidade],
+            "_ingested_at": datetime(2026, 10, 27, 12, 0),
+            "_source_file": "campeonato-brasileiro.csv",
+            "temporada": 2019,
+        }
+        schema = (
+            ", ".join(f"{c} string" for c in colunas)
+            + ", _ingested_at timestamp, _source_file string, temporada int"
+        )
+        return spark.createDataFrame([{**padrao, **linha} for linha in linhas], schema)
+
+    return fabricar

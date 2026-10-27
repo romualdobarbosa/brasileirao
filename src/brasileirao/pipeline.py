@@ -5,6 +5,7 @@ import logging
 import time
 
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 from brasileirao.ingestion import bronze
 from brasileirao.transform import qualidade, silver
@@ -13,8 +14,8 @@ from brasileirao.utils.temporada import partidas_esperadas
 
 log = logging.getLogger(__name__)
 
-# Gols, cartões e estatísticas entram aqui na Fase 3.
-ENTIDADES_BRONZE = ("partidas",)
+# `partidas` vai primeiro: as filhas tiram a temporada de `bronze/partidas`.
+ENTIDADES_BRONZE = ("partidas", *bronze.ENTIDADES_FILHAS)
 
 
 class TemporadaInvalidaError(ValueError):
@@ -47,6 +48,24 @@ def validar_temporada(temporada: int, contagens: dict[int, int]) -> None:
         )
 
 
+def avisar_orfas(spark: SparkSession) -> None:
+    """Filha com `partida_id` fora de `partidas` não tem temporada e não chega na bronze.
+
+    Por isso a checagem roda uma vez por execução, na fonte inteira, e não por temporada.
+    """
+    partidas = bronze.ler_raw(spark, "partidas").select(F.col("ID").alias("partida_id"))
+    for entidade in bronze.ENTIDADES_FILHAS:
+        total, ids = qualidade.partida_ids_orfaos(bronze.ler_raw(spark, entidade), partidas)
+        if total:
+            log.warning(
+                "raw/%s: %d linha(s) com partida_id inexistente em partidas, fora de bronze "
+                "e silver: %s",
+                entidade,
+                total,
+                ", ".join(ids),
+            )
+
+
 def processar_temporada(spark: SparkSession, temporada: int) -> None:
     """Bronze → transformações → checagens → silver de uma temporada."""
     inicio = time.monotonic()
@@ -67,6 +86,7 @@ def lakehouse(spark: SparkSession, temporada: int | None) -> list[int]:
     else:
         validar_temporada(temporada, contagens)
         temporadas = [temporada]
+    avisar_orfas(spark)
     for t in temporadas:
         processar_temporada(spark, t)
     return temporadas

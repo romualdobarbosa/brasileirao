@@ -53,13 +53,13 @@ T1 fundação (deps, config, spark, fixture de teste)
 - [x] Revisar `reference/times.csv` (nomes com acento)
 
 ### Fase 3: Tabelas filhas
-- [ ] T7: Bronze e silver de gols
-- [ ] T8: Bronze e silver de cartões
-- [ ] T9: Bronze e silver de estatísticas
+- [x] T7: Bronze e silver de gols
+- [x] T8: Bronze e silver de cartões
+- [x] T9: Bronze e silver de estatísticas
 
 ### Checkpoint: Completo
-- [ ] T10: Rodada completa nos dados reais e conferência dos 8 critérios de sucesso da spec
-- [ ] Revisão com o Romualdo antes de fechar o módulo
+- [x] T10: Rodada completa nos dados reais e conferência dos 8 critérios de sucesso da spec
+- [x] Revisão com o Romualdo antes de fechar o módulo
 
 ## Riscos e mitigações
 

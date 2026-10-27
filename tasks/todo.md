@@ -146,12 +146,12 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** `bronze/gols` e `silver/gols`: parse de minuto (`"45+2"` → 45 e 2), `tipo_de_gol` vazio → nulo, clube normalizado, overwrite de partição. Entra em `processar_temporada`.
 
 **Critérios de aceite:**
-- [ ] Schema conforme a spec
-- [ ] Aviso de `partida_id` órfão funciona para gols
-- [ ] Idempotência coberta pelo teste do pipeline
+- [x] Schema conforme a spec
+- [x] Aviso de `partida_id` órfão funciona para gols
+- [x] Idempotência coberta pelo teste do pipeline
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/test_limpeza_gols.py tests/integration/test_pipeline.py`
+- [x] `uv run pytest tests/unit/test_limpeza_gols.py tests/integration/test_pipeline.py`
 
 **Dependências:** T6
 
@@ -164,12 +164,12 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** `bronze/cartoes` e `silver/cartoes`: minuto/acréscimo, `num_camisa` int, "Zagueira" → "Zagueiro", posição vazia → nulo.
 
 **Critérios de aceite:**
-- [ ] Schema conforme a spec
-- [ ] `cartao` só aceita `Amarelo` ou `Vermelho` (outro valor é falha)
-- [ ] Idempotência coberta pelo teste do pipeline
+- [x] Schema conforme a spec
+- [x] `cartao` só aceita `Amarelo` ou `Vermelho` (outro valor é falha)
+- [x] Idempotência coberta pelo teste do pipeline
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/test_limpeza_cartoes.py tests/integration/test_pipeline.py`
+- [x] `uv run pytest tests/unit/test_limpeza_cartoes.py tests/integration/test_pipeline.py`
 
 **Dependências:** T7 (helper de bronze das filhas)
 
@@ -182,12 +182,12 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** `bronze/estatisticas` e `silver/estatisticas`: inteiros, percentuais `"45%"` → 0.45, `"None"`/vazio → nulo, descarte das linhas sem dado real (chutes, passes e posse zerados ou nulos), unicidade por (`partida_id`, `clube`).
 
 **Critérios de aceite:**
-- [ ] Schema conforme a spec
-- [ ] Linha zerada é descartada; linha com dado real e posse nula é mantida
-- [ ] Duplicado de (`partida_id`, `clube`) é falha
+- [x] Schema conforme a spec
+- [x] Linha zerada é descartada; linha com dado real e posse nula é mantida
+- [x] Duplicado de (`partida_id`, `clube`) é falha
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/test_limpeza_estatisticas.py tests/integration/test_pipeline.py`
+- [x] `uv run pytest tests/unit/test_limpeza_estatisticas.py tests/integration/test_pipeline.py`
 
 **Dependências:** T7 (helper de bronze das filhas)
 
@@ -204,17 +204,32 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** Partindo de `data/` vazio, rodar `make download && make lakehouse` e conferir os 8 critérios de sucesso da spec, um por um. Divergência vira correção (com teste) ou atualização da spec, nunca ajuste silencioso.
 
 **Critérios de aceite:**
-- [ ] Os 8 critérios de sucesso da spec conferidos e anotados aqui
-- [ ] `make lakehouse` completo em < 5 min
-- [ ] Cobertura ≥ 80%
+- [x] Os 8 critérios de sucesso da spec conferidos e anotados aqui
+- [x] `make lakehouse` completo em < 5 min
+- [x] Cobertura ≥ 80%
 
 **Verificação:**
-- [ ] `time make lakehouse`
-- [ ] `make test` mostra a cobertura
-- [ ] Revisão com o Romualdo antes de fechar o módulo
+- [x] `time make lakehouse`
+- [x] `make test` mostra a cobertura
+- [x] Revisão com o Romualdo antes de fechar o módulo
 
 **Dependências:** T8, T9
 
 **Arquivos:** só correções, se aparecerem
 
 **Tamanho:** XS
+
+**Resultado (27/10/2026, rodada a partir de `data/` só com `raw/` da versão 18):**
+
+1. **OK, sem novo download.** Os 4 CSVs e a `Legenda.txt` estão em `data/raw/`, com as contagens da versão 18 (9.165 partidas, 10.820 gols, 20.953 cartões, 18.330 estatísticas). O `make download` foi conferido na Fase 1 e não rodou de novo.
+2. **OK.** `make lakehouse` levou 2min58s e criou as 8 tabelas. A bronze tem 2003–2025 em `partidas` e `estatisticas`, 2014–2025 em `gols` e 2014–2024 em `cartoes`. A 2025 está completa na v18 (380 partidas), então nenhuma temporada ficou de fora por estar em andamento.
+3. **OK.** `make lakehouse TEMPORADA=2019` rodou 2×. Contagem e hash de conteúdo (sem `_ingested_at`/`_source_file`) das 8 tabelas ficaram idênticos aos de antes, e `silver/partidas` não ganhou versão nova no Delta. O teste `test_rodar_duas_vezes_e_igual_a_uma` cobre as 8 tabelas.
+4. **OK.** `silver/partidas` tem 9.165 linhas e 9.165 `partida_id` distintos, nenhum nulo. Nenhum time fora do mapa em partidas nem nas 3 filhas, e nenhum placar negativo ou nulo.
+5. **OK.** As 112 partidas de jan–mar/2021 estão todas com `temporada = 2020`.
+6. **OK.** Todas as temporadas batem com o esperado (2016 = 379), sem nenhum aviso de contagem no log.
+7. **OK.** `make lint` passa limpo e `make test` dá 139 testes passando, com 99% de cobertura. A suíte leva ~2min (120s), dentro da meta de 3 min da Testing Strategy.
+8. **OK.** Toda a suíte de integração roda com `BRASILEIRAO_DATA_ROOT` em `tmp_path`, e `test_config.py` cobre a troca. Não precisou de mudança de código.
+
+Conferência extra: em 2014–2025, a contagem de gols de `silver/gols` bate 100% com o placar de `silver/partidas`.
+
+Ajuste pós-revisão: os 4 buracos novos da "Cobertura da fonte" (formação em 2014, `num_camisa` em 2014, `posicao` em todas as temporadas, `precisao_passes` em 2014–2017) não geram mais aviso de nulo. Conferido com `make lakehouse TEMPORADA=2014`, `2015` e `2018`.

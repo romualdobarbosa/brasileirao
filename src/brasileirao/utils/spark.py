@@ -26,6 +26,10 @@ def _spark_local(app_name: str, conf: dict[str, str]) -> SparkSession:
         .master("local[*]")
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", DELTA_CATALOG)
+        # Os defaults (200 partições de shuffle, 50 no snapshot do Delta) são para cluster;
+        # com tabelas de milhares de linhas, viram centenas de tarefas vazias por temporada.
+        .config("spark.sql.shuffle.partitions", "4")
+        .config("spark.databricks.delta.snapshotPartitions", "2")
     )
     for chave, valor in conf.items():
         builder = builder.config(chave, valor)

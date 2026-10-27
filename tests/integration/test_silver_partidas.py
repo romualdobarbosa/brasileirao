@@ -13,7 +13,7 @@ ARQUIVO = "campeonato-brasileiro-full.csv"
 
 def _carregar(spark, temporada):
     bronze.escrever_bronze(spark, "partidas", temporada)
-    silver.processar_silver(spark, temporada)
+    silver.processar_silver(spark, temporada, ("partidas",))
 
 
 def _silver(spark):

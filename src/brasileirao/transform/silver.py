@@ -16,6 +16,12 @@ from brasileirao.transform import limpeza, qualidade
 log = logging.getLogger(__name__)
 
 SCHEMA_MAPA_TIMES = "nome_fonte string, nome_canonico string, uf string"
+LIMPEZA_FILHAS = {
+    "gols": (limpeza.limpar_gols, limpeza.COLUNAS_GOLS),
+    "cartoes": (limpeza.limpar_cartoes, limpeza.COLUNAS_CARTOES),
+    "estatisticas": (limpeza.limpar_estatisticas, limpeza.COLUNAS_ESTATISTICAS),
+}
+TABELAS = ("partidas", *LIMPEZA_FILHAS)
 
 
 @dataclass
@@ -48,6 +54,36 @@ def preparar_partidas(spark: SparkSession, temporada: int, mapa: DataFrame) -> C
     qualidade.checar_falhas_partidas(limpo, mapa, limpeza.COLUNAS_TIME_PARTIDAS, temporada)
     df = limpeza.para_silver_partidas(limpo, mapa).localCheckpoint()
     return CargaSilver("partidas", df, qualidade.avisos_partidas(df, temporada))
+
+
+def preparar_filha(
+    spark: SparkSession, tabela: str, temporada: int, mapa: DataFrame
+) -> CargaSilver:
+    limpar, colunas = LIMPEZA_FILHAS[tabela]
+    limpo = limpar(ler_bronze(spark, tabela, temporada))
+    if tabela == "estatisticas":
+        limpo = limpeza.descartar_estatisticas_sem_dado(limpo)
+    limpo = limpo.localCheckpoint()
+    qualidade.checar_falhas_filha(limpo, mapa, tabela, temporada)
+    df = limpeza.para_silver_filha(limpo, mapa, colunas).localCheckpoint()
+    if tabela == "estatisticas":
+        qualidade.checar_unicidade_estatisticas(df, temporada)
+    return CargaSilver(tabela, df, qualidade.avisos_filha(df, tabela, temporada))
+
+
+def gravar_particao(df: DataFrame, tabela: str, temporada: int) -> None:
+    """Substitui a partição da temporada inteira (overwrite + replaceWhere).
+
+    As filhas não têm chave natural confiável; trocar a temporada inteira é idempotente por
+    construção. Temporada vazia apaga a partição.
+    """
+    (
+        df.write.format("delta")
+        .mode("overwrite")
+        .partitionBy("temporada")
+        .option("replaceWhere", f"temporada = {temporada}")
+        .save(config.caminho_tabela("silver", tabela))
+    )
 
 
 def gravar_merge(
@@ -88,13 +124,23 @@ def gravar_merge(
         alvo.delete(da_temporada & F.col(chave).isin(sobrando))
 
 
-def processar_silver(spark: SparkSession, temporada: int) -> list[CargaSilver]:
+def processar_silver(
+    spark: SparkSession, temporada: int, tabelas: tuple[str, ...] = TABELAS
+) -> list[CargaSilver]:
     """Prepara e checa todas as tabelas da temporada antes de gravar qualquer uma."""
     mapa = carregar_mapa_times(spark)
-    cargas = [preparar_partidas(spark, temporada, mapa)]
+    cargas = [
+        preparar_partidas(spark, temporada, mapa)
+        if tabela == "partidas"
+        else preparar_filha(spark, tabela, temporada, mapa)
+        for tabela in tabelas
+    ]
     for carga in cargas:
         if carga.tabela == "partidas":
             gravar_merge(spark, carga.df, "partidas", "partida_id", temporada)
+        else:
+            gravar_particao(carga.df, carga.tabela, temporada)
+        log.info("silver/%s temporada %d: %d linhas", carga.tabela, temporada, carga.df.count())
         for aviso in carga.avisos:
             log.warning("silver/%s temporada %d: %s", carga.tabela, temporada, aviso)
     return cargas

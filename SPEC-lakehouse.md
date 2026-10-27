@@ -1,6 +1,6 @@
 # Spec: lakehouse
 
-> Módulo `lakehouse` do [mapa de capacidades](CAPABILITY_MAP.md). Status: **aprovada** em 27/10/2026; contrato de dados atualizado no mesmo dia, depois do primeiro download.
+> Módulo `lakehouse` do [mapa de capacidades](CAPABILITY_MAP.md). Status: **implementada** em 27/10/2026 (aprovada no mesmo dia; contrato de dados ajustado depois do primeiro download e durante a implementação).
 
 ## Objetivo
 
@@ -99,10 +99,10 @@ Arquivos da fonte: `campeonato-brasileiro-full.csv` (partidas), `campeonato-bras
 | Dado | Temporadas com dado | Buraco conhecido |
 |---|---|---|
 | Partidas e placar | 2003–2025 (9.165 partidas) | — |
-| Técnico e formação | 2014–2025 (formação quase só a partir de 2015) | — |
+| Técnico e formação | 2014–2025 (formação quase só a partir de 2015) | Formação com 364 nulos em 2014 |
 | Gols (autor, minuto, tipo) | 2014–2025 | Só partidas com gol; bate 100% com o placar |
-| Cartões | 2014–2024 | **2025 inteira sem cartões** |
-| Estatísticas | Arquivo cobre 2003–2025, mas só tem número real a partir de 2014 | Antes de 2014 e **2024 inteira** vêm zeradas |
+| Cartões | 2014–2024 | **2025 inteira sem cartões**; `num_camisa` nulo em 386 linhas, todas de 2014; `posicao` nula em 190–271 linhas por temporada, em todas |
+| Estatísticas | Arquivo cobre 2003–2025, mas só tem número real a partir de 2014 | Antes de 2014 e **2024 inteira** vêm zeradas; `precisao_passes` nula em 2014 (32 linhas) e em 2015–2017 inteiras |
 | Arrecadação | 2025 | Só existe em 2025 |
 
 ### Bronze
@@ -203,7 +203,7 @@ def normalizar_times(partidas: DataFrame, mapa: DataFrame, colunas: list[str]) -
 - **Unitários** (`tests/unit/`): derivação da temporada, parse de minuto, normalização de times, deduplicação, cada checagem de qualidade.
 - **Integração** (`tests/integration/`): raw → bronze → silver de ponta a ponta nas fixtures; idempotência (rodar a mesma temporada 2× e comparar o conteúdo das tabelas com 1×); falha com time não mapeado sem escrever nada na silver.
 - **Cobertura:** ≥ 80% de linhas em `src/brasileirao/` (exceto `ingestion/download.py`, que depende de rede).
-- **Tempo:** suíte completa abaixo de 2 minutos local.
+- **Tempo:** suíte completa abaixo de 3 minutos local. Cada temporada grava 8 tabelas Delta, e esse é o custo fixo do Spark.
 
 ## Boundaries
 
