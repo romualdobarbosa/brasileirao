@@ -20,5 +20,9 @@
 - Compute local primeiro; AWS e Databricks rodam o mesmo código, sem reescrita.
 - Formato das tabelas: Delta Lake.
 - Serving: Postgres + Metabase na Oracle Cloud Always Free (custo zero). A fase AWS consome créditos (meta < US$ 15).
+- Cuidados com a Oracle Always Free, para a spec do `serving`:
+  - a VM ociosa por 7 dias (CPU, rede e memória abaixo de ~20%) pode ser recuperada pela Oracle. Mitigação: conta Pay As You Go com alerta de orçamento. Confirmar a política atual;
+  - a A1 costuma dar "out of capacity" em região concorrida, e a home region não muda depois de escolhida;
+  - sem domínio, o link fica em HTTP no IP. Para HTTPS de graça: domínio gratuito (DuckDNS, sslip.io) + Caddy.
 - Python 3.12; dependências gerenciadas com `uv`.
 - Os rascunhos de planejamento (`brasileirao-pyspark-rascunho.md`, `ADDENDUM_TERRAFORM_AWS.md`) ficam fora do git; as specs aprovadas são a fonte da verdade.

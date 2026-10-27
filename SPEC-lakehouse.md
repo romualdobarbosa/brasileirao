@@ -232,6 +232,7 @@ def normalizar_times(partidas: DataFrame, mapa: DataFrame, colunas: list[str]) -
 
 - Cartões não existem em 2025 e estatísticas não existem em 2024. A `disciplina` vai ter buraco, ou vai precisar usar as contagens de cartão de `estatisticas` em 2025.
 - Gols, cartões e estatísticas só existem a partir de 2014. As métricas que dependem deles cobrem uma janela menor que as de partidas (2003–2025).
+- Barueri (2009) e Grêmio Prudente (2010) são o mesmo clube com nomes diferentes na fonte. Hoje ficam separados no `times.csv`; decidir no `ranking_historico` se contam juntos.
 
 ## Open Questions
 
