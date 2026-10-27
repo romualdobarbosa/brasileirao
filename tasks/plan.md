@@ -41,16 +41,16 @@ T1 fundação (deps, config, spark, fixture de teste)
 - [x] `make download` traz os 4 CSVs
 
 ### Fase 2: Fatia vertical de partidas
-- [ ] T3: Regra de temporada e bronze de partidas
-- [ ] T4: Silver de partidas com mapa de times e MERGE
-- [ ] T5: Checagens de qualidade na silver
-- [ ] T6: CLI `lakehouse`, temporada em andamento, Makefile e teste de idempotência
+- [x] T3: Regra de temporada e bronze de partidas
+- [x] T4: Silver de partidas com mapa de times e MERGE
+- [x] T5: Checagens de qualidade na silver
+- [x] T6: CLI `lakehouse`, temporada em andamento, Makefile e teste de idempotência
 
 ### Checkpoint: Partidas de ponta a ponta (revisão com o Romualdo)
-- [ ] `make lakehouse` nos dados reais carrega 2003–2025 em `bronze/partidas` e `silver/partidas`
-- [ ] Contagem por temporada bate (2016 = 379; 2020 e 2021 = 380)
-- [ ] Rodar `TEMPORADA=2019` 2× não muda nada
-- [ ] Revisar `reference/times.csv` (nomes com acento)
+- [x] `make lakehouse` nos dados reais carrega 2003–2025 em `bronze/partidas` e `silver/partidas`
+- [x] Contagem por temporada bate (2016 = 379; 2020 e 2021 = 380)
+- [x] Rodar `TEMPORADA=2019` 2× não muda nada
+- [x] Revisar `reference/times.csv` (nomes com acento)
 
 ### Fase 3: Tabelas filhas
 - [ ] T7: Bronze e silver de gols

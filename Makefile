@@ -1,10 +1,17 @@
-.PHONY: setup download test lint fmt
+.PHONY: setup download lakehouse test lint fmt
 
 setup:
 	uv sync --all-groups
 
 download:
 	uv run python -m brasileirao.ingestion.download
+
+lakehouse:
+ifdef TEMPORADA
+	uv run python -m brasileirao.pipeline lakehouse --temporada $(TEMPORADA)
+else
+	uv run python -m brasileirao.pipeline lakehouse --todas
+endif
 
 test:
 	uv run pytest --cov=brasileirao --cov-report=term-missing

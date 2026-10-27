@@ -60,12 +60,12 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** Função `derivar_temporada` (coluna Spark a partir da data `dd/MM/yyyy`, com jan–mar/2021 → 2020) e escrita de `bronze/partidas`: todas as colunas como string, `_ingested_at`, `_source_file`, partição `temporada`, overwrite com `replaceWhere`.
 
 **Critérios de aceite:**
-- [ ] `derivar_temporada` cobre ano normal, jan/2021, fev/2021, abr/2021 e mar/2003
-- [ ] `escrever_bronze(spark, entidade, temporada)` grava só a partição da temporada pedida
-- [ ] Reescrever a mesma temporada não duplica e não toca as outras partições
+- [x] `derivar_temporada` cobre ano normal, jan/2021, fev/2021, abr/2021 e mar/2003
+- [x] `escrever_bronze(spark, entidade, temporada)` grava só a partição da temporada pedida
+- [x] Reescrever a mesma temporada não duplica e não toca as outras partições
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/test_temporada.py tests/integration/test_bronze.py`
+- [x] `uv run pytest tests/unit/test_temporada.py tests/integration/test_bronze.py`
 
 **Dependências:** T1
 
@@ -78,13 +78,13 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** Transformações puras de partidas (renomear, tipar, `trim` na arena, `"-"` → nulo, vazio → nulo, dedup por `partida_id`), `reference/times.csv` com os 46 nomes da fonte (canônico com acento + UF), `normalizar_times` e escrita em `silver/partidas` via `MERGE` por `partida_id`.
 
 **Critérios de aceite:**
-- [ ] Schema de `silver/partidas` igual ao contrato da spec (inclui `arrecadacao`)
-- [ ] `times.csv` cobre os 46 nomes da versão 18; nome fora do mapa vira nulo (a checagem vem em T5)
-- [ ] MERGE funciona na primeira carga (tabela inexistente) e numa recarga com linha alterada
+- [x] Schema de `silver/partidas` igual ao contrato da spec (inclui `arrecadacao`)
+- [x] `times.csv` cobre os 46 nomes da versão 18; nome fora do mapa vira nulo (a checagem vem em T5)
+- [x] MERGE funciona na primeira carga (tabela inexistente) e numa recarga com linha alterada
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/test_limpeza_partidas.py tests/integration/test_silver_partidas.py`
-- [ ] Manual: conferir os nomes com acento no `times.csv`
+- [x] `uv run pytest tests/unit/test_limpeza_partidas.py tests/integration/test_silver_partidas.py`
+- [x] Manual: conferir os nomes com acento no `times.csv`
 
 **Dependências:** T3
 
@@ -97,12 +97,12 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** `qualidade.py` com as checagens de falha (time sem mapa, `partida_id` nulo/duplicado, placar inválido) e de aviso (contagem por temporada com 2016 = 379, nulos por coluna). A escrita da silver chama as checagens antes de gravar.
 
 **Critérios de aceite:**
-- [ ] Falha levanta exceção própria listando os nomes/ids problemáticos
-- [ ] Com falha, `silver/partidas` fica intacta (teste confere)
-- [ ] Avisos saem no log com contagem, sem interromper
+- [x] Falha levanta exceção própria listando os nomes/ids problemáticos
+- [x] Com falha, `silver/partidas` fica intacta (teste confere)
+- [x] Avisos saem no log com contagem, sem interromper
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/test_qualidade.py tests/integration/test_silver_partidas.py`
+- [x] `uv run pytest tests/unit/test_qualidade.py tests/integration/test_silver_partidas.py`
 
 **Dependências:** T4
 
@@ -115,13 +115,13 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** `python -m brasileirao.pipeline lakehouse --temporada N | --todas` com `processar_temporada`. Detecção da temporada em andamento (maior temporada com menos partidas que o esperado): `--todas` pula, `--temporada N` recusa. Alvos `lakehouse` e `download` no Makefile.
 
 **Critérios de aceite:**
-- [ ] `--todas` processa as temporadas em ordem crescente e pula a em andamento
-- [ ] `--temporada` com temporada em andamento sai com código ≠ 0 e mensagem clara
-- [ ] Teste de idempotência: rodar a mesma temporada 2× deixa bronze e silver iguais a 1× (comparando conteúdo, sem metadados de ingestão)
+- [x] `--todas` processa as temporadas em ordem crescente e pula a em andamento
+- [x] `--temporada` com temporada em andamento sai com código ≠ 0 e mensagem clara
+- [x] Teste de idempotência: rodar a mesma temporada 2× deixa bronze e silver iguais a 1× (comparando conteúdo, sem metadados de ingestão)
 
 **Verificação:**
-- [ ] `uv run pytest tests/integration/test_pipeline.py`
-- [ ] Manual: `make lakehouse` nos dados reais
+- [x] `uv run pytest tests/integration/test_pipeline.py`
+- [x] Manual: `make lakehouse` nos dados reais
 
 **Dependências:** T5, T2
 
@@ -130,10 +130,10 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Tamanho:** S
 
 ### Checkpoint: Partidas de ponta a ponta (revisão com o Romualdo)
-- [ ] `make lakehouse` carrega 2003–2025 em `bronze/partidas` e `silver/partidas`
-- [ ] Contagem por temporada bate (2016 = 379; 2020 e 2021 = 380)
-- [ ] `make lakehouse TEMPORADA=2019` 2× não muda nada
-- [ ] `times.csv` revisado
+- [x] `make lakehouse` carrega 2003–2025 em `bronze/partidas` e `silver/partidas`
+- [x] Contagem por temporada bate (2016 = 379; 2020 e 2021 = 380)
+- [x] `make lakehouse TEMPORADA=2019` 2× não muda nada
+- [x] `times.csv` revisado
 
 ---
 

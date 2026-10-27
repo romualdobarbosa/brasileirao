@@ -1,0 +1,12 @@
+"ID","rodata","data","hora","mandante","visitante","formacao_mandante","formacao_visitante","tecnico_mandante","tecnico_visitante","vencedor","arena","mandante_Placar","visitante_Placar","mandante_Estado","visitante_Estado","arrecadacao"
+"1","1","29/03/2003","16:00","Guarani","Vasco","","","","","Guarani"," Brinco de Ouro","4","2","SP","RJ",
+"2","1","30/03/2003","16:00","Flamengo","Coritiba","","","","","-"," Maracanã","1","1","RJ","PR",
+"10","1","27/04/2019","16:00","Sao Paulo","Botafogo-RJ","4-2-3-1","4-1-4-1","A. Stival","E. de Souza Barroca","Sao Paulo","Morumbi","2","0","SP","RJ",
+"11","1","27/04/2019","19:00","Atletico-MG","Avai","4-2-3-1","4-1-4-1","R. Marques Santana","E. Machado Souto","Atletico-MG","Estádio Raimundo Sampaio","2","1","MG","SC",
+"12","1","28/04/2019","11:00","Gremio","Santos","4-2-3-1","4-3-3","R. Portaluppi","J. Sampaoli","Santos","Arena do Grêmio","1","2","RS","SP",
+"12","1","28/04/2019","11:00","Gremio","Santos","4-2-3-1","4-3-3","R. Portaluppi","J. Sampaoli","Santos","Arena do Grêmio","1","2","RS","SP",
+"20","1","09/08/2020","16:00","Fortaleza","Athletico-PR","4-2-3-1","4-2-3-1","R. Ceni","D. Dorival","-","Castelão","0","0","CE","PR",
+"21","37","10/01/2021","20:00","Ceara","Goias","4-2-3-1","4-4-2","G. Dal Pozzo","A. Gomes","Ceara","Castelão","2","1","CE","GO",
+"22","38","25/02/2021","21:30","Sao Paulo","Flamengo","4-2-3-1","4-2-3-1","M. Vizzotto","R. Ceni","Sao Paulo","Morumbi","2","1","SP","RJ",
+"30","1","10/04/2021","18:15","Vitoria","Nautico","","","","","Nautico","","0","3","BA","PE",
+"40","1","30/03/2025","16:00","Palmeiras","Botafogo-RJ","4-2-3-1","4-3-3","A. Ferreira","R. Paiva","-","Allianz Parque, São Paulo","0","0","SP","RJ","2802427.7"

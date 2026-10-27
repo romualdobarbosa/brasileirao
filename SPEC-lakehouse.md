@@ -118,7 +118,7 @@ Tabelas Delta por caminho (sem metastore): `bronze/partidas`, `bronze/gols`, `br
 
 Tabelas Delta por caminho, particionadas por `temporada`. Times sempre pelo nome canônico.
 
-**`silver/partidas`**: uma linha por `partida_id`. Escrita via `MERGE` na chave `partida_id`.
+**`silver/partidas`**: uma linha por `partida_id`. Escrita via `MERGE` na chave `partida_id`. A fonte do MERGE leva só as linhas novas ou alteradas, então recarga sem mudança não cria versão no Delta. Partida que sai da fonte (ou muda de temporada) é apagada da silver daquela temporada, para a silver não divergir da bronze.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
@@ -134,7 +134,7 @@ Tabelas Delta por caminho, particionadas por `temporada`. Times sempre pelo nome
 | `uf_mandante` / `uf_visitante` | string | |
 | `tecnico_mandante` / `tecnico_visitante` | string | |
 | `formacao_mandante` / `formacao_visitante` | string | |
-| `arrecadacao` | long | só 2025; nulo nas demais |
+| `arrecadacao` | decimal(14,2) | em reais, com centavos (93 dos 380 valores de 2025 têm); só 2025, nulo nas demais |
 
 Mapeamento da fonte: `ID` → `partida_id`, `rodata` → `rodada`, `data` (`dd/MM/yyyy`) → date, `vencedor = "-"` → nulo (empate), `mandante_Estado` → `uf_mandante`, `arena` com `trim` (5 mil linhas vêm com espaço no início). String vazia vira nulo em todas as colunas.
 
@@ -162,7 +162,7 @@ As três tabelas filhas são escritas com overwrite de partição (`replaceWhere
 | Placar negativo ou não numérico | **falha** |
 | Filha com `partida_id` inexistente em `partidas` | aviso com contagem |
 | Nº de partidas da temporada ≠ esperado (552 em 2003–04, 462 em 2005, 379 em 2016, 380 nas demais a partir de 2006). Os 379 de 2016 são a partida Chapecoense × Atlético-MG, que não foi disputada depois do acidente aéreo | aviso |
-| Nulos em colunas opcionais | aviso com contagem por coluna |
+| Nulos em colunas opcionais, exceto os buracos conhecidos da tabela "Cobertura da fonte" (ex.: técnico e formação antes de 2014, arrecadação antes de 2025) | aviso com contagem por coluna |
 
 As checagens rodam antes da escrita na silver: uma falha não deixa a tabela pela metade. O resumo vai para o log ao fim de cada temporada.
 
