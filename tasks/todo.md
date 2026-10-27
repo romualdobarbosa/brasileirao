@@ -1,235 +1,267 @@
-# Tarefas: lakehouse
+# Tarefas: gold
 
-Plano: [plan.md](plan.md). Spec: [SPEC-lakehouse.md](../SPEC-lakehouse.md).
+Plano: [plan.md](plan.md). Spec: [SPEC-gold.md](../SPEC-gold.md).
 
 Toda tarefa só conta como feita com `make lint` e `make test` passando.
 
 ---
 
-## Fase 1: Fundação
+## Fase 1: Fatia vertical da classificação
 
-### T1: Fundação do pacote
+### T1: Base do gold
 
-**Descrição:** Transformar o repo num pacote `src/brasileirao` instalável pelo `uv`, com as dependências da spec, a leitura de configuração e uma `get_spark()` local com Delta. Inclui a fixture de Spark dos testes e um teste que prova que Delta funciona nesta máquina (Java 25). É a tarefa de maior risco técnico, por isso vem primeiro.
+**Descrição:** Preparar o terreno: camada `gold` em `config.CAMADAS`, `rebaixados_por_temporada(temporada)` em `utils/temporada.py` (2 em 2003, 4 a partir de 2004), `reference/ajustes_pontos.csv` com as 14 linhas da spec e um leitor `carregar_ajustes(spark)` no pacote `aggregate`, no mesmo molde do `carregar_mapa_times`.
 
 **Critérios de aceite:**
-- [x] `pyproject.toml` com `[build-system]`, `pyspark==4.2.0`, `delta-spark==4.4.1`, `kagglehub>=1.0.3`, dev `chispa` e `pytest-cov`, e `[tool.ruff]` conforme a spec; `requests` e `main.py` removidos
-- [x] `config.py` resolve os caminhos das camadas a partir de `BRASILEIRAO_DATA_ROOT` (default `./data`)
-- [x] `get_spark()` sobe sessão local com Delta; ambiente desconhecido dá erro claro
-- [x] `Makefile` com `setup`, `test`, `lint`, `fmt`; `data/` no `.gitignore`
+- [ ] `config.caminho_tabela("gold", "x")` funciona; camada desconhecida continua dando erro
+- [ ] `rebaixados_por_temporada` testado para 2003, 2004 e 2025; temporada antes de 2003 dá erro
+- [ ] `ajustes_pontos.csv` com colunas `temporada,clube,pontos,motivo,fonte`, as 14 linhas da tabela da spec, nomes canônicos e URL da página da temporada na Wikipédia
+- [ ] `carregar_ajustes` devolve DataFrame com `temporada int, clube string, pontos int, motivo string, fonte string`
+- [ ] Teste unitário: todo `clube` do CSV existe como `nome_canonico` em `times.csv`; a soma por temporada e clube bate com os totais da spec (ex.: Ponte Preta 2003 = −1)
 
 **Verificação:**
-- [x] `make setup && make lint && make test`
-- [x] Teste de integração escreve uma tabela Delta em `tmp_path`, lê de volta e compara com chispa
+- [ ] `uv run pytest tests/unit/test_config.py tests/unit/test_temporada.py tests/unit/aggregate/`
 
 **Dependências:** nenhuma
 
-**Arquivos:** `pyproject.toml`, `Makefile`, `.gitignore`, `src/brasileirao/{__init__,config}.py`, `src/brasileirao/utils/spark.py`, `tests/conftest.py`, `tests/unit/test_config.py`, `tests/integration/test_spark_delta.py`
-
-**Tamanho:** M
-
-### T2: Download do dataset
-
-**Descrição:** `python -m brasileirao.ingestion.download` baixa a versão 18 do dataset com `kagglehub` e copia os CSVs para `data/raw/`.
-
-**Critérios de aceite:**
-- [x] Versão fixada em constante (`adaoduque/campeonato-brasileiro-de-futebol/versions/18`)
-- [x] Os 4 CSVs e a `Legenda.txt` acabam em `<data_root>/raw/`; rodar de novo sobrescreve sem erro
-- [x] Falta de credencial gera mensagem dizendo onde colocar o token
-
-**Verificação:**
-- [x] `make download` e `ls data/raw`
-- [x] Teste unitário da cópia com o `kagglehub` mockado (a função de rede fica fora da cobertura, conforme a spec)
-
-**Dependências:** T1
-
-**Arquivos:** `src/brasileirao/ingestion/download.py`, `Makefile`, `tests/unit/test_download.py`
+**Arquivos:** `src/brasileirao/config.py`, `src/brasileirao/utils/temporada.py`, `src/brasileirao/reference/ajustes_pontos.csv`, `src/brasileirao/aggregate/{__init__,referencia}.py`, `tests/unit/aggregate/test_referencia.py` (+ ajustes em `test_config.py` e `test_temporada.py`)
 
 **Tamanho:** S
 
-### Checkpoint: Fundação
-- [x] `make lint` e `make test` passam
-- [x] `make download` traz os arquivos
+### T2: `calcular_classificacao`
 
----
+**Descrição:** `aggregate/classificacao.py` com `calcular_classificacao(partidas, ajustes) -> DataFrame`, conforme o schema de `classificacao_por_rodada` da spec. Por dentro: partidas viram duas linhas por jogo (visão de cada clube), resultado por rodada, grade clube × rodada com zeros nas rodadas sem jogo, acumulados por window, `ultimos_5`, ajuste só na última rodada, `aproveitamento` e `posicao` por `row_number()` com o desempate da spec. Só window functions e joins, sem `collect()`.
 
-## Fase 2: Fatia vertical de partidas
-
-### T3: Regra de temporada e bronze de partidas
-
-**Descrição:** Função `derivar_temporada` (coluna Spark a partir da data `dd/MM/yyyy`, com jan–mar/2021 → 2020) e escrita de `bronze/partidas`: todas as colunas como string, `_ingested_at`, `_source_file`, partição `temporada`, overwrite com `replaceWhere`.
+Fixture: minicampeonato de 4 times, turno e returno (12 partidas, 6 rodadas), num módulo de fixtures de `tests/unit/aggregate/` reaproveitável pelas próximas tarefas. A tabela final esperada é calculada à mão e escrita no teste.
 
 **Critérios de aceite:**
-- [x] `derivar_temporada` cobre ano normal, jan/2021, fev/2021, abr/2021 e mar/2003
-- [x] `escrever_bronze(spark, entidade, temporada)` grava só a partição da temporada pedida
-- [x] Reescrever a mesma temporada não duplica e não toca as outras partições
+- [ ] 4 × 6 = 24 linhas; `posicao` 1..4 sem repetição em toda rodada
+- [ ] Partida da rodada 2 jogada depois da rodada 4: entra na rodada 2 (a classificação segue a rodada) e o time tem linha nas 6 rodadas
+- [ ] Empate em pontos decidido por vitórias num caso e por saldo em outro
+- [ ] Ajuste negativo aparece só na rodada 6, muda a posição final e não entra no `aproveitamento`
+- [ ] `ultimos_5` certo na rodada 1 (`"V"`, uma letra) e na rodada 6 (5 letras, mais antigo primeiro)
+- [ ] `aproveitamento` com 4 casas
 
 **Verificação:**
-- [x] `uv run pytest tests/unit/test_temporada.py tests/integration/test_bronze.py`
+- [ ] `uv run pytest tests/unit/aggregate/test_classificacao.py`
 
 **Dependências:** T1
 
-**Arquivos:** `src/brasileirao/utils/temporada.py`, `src/brasileirao/ingestion/bronze.py`, `tests/fixtures/raw/campeonato-brasileiro-full.csv`, `tests/unit/test_temporada.py`, `tests/integration/test_bronze.py`
+**Arquivos:** `src/brasileirao/aggregate/classificacao.py`, `tests/unit/aggregate/{conftest,test_classificacao}.py`
 
 **Tamanho:** M
 
-### T4: Silver de partidas com mapa de times e MERGE
+### T3: `gold.py`, checagens, CLI e integração
 
-**Descrição:** Transformações puras de partidas (renomear, tipar, `trim` na arena, `"-"` → nulo, vazio → nulo, dedup por `partida_id`), `reference/times.csv` com os 46 nomes da fonte (canônico com acento + UF), `normalizar_times` e escrita em `silver/partidas` via `MERGE` por `partida_id`.
+**Descrição:** `aggregate/gold.py` com o registro ordenado de tabelas (por enquanto só `classificacao_por_rodada`), leitura da silver (erro claro se não existir), cálculo, checagens e gravação com overwrite (sem particionar, `overwriteSchema` desligado). `aggregate/qualidade.py` com as checagens de falha da classificação e dos ajustes: posição, jogos na última rodada (exceção de 2016), Σ vitórias = Σ derrotas, clube do ajuste sem jogo na temporada. Subcomando `gold` na CLI e alvo `make gold`.
 
 **Critérios de aceite:**
-- [x] Schema de `silver/partidas` igual ao contrato da spec (inclui `arrecadacao`)
-- [x] `times.csv` cobre os 46 nomes da versão 18; nome fora do mapa vira nulo (a checagem vem em T5)
-- [x] MERGE funciona na primeira carga (tabela inexistente) e numa recarga com linha alterada
+- [ ] `python -m brasileirao.pipeline gold` grava `gold/classificacao_por_rodada`; sem silver, falha com mensagem que manda rodar `make lakehouse`
+- [ ] Cada checagem de falha tem teste unitário com um DataFrame que a dispara
+- [ ] Integração: fixtures raw do lakehouse → silver → gold; rodar `gold` 2× deixa o conteúdo igual a 1×
+- [ ] Integração: com uma checagem forçada a falhar, nenhuma tabela gold é gravada
+- [ ] Resumo no log: linhas por tabela e tempo total
 
 **Verificação:**
-- [x] `uv run pytest tests/unit/test_limpeza_partidas.py tests/integration/test_silver_partidas.py`
-- [x] Manual: conferir os nomes com acento no `times.csv`
+- [ ] `make lint && make test`
+- [ ] `make gold` nos dados reais (dados em `data/silver/`)
+
+**Dependências:** T2
+
+**Arquivos:** `src/brasileirao/aggregate/{gold,qualidade}.py`, `src/brasileirao/pipeline.py`, `Makefile`, `tests/unit/aggregate/test_qualidade.py`, `tests/integration/test_gold.py`
+
+**Tamanho:** M
+
+### Checkpoint: Classificação nos dados reais
+- [ ] Linhas por temporada: 24 × 46 (2003–04), 22 × 42 (2005), 20 × 38 (2006–2025)
+- [ ] Campeão de 2003–2025 bate com o oficial: 2003 Cruzeiro, 2004 Santos, 2005 Corinthians, 2006–08 São Paulo, 2009 Flamengo, 2010 Fluminense, 2011 Corinthians, 2012 Fluminense, 2013–14 Cruzeiro, 2015 Corinthians, 2016 Palmeiras, 2017 Corinthians, 2018 Palmeiras, 2019–20 Flamengo, 2021 Atlético-MG, 2022–23 Palmeiras, 2024 Botafogo-RJ, 2025 Flamengo
+- [ ] Pontos finais dos clubes ajustados e rebaixados de 2003, 2004, 2010, 2013, 2016 e 2018 batem com a spec
+- [ ] `make gold` 2× sem mudança de conteúdo; tempo anotado
+- [ ] Revisão com o Romualdo
+
+---
+
+## Fase 2: Tabelas de partidas
+
+### T4: `desempenho_mandante_visitante`
+
+**Descrição:** `calcular_desempenho(partidas)` com uma linha por (`temporada`, `clube`, `mando`), resultado de campo, sem ajustes. Entra no registro de `gold.py`.
+
+**Critérios de aceite:**
+- [ ] No minicampeonato, cada clube tem 2 linhas, e a soma de mandante + visitante bate com a última rodada da classificação, sem o ajuste
+- [ ] `aproveitamento` com 4 casas
+
+**Verificação:**
+- [ ] `uv run pytest tests/unit/aggregate/test_desempenho.py tests/integration/test_gold.py`
 
 **Dependências:** T3
 
-**Arquivos:** `src/brasileirao/transform/limpeza.py`, `src/brasileirao/transform/silver.py`, `src/brasileirao/reference/times.csv`, `tests/unit/test_limpeza_partidas.py`, `tests/integration/test_silver_partidas.py`
+**Arquivos:** `src/brasileirao/aggregate/desempenho.py`, `src/brasileirao/aggregate/gold.py`, `tests/unit/aggregate/test_desempenho.py`
+
+**Tamanho:** S
+
+### T5: `sequencias`
+
+**Descrição:** `calcular_sequencias(partidas)` por gaps-and-islands, com os jogos de cada clube em ordem de `data`, `hora`, `partida_id`. Os 4 tipos da spec, a maior sequência de cada (`temporada`, `clube`, `tipo`), empate de tamanho fica com a mais antiga, `em_aberto` e a linha com `jogos = 0` para quem não tem o tipo.
+
+**Critérios de aceite:**
+- [ ] 4 linhas por clube e temporada no minicampeonato
+- [ ] A partida adiada entra na ordem da data, não da rodada (o teste prova que muda a sequência)
+- [ ] Clube que nunca perdeu: `derrotas` com `jogos = 0` e datas nulas; `invencibilidade` com `em_aberto = 1`
+- [ ] Duas sequências do mesmo tamanho: fica a mais antiga
+
+**Verificação:**
+- [ ] `uv run pytest tests/unit/aggregate/test_sequencias.py tests/integration/test_gold.py`
+
+**Dependências:** T3
+
+**Arquivos:** `src/brasileirao/aggregate/sequencias.py`, `src/brasileirao/aggregate/gold.py`, `tests/unit/aggregate/test_sequencias.py` (+ partidas extras na fixture, se precisar)
 
 **Tamanho:** M
 
-### T5: Checagens de qualidade
+### T6: `ranking_historico`
 
-**Descrição:** `qualidade.py` com as checagens de falha (time sem mapa, `partida_id` nulo/duplicado, placar inválido) e de aviso (contagem por temporada com 2016 = 379, nulos por coluna). A escrita da silver chama as checagens antes de gravar.
+**Descrição:** `calcular_ranking(classificacao)` a partir da última rodada de cada temporada: soma dos acumulados, pontos com ajuste, `temporadas`, primeira e última, `titulos` e `posicao` pelo desempate da spec.
 
 **Critérios de aceite:**
-- [x] Falha levanta exceção própria listando os nomes/ids problemáticos
-- [x] Com falha, `silver/partidas` fica intacta (teste confere)
-- [x] Avisos saem no log com contagem, sem interromper
+- [ ] Com duas temporadas na fixture (o minicampeonato mais uma segunda temporada com um time diferente), o ranking soma as duas e conta 1 título para cada campeão
+- [ ] Pontos do ranking incluem o ajuste; `aproveitamento` não
 
 **Verificação:**
-- [x] `uv run pytest tests/unit/test_qualidade.py tests/integration/test_silver_partidas.py`
+- [ ] `uv run pytest tests/unit/aggregate/test_ranking.py tests/integration/test_gold.py`
 
-**Dependências:** T4
+**Dependências:** T3
 
-**Arquivos:** `src/brasileirao/transform/qualidade.py`, `src/brasileirao/transform/silver.py`, `tests/unit/test_qualidade.py`, `tests/integration/test_silver_partidas.py`
+**Arquivos:** `src/brasileirao/aggregate/ranking.py`, `src/brasileirao/aggregate/gold.py`, `tests/unit/aggregate/test_ranking.py`
 
 **Tamanho:** S
 
-### T6: CLI, temporada em andamento e idempotência
-
-**Descrição:** `python -m brasileirao.pipeline lakehouse --temporada N | --todas` com `processar_temporada`. Detecção da temporada em andamento (maior temporada com menos partidas que o esperado): `--todas` pula, `--temporada N` recusa. Alvos `lakehouse` e `download` no Makefile.
-
-**Critérios de aceite:**
-- [x] `--todas` processa as temporadas em ordem crescente e pula a em andamento
-- [x] `--temporada` com temporada em andamento sai com código ≠ 0 e mensagem clara
-- [x] Teste de idempotência: rodar a mesma temporada 2× deixa bronze e silver iguais a 1× (comparando conteúdo, sem metadados de ingestão)
-
-**Verificação:**
-- [x] `uv run pytest tests/integration/test_pipeline.py`
-- [x] Manual: `make lakehouse` nos dados reais
-
-**Dependências:** T5, T2
-
-**Arquivos:** `src/brasileirao/pipeline.py`, `Makefile`, `tests/integration/test_pipeline.py`
-
-**Tamanho:** S
-
-### Checkpoint: Partidas de ponta a ponta (revisão com o Romualdo)
-- [x] `make lakehouse` carrega 2003–2025 em `bronze/partidas` e `silver/partidas`
-- [x] Contagem por temporada bate (2016 = 379; 2020 e 2021 = 380)
-- [x] `make lakehouse TEMPORADA=2019` 2× não muda nada
-- [x] `times.csv` revisado
+### Checkpoint: Partidas
+- [ ] `make lint`, `make test`, `make gold` nos dados reais
+- [ ] Amostras: títulos no ranking batem com a lista de campeões do checkpoint da Fase 1; a maior invencibilidade do campeão de 2025 confere com o calendário da silver
+- [ ] Revisão com o Romualdo
 
 ---
 
-## Fase 3: Tabelas filhas
+## Fase 3: Tabelas de eventos e resumo
 
-> T7, T8 e T9 são independentes entre si. A T7 cria o helper de bronze das filhas (temporada via join com `bronze/partidas`), que T8 e T9 reaproveitam. Se forem paralelas, a T7 vai primeiro ou o helper sai antes.
+### T7: `disciplina`
 
-### T7: Gols
-
-**Descrição:** `bronze/gols` e `silver/gols`: parse de minuto (`"45+2"` → 45 e 2), `tipo_de_gol` vazio → nulo, clube normalizado, overwrite de partição. Entra em `processar_temporada`.
+**Descrição:** `calcular_disciplina(partidas, cartoes, estatisticas)`: 2014–2024 de `cartoes` e 2025 de `estatisticas`, com `fonte`, `jogos` do clube na temporada e as médias com 2 casas. A regra de qual temporada usa qual fonte é "temporada sem nenhuma linha em `cartoes` usa `estatisticas`", sem ano fixo no código. Aviso (não falha) para clube sem partida na temporada.
 
 **Critérios de aceite:**
-- [x] Schema conforme a spec
-- [x] Aviso de `partida_id` órfão funciona para gols
-- [x] Idempotência coberta pelo teste do pipeline
+- [ ] Fixture com uma temporada que tem cartões e uma que só tem estatísticas: `fonte` certa em cada uma
+- [ ] Clube sem nenhum cartão na temporada aparece com 0, não some
+- [ ] Temporada antes de 2014 não aparece
 
 **Verificação:**
-- [x] `uv run pytest tests/unit/test_limpeza_gols.py tests/integration/test_pipeline.py`
+- [ ] `uv run pytest tests/unit/aggregate/test_disciplina.py tests/integration/test_gold.py`
 
-**Dependências:** T6
+**Dependências:** T3
 
-**Arquivos:** `src/brasileirao/ingestion/bronze.py`, `src/brasileirao/transform/{limpeza,silver}.py`, `tests/fixtures/raw/campeonato-brasileiro-gols.csv`, `tests/unit/test_limpeza_gols.py`
-
-**Tamanho:** M
-
-### T8: Cartões
-
-**Descrição:** `bronze/cartoes` e `silver/cartoes`: minuto/acréscimo, `num_camisa` int, "Zagueira" → "Zagueiro", posição vazia → nulo.
-
-**Critérios de aceite:**
-- [x] Schema conforme a spec
-- [x] `cartao` só aceita `Amarelo` ou `Vermelho` (outro valor é falha)
-- [x] Idempotência coberta pelo teste do pipeline
-
-**Verificação:**
-- [x] `uv run pytest tests/unit/test_limpeza_cartoes.py tests/integration/test_pipeline.py`
-
-**Dependências:** T7 (helper de bronze das filhas)
-
-**Arquivos:** `src/brasileirao/transform/{limpeza,silver}.py`, `tests/fixtures/raw/campeonato-brasileiro-cartoes.csv`, `tests/unit/test_limpeza_cartoes.py`
+**Arquivos:** `src/brasileirao/aggregate/disciplina.py`, `src/brasileirao/aggregate/{gold,qualidade}.py`, `tests/unit/aggregate/test_disciplina.py`
 
 **Tamanho:** S
 
-### T9: Estatísticas
+### T8: `artilharia`
 
-**Descrição:** `bronze/estatisticas` e `silver/estatisticas`: inteiros, percentuais `"45%"` → 0.45, `"None"`/vazio → nulo, descarte das linhas sem dado real (chutes, passes e posse zerados ou nulos), unicidade por (`partida_id`, `clube`).
+**Descrição:** `calcular_artilharia(gols)`: uma linha por (`temporada`, `atleta`), sem gol contra, `clubes` em ordem alfabética separados por `", "`, `penaltis` e `posicao` com `rank()`.
 
 **Critérios de aceite:**
-- [x] Schema conforme a spec
-- [x] Linha zerada é descartada; linha com dado real e posse nula é mantida
-- [x] Duplicado de (`partida_id`, `clube`) é falha
+- [ ] Gol contra não conta para ninguém
+- [ ] Atleta com gols por dois clubes: uma linha, `clubes = "A, B"`, gols somados
+- [ ] Empate no topo divide a posição 1, e o próximo fica em 3
 
 **Verificação:**
-- [x] `uv run pytest tests/unit/test_limpeza_estatisticas.py tests/integration/test_pipeline.py`
+- [ ] `uv run pytest tests/unit/aggregate/test_artilharia.py tests/integration/test_gold.py`
 
-**Dependências:** T7 (helper de bronze das filhas)
+**Dependências:** T3
 
-**Arquivos:** `src/brasileirao/transform/{limpeza,silver,qualidade}.py`, `tests/fixtures/raw/campeonato-brasileiro-estatisticas-full.csv`, `tests/unit/test_limpeza_estatisticas.py`
+**Arquivos:** `src/brasileirao/aggregate/artilharia.py`, `src/brasileirao/aggregate/gold.py`, `tests/unit/aggregate/test_artilharia.py`
 
 **Tamanho:** S
+
+### T9: `gols_por_minuto`
+
+**Descrição:** `calcular_gols_por_minuto(gols, partidas)`: faixa pelo `minuto`, `lado` pelo clube que marcou contra o mandante da partida, `gols` e `pct_gols`. Inclui a checagem de falha da spec (total de gols da tabela = gols da silver na temporada).
+
+**Critérios de aceite:**
+- [ ] Gol aos 45+2 em `31-45+`, aos 90+3 em `76-90+`, aos 0 em `0-15`, aos 46 em `46-60`
+- [ ] Gol contra entra no `lado` do beneficiado
+- [ ] `pct_gols` soma 1 por temporada (tolerância de arredondamento)
+- [ ] Teste da checagem com um DataFrame que perde um gol
+
+**Verificação:**
+- [ ] `uv run pytest tests/unit/aggregate/test_gols_por_minuto.py tests/unit/aggregate/test_qualidade.py tests/integration/test_gold.py`
+
+**Dependências:** T3
+
+**Arquivos:** `src/brasileirao/aggregate/gols_por_minuto.py`, `src/brasileirao/aggregate/{gold,qualidade}.py`, `tests/unit/aggregate/test_gols_por_minuto.py`
+
+**Tamanho:** S
+
+### T10: `resumo_temporada`
+
+**Descrição:** `calcular_resumo(partidas, classificacao, artilharia)`: uma linha por temporada com os totais, percentuais, campeão, vice, `rebaixados` pela regra do T1 (ordem da classificação, separados por `", "`) e artilheiro (empate junta os nomes; nulo sem dado de gols).
+
+**Critérios de aceite:**
+- [ ] Na fixture, campeão, vice e rebaixados batem com a classificação final (com ajuste)
+- [ ] `pct_vitoria_mandante + pct_empate + pct_vitoria_visitante = 1` (tolerância de arredondamento)
+- [ ] Temporada sem gols na silver de gols: `artilheiro` e `gols_artilheiro` nulos
+- [ ] Artilheiros empatados: os dois nomes em ordem alfabética
+
+**Verificação:**
+- [ ] `uv run pytest tests/unit/aggregate/test_resumo.py tests/integration/test_gold.py`
+
+**Dependências:** T8
+
+**Arquivos:** `src/brasileirao/aggregate/resumo.py`, `src/brasileirao/aggregate/gold.py`, `tests/unit/aggregate/test_resumo.py`
+
+**Tamanho:** S
+
+### Checkpoint: Gold completo
+- [ ] `make gold` nos dados reais grava as 8 tabelas em menos de 2 minutos, com todas as checagens passando
+- [ ] Amostras: artilheiro de 2 temporadas e o campeão no `resumo_temporada` batem com o oficial; `disciplina` de 2025 vem de `estatisticas`
+- [ ] Revisão com o Romualdo
 
 ---
 
-## Checkpoint: Completo
+## Fase 4: Explain plans e fechamento
 
-### T10: Rodada completa e critérios de sucesso
+### T11: `explain.py` e `make explain`
 
-**Descrição:** Partindo de `data/` vazio, rodar `make download && make lakehouse` e conferir os 8 critérios de sucesso da spec, um por um. Divergência vira correção (com teste) ou atualização da spec, nunca ajuste silencioso.
+**Descrição:** `aggregate/explain.py` lê a silver real, chama as funções `calcular_*` escolhidas e grava `df.explain("formatted")` em `docs/explain/planos/<tabela>.txt`. Os planos são `classificacao_por_rodada`, `sequencias` e um join com broadcast (`disciplina` ou `artilharia`, o que mostrar `BroadcastHashJoin` com mais clareza). Subcomando `explain` na CLI e alvo `make explain`. `shuffle.partitions` fixo para o texto variar pouco entre execuções.
 
 **Critérios de aceite:**
-- [x] Os 8 critérios de sucesso da spec conferidos e anotados aqui
-- [x] `make lakehouse` completo em < 5 min
-- [x] Cobertura ≥ 80%
+- [ ] `make explain` regrava os 3 arquivos
+- [ ] Teste de integração: com a silver das fixtures, `explain` grava arquivos não vazios num diretório temporário (o diretório de saída é parâmetro, com default `docs/explain/planos`)
 
 **Verificação:**
-- [x] `time make lakehouse`
-- [x] `make test` mostra a cobertura
-- [x] Revisão com o Romualdo antes de fechar o módulo
+- [ ] `make explain && ls docs/explain/planos`
 
-**Dependências:** T8, T9
+**Dependências:** T10
 
-**Arquivos:** só correções, se aparecerem
+**Arquivos:** `src/brasileirao/aggregate/explain.py`, `src/brasileirao/pipeline.py`, `Makefile`, `tests/integration/test_explain.py`, `docs/explain/planos/*.txt`
 
-**Tamanho:** XS
+**Tamanho:** S
 
-**Resultado (27/10/2026, rodada a partir de `data/` só com `raw/` da versão 18):**
+### T12: `docs/explain/README.md` e critérios de sucesso
 
-1. **OK, sem novo download.** Os 4 CSVs e a `Legenda.txt` estão em `data/raw/`, com as contagens da versão 18 (9.165 partidas, 10.820 gols, 20.953 cartões, 18.330 estatísticas). O `make download` foi conferido na Fase 1 e não rodou de novo.
-2. **OK.** `make lakehouse` levou 2min58s e criou as 8 tabelas. A bronze tem 2003–2025 em `partidas` e `estatisticas`, 2014–2025 em `gols` e 2014–2024 em `cartoes`. A 2025 está completa na v18 (380 partidas), então nenhuma temporada ficou de fora por estar em andamento.
-3. **OK.** `make lakehouse TEMPORADA=2019` rodou 2×. Contagem e hash de conteúdo (sem `_ingested_at`/`_source_file`) das 8 tabelas ficaram idênticos aos de antes, e `silver/partidas` não ganhou versão nova no Delta. O teste `test_rodar_duas_vezes_e_igual_a_uma` cobre as 8 tabelas.
-4. **OK.** `silver/partidas` tem 9.165 linhas e 9.165 `partida_id` distintos, nenhum nulo. Nenhum time fora do mapa em partidas nem nas 3 filhas, e nenhum placar negativo ou nulo.
-5. **OK.** As 112 partidas de jan–mar/2021 estão todas com `temporada = 2020`.
-6. **OK.** Todas as temporadas batem com o esperado (2016 = 379), sem nenhum aviso de contagem no log.
-7. **OK.** `make lint` passa limpo e `make test` dá 139 testes passando, com 99% de cobertura. A suíte leva ~2min (120s), dentro da meta de 3 min da Testing Strategy.
-8. **OK.** Toda a suíte de integração roda com `BRASILEIRAO_DATA_ROOT` em `tmp_path`, e `test_config.py` cobre a troca. Não precisou de mudança de código.
+**Descrição:** Leitura comentada dos 3 planos (exchange e sort da window, as duas windows das sequências sobre a mesma partição, o broadcast, o que o AQE mudou) e a decisão de não particionar o gold. O texto é público e passa pela skill `voz-romualdo`. Depois, conferir os 7 critérios de sucesso da spec nos dados reais e anotar o resultado aqui, como no T10 do lakehouse.
 
-Conferência extra: em 2014–2025, a contagem de gols de `silver/gols` bate 100% com o placar de `silver/partidas`.
+**Critérios de aceite:**
+- [ ] README comenta os 3 planos citando trechos reais dos `.txt`
+- [ ] Seção sobre particionamento com o número real de linhas e arquivos de cada tabela gold
+- [ ] Os 7 critérios de sucesso conferidos e anotados abaixo
 
-Ajuste pós-revisão: os 4 buracos novos da "Cobertura da fonte" (formação em 2014, `num_camisa` em 2014, `posicao` em todas as temporadas, `precisao_passes` em 2014–2017) não geram mais aviso de nulo. Conferido com `make lakehouse TEMPORADA=2014`, `2015` e `2018`.
+**Verificação:**
+- [ ] Leitura do Romualdo; `make lint && make test`
+
+**Dependências:** T11
+
+**Arquivos:** `docs/explain/README.md`, `tasks/todo.md` (só a anotação do resultado)
+
+**Tamanho:** S
+
+### Checkpoint: Completo
+- [ ] Revisão com o Romualdo antes de fechar o módulo

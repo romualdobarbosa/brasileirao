@@ -5,7 +5,7 @@
 | Módulo | Responsabilidade | Depende de | Spec |
 |---|---|---|---|
 | `lakehouse` | CSV do Kaggle → bronze → silver em Delta local; mapa de nomes dos times; carga por temporada idempotente (MERGE); checagens de qualidade | — | [SPEC-lakehouse.md](SPEC-lakehouse.md) |
-| `gold` | Tabelas analíticas (classificação por rodada, mandante/visitante, sequências, ranking histórico, disciplina) e explain plans documentados | lakehouse | — |
+| `gold` | Tabelas analíticas (classificação por rodada, mandante/visitante, sequências, ranking histórico, disciplina, artilharia, gols por minuto, resumo da temporada) e explain plans documentados | lakehouse | [SPEC-gold.md](SPEC-gold.md) |
 | `serving` | Postgres + Metabase (Docker Compose) na VM Oracle Always Free; carga JDBC do gold; usuário read-only; dashboard com link público | gold | — |
 | `ci` | GitHub Actions: ruff + pytest com Spark local em PR; checks de Terraform quando `cloud-aws` existir | lakehouse | — |
 | `enrichment` | Base dos Dados via BigQuery, juntando com o silver | lakehouse | — |

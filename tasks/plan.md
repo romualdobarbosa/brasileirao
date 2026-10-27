@@ -1,79 +1,87 @@
-# Plano de implementação: lakehouse
+# Plano de implementação: gold
 
-Spec: [SPEC-lakehouse.md](../SPEC-lakehouse.md). Tarefas detalhadas em [todo.md](todo.md).
+Spec: [SPEC-gold.md](../SPEC-gold.md). Tarefas detalhadas em [todo.md](todo.md). O plano do módulo anterior está em [plan-lakehouse.md](plan-lakehouse.md).
 
 ## Visão geral
 
-Construir o pacote `brasileirao` que leva os CSVs do Kaggle (versão 18) até bronze e silver em Delta local, com carga por temporada idempotente. A ordem é: fundação (Spark + Delta rodando e testável), depois uma fatia vertical completa só com **partidas** (download → bronze → silver → qualidade → CLI), validada nos dados reais, e por fim as três tabelas filhas, cada uma como uma fatia própria.
+Construir o pacote `brasileirao.aggregate`, que lê a silver inteira e grava 8 tabelas gold em Delta, com checagens antes da escrita e explain plans documentados. A ordem: primeiro uma fatia vertical completa só com **`classificacao_por_rodada`** (referência de ajustes → cálculo → checagens → gravação → CLI), validada nos dados reais contra as tabelas oficiais. Depois vêm as tabelas que só dependem de partidas, as tabelas de eventos (gols e cartões, 2014+) e por fim os explain plans.
 
 ## Decisões de arquitetura
 
-- **Tabelas Delta por caminho**, sem metastore. Fica mais simples de levar para S3 e Databricks depois; o caminho base vem de `BRASILEIRAO_DATA_ROOT`.
-- **`get_spark()` escolhe o builder por `BRASILEIRAO_SPARK_ENV`.** Só `local` é implementado agora, com `configure_spark_with_delta_pip`. Os outros ambientes levantam `NotImplementedError` até os módulos de nuvem.
-- **A unidade de trabalho é a temporada.** `processar_temporada(spark, temporada)` faz bronze (4 tabelas) → transformações → checagens → silver (4 tabelas). `--todas` só chama essa função em ordem crescente de temporada. Isso é a "carga sucessiva" da demo de MERGE.
-- **Checagens rodam antes da escrita na silver.** Se falhar, a bronze da temporada já foi gravada (é dado cru, idempotente), mas a silver não recebe nada daquela temporada. As temporadas anteriores ficam como estavam.
-- **Transformação pura separada de I/O.** `limpeza.py` só tem funções `DataFrame → DataFrame`, testadas sem disco. `bronze.py` e `silver.py` fazem leitura e escrita.
-- **Fixtures sintéticas nos testes.** Nenhum teste lê `data/raw/`; o download real só é usado nos checkpoints manuais.
+- **Uma função pura por tabela.** `calcular_<tabela>(...)` recebe DataFrames (silver, referência ou outra tabela gold já calculada) e devolve o DataFrame gold. Só `gold.py` lê a silver e grava. Os testes unitários montam DataFrames em memória e não tocam em disco.
+- **Tabelas gold que dependem de outra recebem o DataFrame calculado, não releem do disco.** `ranking_historico` e `resumo_temporada` recebem a classificação, e o `resumo` recebe a artilharia. `gold.py` calcula na ordem das dependências e faz `localCheckpoint()` nas tabelas reaproveitadas, como `silver.py` já faz.
+- **Tudo ou nada.** `gold.py` calcula as 8 tabelas, roda todas as checagens e só então grava. Uma falha não deixa o gold misturado entre versões.
+- **Registro de tabelas em `gold.py`.** Um dicionário ordenado `nome → função` que cada tarefa estende. A CLI, a gravação e o teste de idempotência percorrem esse registro, então tabela nova entra no teste sem mudar o teste.
+- **`ajustes_pontos.csv` lido do pacote** (`importlib.resources`), igual ao `times.csv`.
+- **`explain.py` reaproveita as funções `calcular_*`.** Ele roda `explain("formatted")` no DataFrame que a função devolve, sobre a silver real, e grava em `docs/explain/planos/<tabela>.txt`. Não existe consulta paralela só para o explain.
 
 ## Grafo de dependências
 
 ```
-T1 fundação (deps, config, spark, fixture de teste)
- ├── T2 download (kagglehub → data/raw)
- └── T3 temporada + bronze/partidas
-      └── T4 silver/partidas (limpeza, mapa de times, MERGE)
-           └── T5 qualidade (checagens antes da escrita)
-                └── T6 CLI + Makefile + idempotência   ← checkpoint nos dados reais
-                     ├── T7 gols
-                     ├── T8 cartões        (T7, T8, T9 independentes entre si)
-                     └── T9 estatísticas
-                          └── T10 rodada completa + critérios de sucesso
+T1 base (config gold, rebaixados, ajustes_pontos.csv)
+ └── T2 classificacao_por_rodada (cálculo puro)
+      └── T3 gold.py + checagens + CLI gold + Makefile + integração   ← checkpoint nos dados reais
+           ├── T4 desempenho_mandante_visitante
+           ├── T5 sequencias                     (T4, T5, T6, T7, T8, T9 independentes entre si)
+           ├── T6 ranking_historico
+           ├── T7 disciplina
+           ├── T8 artilharia ──┐
+           └── T9 gols_por_minuto
+                               └── T10 resumo_temporada (precisa de T8)
+                                    └── T11 explain.py + make explain
+                                         └── T12 docs/explain/README.md + critérios de sucesso
 ```
 
 ## Lista de tarefas
 
-### Fase 1: Fundação
-- [x] T1: Fundação do pacote: dependências, config, Spark session com Delta, fixture de teste
-- [x] T2: Download do dataset fixado na versão 18
+### Fase 1: Fatia vertical da classificação
+- [ ] T1: Base do gold: camada `gold` no config, `rebaixados_por_temporada`, `ajustes_pontos.csv` e leitor
+- [ ] T2: `calcular_classificacao` com o minicampeonato de teste
+- [ ] T3: `gold.py`, checagens de falha da classificação, CLI `gold`, Makefile e teste de integração
 
-### Checkpoint: Fundação
-- [x] `make test` e `make lint` passam; um teste escreve e lê uma tabela Delta
-- [x] `make download` traz os 4 CSVs
+### Checkpoint: Classificação nos dados reais (revisão com o Romualdo)
+- [ ] `make gold` grava `gold/classificacao_por_rodada` com 24 × 46, 22 × 42 e 20 × 38 linhas por temporada
+- [ ] Campeão de 2003–2025 bate com o oficial
+- [ ] Nas 6 temporadas com ajuste, os pontos finais e os rebaixados batem com a spec
+- [ ] `make gold` 2× deixa o conteúdo igual
 
-### Fase 2: Fatia vertical de partidas
-- [x] T3: Regra de temporada e bronze de partidas
-- [x] T4: Silver de partidas com mapa de times e MERGE
-- [x] T5: Checagens de qualidade na silver
-- [x] T6: CLI `lakehouse`, temporada em andamento, Makefile e teste de idempotência
+### Fase 2: Tabelas de partidas
+- [ ] T4: `desempenho_mandante_visitante`
+- [ ] T5: `sequencias` (gaps-and-islands)
+- [ ] T6: `ranking_historico`
 
-### Checkpoint: Partidas de ponta a ponta (revisão com o Romualdo)
-- [x] `make lakehouse` nos dados reais carrega 2003–2025 em `bronze/partidas` e `silver/partidas`
-- [x] Contagem por temporada bate (2016 = 379; 2020 e 2021 = 380)
-- [x] Rodar `TEMPORADA=2019` 2× não muda nada
-- [x] Revisar `reference/times.csv` (nomes com acento)
+### Checkpoint: Partidas
+- [ ] `make lint`, `make test` e `make gold` nos dados reais; conferência por amostra (ex.: maior invencibilidade de uma temporada conhecida, títulos no ranking)
 
-### Fase 3: Tabelas filhas
-- [x] T7: Bronze e silver de gols
-- [x] T8: Bronze e silver de cartões
-- [x] T9: Bronze e silver de estatísticas
+### Fase 3: Tabelas de eventos e resumo
+- [ ] T7: `disciplina`
+- [ ] T8: `artilharia`
+- [ ] T9: `gols_por_minuto` + checagem de soma dos gols
+- [ ] T10: `resumo_temporada`
+
+### Checkpoint: Gold completo
+- [ ] As 8 tabelas nos dados reais, `make gold` abaixo de 2 minutos, todas as checagens passando
+
+### Fase 4: Explain plans e fechamento
+- [ ] T11: `explain.py` e `make explain`
+- [ ] T12: `docs/explain/README.md` e conferência dos 7 critérios de sucesso da spec
 
 ### Checkpoint: Completo
-- [x] T10: Rodada completa nos dados reais e conferência dos 8 critérios de sucesso da spec
-- [x] Revisão com o Romualdo antes de fechar o módulo
+- [ ] Revisão com o Romualdo antes de fechar o módulo
 
 ## Riscos e mitigações
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Spark 4.2 + Delta 4.4.1 + Java 25 dar problema em runtime (o Spark declara suporte, mas a combinação com Delta é nova) | Alto | T1 roda primeiro e testa escrita/leitura Delta de verdade. Plano B: instalar JDK 21 |
-| `configure_spark_with_delta_pip` baixa os jars do Maven Central na primeira sessão | Médio | Aceitar no dev (fica no cache do Ivy). No CI, cachear `~/.ivy2` (fica para o módulo `ci`) |
-| Suíte lenta por causa do Spark | Médio | Uma `SparkSession` por sessão de teste, `shuffle.partitions=2`, fixtures mínimas |
-| Erro nos nomes com acento do `times.csv` | Baixo | Revisão do Romualdo no checkpoint da Fase 2 |
-| MERGE com tabela particionada e schema enforcement dar conflito na primeira escrita | Médio | T4 cobre primeira carga (tabela inexistente) e recarga no mesmo teste |
+| Grade clube × rodada errada em temporada com partida adiada (time sem linha numa rodada) | Alto | O minicampeonato do T2 tem partida adiada. A checagem de N × rodadas linhas roda no T3, e o checkpoint confere nos dados reais |
+| Desempate da spec divergir do oficial em alguma temporada sem ajuste (confronto direto) | Médio | O checkpoint confere o campeão de todas as temporadas. Divergência de posição fora do topo e do Z4 é aceita e vai para o README |
+| Plano de execução enorme na classificação (várias windows, cross join) deixando `make gold` lento | Médio | Medir no checkpoint da Fase 1. Se passar de 1 min só nela, `localCheckpoint()` antes das windows de posição |
+| Nome do atleta inconsistente na fonte (mesmo atleta grafado de dois jeitos) quebrando a artilharia | Baixo | Conferir o artilheiro de algumas temporadas no checkpoint da Fase 3; alias de atleta fica fora do escopo e vai para o README |
+| Plano físico mudar entre máquinas (AQE, número de cores) e os `.txt` de `docs/explain/planos/` ficarem diferentes a cada `make explain` | Baixo | O README comenta a estrutura do plano, não números de partição. `explain.py` fixa `spark.sql.shuffle.partitions` |
 
 ## Paralelização
 
-T7, T8 e T9 são independentes depois de T6 (cada uma mexe nas próprias funções e fixtures). O resto é sequencial. O módulo `ci` pode começar depois de T1.
+Depois do T3, T4–T9 são independentes: cada uma mexe no próprio módulo, no próprio teste e numa entrada do registro de `gold.py`. Pelo fluxo de uma sessão por fase, elas rodam em sequência dentro das Fases 2 e 3. O T10 espera o T8.
 
 ## Open Questions
 
