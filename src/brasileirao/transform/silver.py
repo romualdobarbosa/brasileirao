@@ -16,12 +16,14 @@ from brasileirao.transform import limpeza, qualidade
 log = logging.getLogger(__name__)
 
 SCHEMA_MAPA_TIMES = "nome_fonte string, nome_canonico string, uf string"
+SCHEMA_MAPA_ATLETAS = "nome_fonte string, clube string, nome_popular string"
 LIMPEZA_FILHAS = {
     "gols": (limpeza.limpar_gols, limpeza.COLUNAS_GOLS),
     "cartoes": (limpeza.limpar_cartoes, limpeza.COLUNAS_CARTOES),
     "estatisticas": (limpeza.limpar_estatisticas, limpeza.COLUNAS_ESTATISTICAS),
 }
 TABELAS = ("partidas", *LIMPEZA_FILHAS)
+FILHAS_COM_ATLETA = ("gols", "cartoes")
 
 
 @dataclass
@@ -33,11 +35,23 @@ class CargaSilver:
     avisos: list[str]
 
 
+def _ler_referencia(spark: SparkSession, arquivo: str, schema: str) -> DataFrame:
+    """CSV de `reference/` lido do pacote, para funcionar igual a partir do wheel."""
+    texto = resources.files("brasileirao.reference").joinpath(arquivo).read_text("utf-8")
+    # Célula vazia vira nulo (o `clube` opcional de `atletas.csv`).
+    leitor = csv.DictReader(io.StringIO(texto))
+    linhas = [tuple(valor or None for valor in linha.values()) for linha in leitor]
+    return spark.createDataFrame(linhas, schema)
+
+
 def carregar_mapa_times(spark: SparkSession) -> DataFrame:
-    """`reference/times.csv` lido do pacote, para funcionar igual a partir do wheel."""
-    texto = resources.files("brasileirao.reference").joinpath("times.csv").read_text("utf-8")
-    linhas = [tuple(linha.values()) for linha in csv.DictReader(io.StringIO(texto))]
-    return spark.createDataFrame(linhas, SCHEMA_MAPA_TIMES)
+    """`reference/times.csv`: nome da fonte → nome canônico e UF."""
+    return _ler_referencia(spark, "times.csv", SCHEMA_MAPA_TIMES)
+
+
+def carregar_mapa_atletas(spark: SparkSession) -> DataFrame:
+    """`reference/atletas.csv`: nome da fonte (e clube, para homônimos) → nome popular."""
+    return _ler_referencia(spark, "atletas.csv", SCHEMA_MAPA_ATLETAS)
 
 
 def ler_bronze(spark: SparkSession, entidade: str, temporada: int) -> DataFrame:
@@ -57,7 +71,7 @@ def preparar_partidas(spark: SparkSession, temporada: int, mapa: DataFrame) -> C
 
 
 def preparar_filha(
-    spark: SparkSession, tabela: str, temporada: int, mapa: DataFrame
+    spark: SparkSession, tabela: str, temporada: int, mapa: DataFrame, mapa_atletas: DataFrame
 ) -> CargaSilver:
     limpar, colunas = LIMPEZA_FILHAS[tabela]
     limpo = limpar(ler_bronze(spark, tabela, temporada))
@@ -65,7 +79,8 @@ def preparar_filha(
         limpo = limpeza.descartar_estatisticas_sem_dado(limpo)
     limpo = limpo.localCheckpoint()
     qualidade.checar_falhas_filha(limpo, mapa, tabela, temporada)
-    df = limpeza.para_silver_filha(limpo, mapa, colunas).localCheckpoint()
+    atletas = mapa_atletas if tabela in FILHAS_COM_ATLETA else None
+    df = limpeza.para_silver_filha(limpo, mapa, colunas, atletas).localCheckpoint()
     if tabela == "estatisticas":
         qualidade.checar_unicidade_estatisticas(df, temporada)
     return CargaSilver(tabela, df, qualidade.avisos_filha(df, tabela, temporada))
@@ -129,10 +144,11 @@ def processar_silver(
 ) -> list[CargaSilver]:
     """Prepara e checa todas as tabelas da temporada antes de gravar qualquer uma."""
     mapa = carregar_mapa_times(spark)
+    mapa_atletas = carregar_mapa_atletas(spark)
     cargas = [
         preparar_partidas(spark, temporada, mapa)
         if tabela == "partidas"
-        else preparar_filha(spark, tabela, temporada, mapa)
+        else preparar_filha(spark, tabela, temporada, mapa, mapa_atletas)
         for tabela in tabelas
     ]
     for carga in cargas:

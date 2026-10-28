@@ -229,6 +229,34 @@ def descartar_estatisticas_sem_dado(estatisticas: DataFrame) -> DataFrame:
     return estatisticas.where(~sem_dado)
 
 
-def para_silver_filha(limpo: DataFrame, mapa: DataFrame, colunas: list[str]) -> DataFrame:
-    """Filha limpa → schema da silver: clube canônico e sem linhas idênticas."""
-    return normalizar_times(limpo, mapa, ["clube"]).select(*colunas).dropDuplicates()
+def padronizar_atletas(filha: DataFrame, mapa: DataFrame) -> DataFrame:
+    """Troca o nome do atleta na fonte pelo popular (`Gabriel Barbosa` → `Gabigol`).
+
+    Linha do mapa com `clube` (canônico) vale só para aquele clube e ganha da linha sem
+    clube; é assim que o homônimo desconhecido ganha sufixo (`Fred (Goiás)`). Diferente dos
+    times, nome sem mapeamento continua como veio da fonte.
+    """
+    fonte = F.col("nome_fonte").alias("atleta")
+    por_clube = mapa.where(F.col("clube").isNotNull()).select(
+        fonte, "clube", F.col("nome_popular").alias("_popular_do_clube")
+    )
+    geral = mapa.where(F.col("clube").isNull()).select(
+        fonte, F.col("nome_popular").alias("_popular")
+    )
+    return (
+        filha.join(F.broadcast(por_clube), on=["atleta", "clube"], how="left")
+        .join(F.broadcast(geral), on="atleta", how="left")
+        .withColumn("atleta", F.coalesce("_popular_do_clube", "_popular", "atleta"))
+        .select(*filha.columns)
+    )
+
+
+def para_silver_filha(
+    limpo: DataFrame, mapa: DataFrame, colunas: list[str], mapa_atletas: DataFrame | None = None
+) -> DataFrame:
+    """Filha limpa → schema da silver: clube canônico, atleta popular (quando há mapa) e sem
+    linhas idênticas."""
+    filha = normalizar_times(limpo, mapa, ["clube"])
+    if mapa_atletas is not None:
+        filha = padronizar_atletas(filha, mapa_atletas)
+    return filha.select(*colunas).dropDuplicates()
