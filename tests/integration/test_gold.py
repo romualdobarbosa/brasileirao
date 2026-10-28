@@ -45,7 +45,12 @@ def test_rodar_duas_vezes_e_igual_a_uma(spark, lake):
 
     gold.processar_gold(spark)
 
-    assert linhas == {"classificacao_por_rodada": 24}
+    assert linhas == {
+        "classificacao_por_rodada": 24,
+        "desempenho_mandante_visitante": 8,
+        "sequencias": 16,
+        "ranking_historico": 4,
+    }
     for nome, df in _ler_gold(spark).items():
         assert_df_equality(df, uma_vez[nome], ignore_row_order=True)
 

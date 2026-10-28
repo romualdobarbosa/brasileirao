@@ -32,7 +32,7 @@ def _acumulado() -> Window:
 
 
 def jogos_por_clube(partidas: DataFrame) -> DataFrame:
-    """Duas linhas por partida, uma na visão de cada clube, com o resultado `V`/`E`/`D`."""
+    """Duas linhas por partida, uma na visão de cada clube, com `mando` e o resultado V/E/D."""
     lados = [
         ("mandante", "placar_mandante", "placar_visitante"),
         ("visitante", "placar_visitante", "placar_mandante"),
@@ -45,6 +45,7 @@ def jogos_por_clube(partidas: DataFrame) -> DataFrame:
             "data",
             "hora",
             F.col(clube).alias("clube"),
+            F.lit(clube).alias("mando"),
             F.col(pro).alias("gols_pro"),
             F.col(contra).alias("gols_contra"),
         )

@@ -11,7 +11,10 @@ from pyspark.sql import DataFrame, SparkSession
 from brasileirao import config
 from brasileirao.aggregate import qualidade
 from brasileirao.aggregate.classificacao import calcular_classificacao
+from brasileirao.aggregate.desempenho import calcular_desempenho
+from brasileirao.aggregate.ranking import calcular_ranking
 from brasileirao.aggregate.referencia import carregar_ajustes
+from brasileirao.aggregate.sequencias import calcular_sequencias
 from brasileirao.transform.silver import carregar_mapa_times
 
 log = logging.getLogger(__name__)
@@ -44,6 +47,9 @@ TABELAS: dict[str, TabelaGold] = {
         qualidade.checar_classificacao,
         ("ajustes", "mapa_times"),
     ),
+    "desempenho_mandante_visitante": TabelaGold(calcular_desempenho, ("silver/partidas",)),
+    "sequencias": TabelaGold(calcular_sequencias, ("silver/partidas",)),
+    "ranking_historico": TabelaGold(calcular_ranking, ("classificacao_por_rodada",)),
 }
 
 

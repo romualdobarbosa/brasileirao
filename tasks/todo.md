@@ -90,11 +90,11 @@ Resultado (27/10/2026): 18.332 linhas, N × rodadas em todas as 23 temporadas; o
 **Descrição:** `calcular_desempenho(partidas)` com uma linha por (`temporada`, `clube`, `mando`), resultado de campo, sem ajustes. Entra no registro de `gold.py`.
 
 **Critérios de aceite:**
-- [ ] No minicampeonato, cada clube tem 2 linhas, e a soma de mandante + visitante bate com a última rodada da classificação, sem o ajuste
-- [ ] `aproveitamento` com 4 casas
+- [x] No minicampeonato, cada clube tem 2 linhas, e a soma de mandante + visitante bate com a última rodada da classificação, sem o ajuste
+- [x] `aproveitamento` com 4 casas
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_desempenho.py tests/integration/test_gold.py`
+- [x] `uv run pytest tests/unit/aggregate/test_desempenho.py tests/integration/test_gold.py`
 
 **Dependências:** T3
 
@@ -107,13 +107,13 @@ Resultado (27/10/2026): 18.332 linhas, N × rodadas em todas as 23 temporadas; o
 **Descrição:** `calcular_sequencias(partidas)` por gaps-and-islands, com os jogos de cada clube em ordem de `data`, `hora`, `partida_id`. Os 4 tipos da spec, a maior sequência de cada (`temporada`, `clube`, `tipo`), empate de tamanho fica com a mais antiga, `em_aberto` e a linha com `jogos = 0` para quem não tem o tipo.
 
 **Critérios de aceite:**
-- [ ] 4 linhas por clube e temporada no minicampeonato
-- [ ] A partida adiada entra na ordem da data, não da rodada (o teste prova que muda a sequência)
-- [ ] Clube que nunca perdeu: `derrotas` com `jogos = 0` e datas nulas; `invencibilidade` com `em_aberto = 1`
-- [ ] Duas sequências do mesmo tamanho: fica a mais antiga
+- [x] 4 linhas por clube e temporada no minicampeonato
+- [x] A partida adiada entra na ordem da data, não da rodada (o teste prova que muda a sequência)
+- [x] Clube que nunca perdeu: `derrotas` com `jogos = 0` e datas nulas; `invencibilidade` com `em_aberto = 1`
+- [x] Duas sequências do mesmo tamanho: fica a mais antiga
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_sequencias.py tests/integration/test_gold.py`
+- [x] `uv run pytest tests/unit/aggregate/test_sequencias.py tests/integration/test_gold.py`
 
 **Dependências:** T3
 
@@ -126,11 +126,11 @@ Resultado (27/10/2026): 18.332 linhas, N × rodadas em todas as 23 temporadas; o
 **Descrição:** `calcular_ranking(classificacao)` a partir da última rodada de cada temporada: soma dos acumulados, pontos com ajuste, `temporadas`, primeira e última, `titulos` e `posicao` pelo desempate da spec.
 
 **Critérios de aceite:**
-- [ ] Com duas temporadas na fixture (o minicampeonato mais uma segunda temporada com um time diferente), o ranking soma as duas e conta 1 título para cada campeão
-- [ ] Pontos do ranking incluem o ajuste; `aproveitamento` não
+- [x] Com duas temporadas na fixture (o minicampeonato mais uma segunda temporada com um time diferente), o ranking soma as duas e conta 1 título para cada campeão
+- [x] Pontos do ranking incluem o ajuste; `aproveitamento` não
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_ranking.py tests/integration/test_gold.py`
+- [x] `uv run pytest tests/unit/aggregate/test_ranking.py tests/integration/test_gold.py`
 
 **Dependências:** T3
 
@@ -139,9 +139,11 @@ Resultado (27/10/2026): 18.332 linhas, N × rodadas em todas as 23 temporadas; o
 **Tamanho:** S
 
 ### Checkpoint: Partidas
-- [ ] `make lint`, `make test`, `make gold` nos dados reais
-- [ ] Amostras: títulos no ranking batem com a lista de campeões do checkpoint da Fase 1; a maior invencibilidade do campeão de 2025 confere com o calendário da silver
+- [x] `make lint`, `make test`, `make gold` nos dados reais
+- [x] Amostras: títulos no ranking batem com a lista de campeões do checkpoint da Fase 1; a maior invencibilidade do campeão de 2025 confere com o calendário da silver
 - [ ] Revisão com o Romualdo
+
+Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.880 / 46 linhas; 23 títulos no ranking, batendo clube a clube; Barueri e Grêmio Prudente separados; maior invencibilidade do Flamengo em 2025 = 12 jogos, 20/07 (1 × 0 Fluminense, R15) a 02/10 (0 × 0 Cruzeiro, R26), entre as derrotas para Santos (16/07) e Bahia (05/10), conferida no calendário da silver; hash das 4 tabelas igual em 2 execuções. Suíte: 183 testes, 99%, 2min46s.
 
 ---
 
