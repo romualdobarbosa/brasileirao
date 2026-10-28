@@ -1,4 +1,4 @@
-.PHONY: setup download lakehouse gold test lint fmt
+.PHONY: setup download lakehouse gold explain test lint fmt
 
 setup:
 	uv sync --all-groups
@@ -15,6 +15,9 @@ endif
 
 gold:
 	uv run python -m brasileirao.pipeline gold
+
+explain:
+	uv run python -m brasileirao.pipeline explain
 
 test:
 	uv run pytest --cov=brasileirao --cov-report=term-missing

@@ -35,39 +35,39 @@ T1 base (config gold, rebaixados, ajustes_pontos.csv)
 ## Lista de tarefas
 
 ### Fase 1: Fatia vertical da classificação
-- [ ] T1: Base do gold: camada `gold` no config, `rebaixados_por_temporada`, `ajustes_pontos.csv` e leitor
-- [ ] T2: `calcular_classificacao` com o minicampeonato de teste
-- [ ] T3: `gold.py`, checagens de falha da classificação, CLI `gold`, Makefile e teste de integração
+- [x] T1: Base do gold: camada `gold` no config, `rebaixados_por_temporada`, `ajustes_pontos.csv` e leitor
+- [x] T2: `calcular_classificacao` com o minicampeonato de teste
+- [x] T3: `gold.py`, checagens de falha da classificação, CLI `gold`, Makefile e teste de integração
 
 ### Checkpoint: Classificação nos dados reais (revisão com o Romualdo)
-- [ ] `make gold` grava `gold/classificacao_por_rodada` com 24 × 46, 22 × 42 e 20 × 38 linhas por temporada
-- [ ] Campeão de 2003–2025 bate com o oficial
-- [ ] Nas 6 temporadas com ajuste, os pontos finais e os rebaixados batem com a spec
-- [ ] `make gold` 2× deixa o conteúdo igual
+- [x] `make gold` grava `gold/classificacao_por_rodada` com 24 × 46, 22 × 42 e 20 × 38 linhas por temporada
+- [x] Campeão de 2003–2025 bate com o oficial
+- [x] Nas 6 temporadas com ajuste, os pontos finais e os rebaixados batem com a spec
+- [x] `make gold` 2× deixa o conteúdo igual
 
 ### Fase 2: Tabelas de partidas
-- [ ] T4: `desempenho_mandante_visitante`
-- [ ] T5: `sequencias` (gaps-and-islands)
-- [ ] T6: `ranking_historico`
+- [x] T4: `desempenho_mandante_visitante`
+- [x] T5: `sequencias` (gaps-and-islands)
+- [x] T6: `ranking_historico`
 
 ### Checkpoint: Partidas
-- [ ] `make lint`, `make test` e `make gold` nos dados reais; conferência por amostra (ex.: maior invencibilidade de uma temporada conhecida, títulos no ranking)
+- [x] `make lint`, `make test` e `make gold` nos dados reais; conferência por amostra (ex.: maior invencibilidade de uma temporada conhecida, títulos no ranking)
 
 ### Fase 3: Tabelas de eventos e resumo
-- [ ] T7: `disciplina`
-- [ ] T8: `artilharia`
-- [ ] T9: `gols_por_minuto` + checagem de soma dos gols
-- [ ] T10: `resumo_temporada`
+- [x] T7: `disciplina`
+- [x] T8: `artilharia`
+- [x] T9: `gols_por_minuto` + checagem de soma dos gols
+- [x] T10: `resumo_temporada`
 
 ### Checkpoint: Gold completo
-- [ ] As 8 tabelas nos dados reais, `make gold` abaixo de 2 minutos, todas as checagens passando
+- [x] As 8 tabelas nos dados reais, `make gold` abaixo de 2 minutos, todas as checagens passando
 
 ### Fase 4: Explain plans e fechamento
-- [ ] T11: `explain.py` e `make explain`
-- [ ] T12: `docs/explain/README.md` e conferência dos 7 critérios de sucesso da spec
+- [x] T11: `explain.py` e `make explain`
+- [x] T12: `docs/explain/README.md` e conferência dos 7 critérios de sucesso da spec
 
 ### Checkpoint: Completo
-- [ ] Revisão com o Romualdo antes de fechar o módulo
+- [x] Revisão com o Romualdo antes de fechar o módulo
 
 ## Riscos e mitigações
 

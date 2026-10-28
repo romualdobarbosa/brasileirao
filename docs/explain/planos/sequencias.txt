@@ -1,0 +1,581 @@
+== Physical Plan ==
+AdaptiveSparkPlan (105)
++- == Final Plan ==
+   ResultQueryStage (65)
+   +- * Project (64)
+      +- * BroadcastHashJoin LeftOuter BuildRight (63)
+         :- AQEShuffleRead (25), local
+         :  +- ShuffleQueryStage (24), Statistics(sizeInBytes=99.9 KiB, rowCount=1.88E+3)
+         :     +- Exchange (23)
+         :        +- * BroadcastNestedLoopJoin Cross BuildRight (22)
+         :           :- * HashAggregate (12)
+         :           :  +- AQEShuffleRead (11), coalesced
+         :           :     +- ShuffleQueryStage (10), Statistics(sizeInBytes=33.4 KiB, rowCount=940)
+         :           :        +- Exchange (9)
+         :           :           +- * HashAggregate (8)
+         :           :              +- Union (7)
+         :           :                 :- * Project (3)
+         :           :                 :  +- * ColumnarToRow (2)
+         :           :                 :     +- Scan parquet  (1)
+         :           :                 +- * Project (6)
+         :           :                    +- * ColumnarToRow (5)
+         :           :                       +- Scan parquet  (4)
+         :           +- BroadcastQueryStage (21), Statistics(sizeInBytes=104.0 B, rowCount=4)
+         :              +- BroadcastExchange (20)
+         :                 +- * HashAggregate (19)
+         :                    +- AQEShuffleRead (18), coalesced
+         :                       +- ShuffleQueryStage (17), Statistics(sizeInBytes=160.0 B, rowCount=6)
+         :                          +- Exchange (16)
+         :                             +- * HashAggregate (15)
+         :                                +- * Project (14)
+         :                                   +- * Scan ExistingRDD (13)
+         +- BroadcastQueryStage (62), Statistics(sizeInBytes=2.1 MiB, rowCount=1.88E+3)
+            +- BroadcastExchange (61)
+               +- AQEShuffleRead (60), local
+                  +- ShuffleQueryStage (59), Statistics(sizeInBytes=158.6 KiB, rowCount=1.88E+3)
+                     +- Exchange (58)
+                        +- * Project (57)
+                           +- * Filter (56)
+                              +- Window (55)
+                                 +- WindowGroupLimit (54)
+                                    +- * Sort (53)
+                                       +- * HashAggregate (52)
+                                          +- * HashAggregate (51)
+                                             +- * Project (50)
+                                                +- Window (49)
+                                                   +- * Sort (48)
+                                                      +- * Project (47)
+                                                         +- * BroadcastHashJoin Inner BuildRight (46)
+                                                            :- Window (41)
+                                                            :  +- * Project (40)
+                                                            :     +- Window (39)
+                                                            :        +- * Sort (38)
+                                                            :           +- AQEShuffleRead (37), coalesced
+                                                            :              +- ShuffleQueryStage (36), Statistics(sizeInBytes=1510.9 KiB, rowCount=1.83E+4)
+                                                            :                 +- Exchange (35)
+                                                            :                    +- Union (34)
+                                                            :                       :- * Project (29)
+                                                            :                       :  +- * Filter (28)
+                                                            :                       :     +- * ColumnarToRow (27)
+                                                            :                       :        +- Scan parquet  (26)
+                                                            :                       +- * Project (33)
+                                                            :                          +- * Filter (32)
+                                                            :                             +- * ColumnarToRow (31)
+                                                            :                                +- Scan parquet  (30)
+                                                            +- BroadcastQueryStage (45), Statistics(sizeInBytes=2.0 MiB, rowCount=6)
+                                                               +- BroadcastExchange (44)
+                                                                  +- * Filter (43)
+                                                                     +- * Scan ExistingRDD (42)
++- == Initial Plan ==
+   Project (104)
+   +- SortMergeJoin LeftOuter (103)
+      :- Sort (77)
+      :  +- Exchange (76)
+      :     +- BroadcastNestedLoopJoin Cross BuildRight (75)
+      :        :- HashAggregate (71)
+      :        :  +- Exchange (70)
+      :        :     +- HashAggregate (69)
+      :        :        +- Union (68)
+      :        :           :- Project (66)
+      :        :           :  +- Scan parquet  (1)
+      :        :           +- Project (67)
+      :        :              +- Scan parquet  (4)
+      :        +- BroadcastExchange (74)
+      :           +- HashAggregate (73)
+      :              +- Exchange (72)
+      :                 +- HashAggregate (15)
+      :                    +- Project (14)
+      :                       +- Scan ExistingRDD (13)
+      +- Sort (102)
+         +- Exchange (101)
+            +- Project (100)
+               +- Filter (99)
+                  +- Window (98)
+                     +- WindowGroupLimit (97)
+                        +- Sort (96)
+                           +- HashAggregate (95)
+                              +- HashAggregate (94)
+                                 +- Project (93)
+                                    +- Window (92)
+                                       +- Sort (91)
+                                          +- Project (90)
+                                             +- BroadcastHashJoin Inner BuildRight (89)
+                                                :- Window (87)
+                                                :  +- Project (86)
+                                                :     +- Window (85)
+                                                :        +- Sort (84)
+                                                :           +- Exchange (83)
+                                                :              +- Union (82)
+                                                :                 :- Project (79)
+                                                :                 :  +- Filter (78)
+                                                :                 :     +- Scan parquet  (26)
+                                                :                 +- Project (81)
+                                                :                    +- Filter (80)
+                                                :                       +- Scan parquet  (30)
+                                                +- BroadcastExchange (88)
+                                                   +- Filter (43)
+                                                      +- Scan ExistingRDD (42)
+
+
+(1) Scan parquet 
+Output [2]: [mandante#5, temporada#1]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+ReadSchema: struct<mandante:string>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [2]: [mandante#5, temporada#1]
+
+(3) Project [codegen id : 1]
+Output [2]: [temporada#1, mandante#5 AS clube#1365]
+Input [2]: [mandante#5, temporada#1]
+
+(4) Scan parquet 
+Output [2]: [visitante#1379, temporada#1374]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+ReadSchema: struct<visitante:string>
+
+(5) ColumnarToRow [codegen id : 2]
+Input [2]: [visitante#1379, temporada#1374]
+
+(6) Project [codegen id : 2]
+Output [2]: [temporada#1374, visitante#1379 AS clube#1369]
+Input [2]: [visitante#1379, temporada#1374]
+
+(7) Union
+
+(8) HashAggregate [codegen id : 3]
+Input [2]: [temporada#1, clube#1365]
+Keys [2]: [temporada#1, clube#1365]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#1365]
+
+(9) Exchange
+Input [2]: [temporada#1, clube#1365]
+Arguments: hashpartitioning(temporada#1, clube#1365, 4), ENSURE_REQUIREMENTS, [plan_id=2086]
+
+(10) ShuffleQueryStage
+Output [2]: [temporada#1, clube#1365]
+Arguments: 0
+
+(11) AQEShuffleRead
+Input [2]: [temporada#1, clube#1365]
+Arguments: coalesced
+
+(12) HashAggregate [codegen id : 14]
+Input [2]: [temporada#1, clube#1365]
+Keys [2]: [temporada#1, clube#1365]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#1365]
+
+(13) Scan ExistingRDD [codegen id : 4]
+Output [2]: [tipo#1397, resultado#1398]
+Arguments: [tipo#1397, resultado#1398], MapPartitionsRDD[114] at applySchemaToPythonRDD at DirectMethodHandleAccessor.java:104, ExistingRDD, UnknownPartitioning(0)
+
+(14) Project [codegen id : 4]
+Output [1]: [tipo#1397]
+Input [2]: [tipo#1397, resultado#1398]
+
+(15) HashAggregate [codegen id : 4]
+Input [1]: [tipo#1397]
+Keys [1]: [tipo#1397]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [tipo#1397]
+
+(16) Exchange
+Input [1]: [tipo#1397]
+Arguments: hashpartitioning(tipo#1397, 4), ENSURE_REQUIREMENTS, [plan_id=2107]
+
+(17) ShuffleQueryStage
+Output [1]: [tipo#1397]
+Arguments: 1
+
+(18) AQEShuffleRead
+Input [1]: [tipo#1397]
+Arguments: coalesced
+
+(19) HashAggregate [codegen id : 8]
+Input [1]: [tipo#1397]
+Keys [1]: [tipo#1397]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [tipo#1397]
+
+(20) BroadcastExchange
+Input [1]: [tipo#1397]
+Arguments: IdentityBroadcastMode, [plan_id=2466]
+
+(21) BroadcastQueryStage
+Output [1]: [tipo#1397]
+Arguments: 4
+
+(22) BroadcastNestedLoopJoin [codegen id : 14]
+Join type: Cross
+Join condition: None
+
+(23) Exchange
+Input [3]: [temporada#1, clube#1365, tipo#1397]
+Arguments: hashpartitioning(temporada#1, clube#1365, tipo#1397, 4), ENSURE_REQUIREMENTS, [plan_id=2789]
+
+(24) ShuffleQueryStage
+Output [3]: [temporada#1, clube#1365, tipo#1397]
+Arguments: 6
+
+(25) AQEShuffleRead
+Input [3]: [temporada#1, clube#1365, tipo#1397]
+Arguments: local
+
+(26) Scan parquet 
+Output [7]: [partida_id#1429, data#1432, hora#1433, mandante#1434, placar_mandante#1436, placar_visitante#1437, temporada#1430]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#1430)]
+PushedFilters: [IsNotNull(mandante)]
+ReadSchema: struct<partida_id:int,data:date,hora:string,mandante:string,placar_mandante:int,placar_visitante:int>
+
+(27) ColumnarToRow [codegen id : 5]
+Input [7]: [partida_id#1429, data#1432, hora#1433, mandante#1434, placar_mandante#1436, placar_visitante#1437, temporada#1430]
+
+(28) Filter [codegen id : 5]
+Input [7]: [partida_id#1429, data#1432, hora#1433, mandante#1434, placar_mandante#1436, placar_visitante#1437, temporada#1430]
+Condition : isnotnull(mandante#1434)
+
+(29) Project [codegen id : 5]
+Output [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, mandante#1434 AS clube#1447, CASE WHEN (placar_mandante#1436 > placar_visitante#1437) THEN V WHEN (placar_mandante#1436 = placar_visitante#1437) THEN E ELSE D END AS resultado#1473]
+Input [7]: [partida_id#1429, data#1432, hora#1433, mandante#1434, placar_mandante#1436, placar_visitante#1437, temporada#1430]
+
+(30) Scan parquet 
+Output [7]: [partida_id#1451, data#1454, hora#1455, visitante#1457, placar_mandante#1458, placar_visitante#1459, temporada#1452]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#1452)]
+PushedFilters: [IsNotNull(visitante)]
+ReadSchema: struct<partida_id:int,data:date,hora:string,visitante:string,placar_mandante:int,placar_visitante:int>
+
+(31) ColumnarToRow [codegen id : 6]
+Input [7]: [partida_id#1451, data#1454, hora#1455, visitante#1457, placar_mandante#1458, placar_visitante#1459, temporada#1452]
+
+(32) Filter [codegen id : 6]
+Input [7]: [partida_id#1451, data#1454, hora#1455, visitante#1457, placar_mandante#1458, placar_visitante#1459, temporada#1452]
+Condition : isnotnull(visitante#1457)
+
+(33) Project [codegen id : 6]
+Output [6]: [partida_id#1451, temporada#1452, data#1454, hora#1455, visitante#1457 AS clube#1469, CASE WHEN (placar_visitante#1459 > placar_mandante#1458) THEN V WHEN (placar_visitante#1459 = placar_mandante#1458) THEN E ELSE D END AS resultado#1483]
+Input [7]: [partida_id#1451, data#1454, hora#1455, visitante#1457, placar_mandante#1458, placar_visitante#1459, temporada#1452]
+
+(34) Union
+
+(35) Exchange
+Input [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: hashpartitioning(temporada#1430, clube#1447, 4), ENSURE_REQUIREMENTS, [plan_id=2188]
+
+(36) ShuffleQueryStage
+Output [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: 2
+
+(37) AQEShuffleRead
+Input [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: coalesced
+
+(38) Sort [codegen id : 9]
+Input [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: [temporada#1430 ASC NULLS FIRST, clube#1447 ASC NULLS FIRST, data#1432 ASC NULLS FIRST, hora#1433 ASC NULLS FIRST, partida_id#1429 ASC NULLS FIRST], false, 0
+
+(39) Window
+Input [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: [row_number() windowspecdefinition(temporada#1430, clube#1447, data#1432 ASC NULLS FIRST, hora#1433 ASC NULLS FIRST, partida_id#1429 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS ordem#1474], [temporada#1430, clube#1447], [data#1432 ASC NULLS FIRST, hora#1433 ASC NULLS FIRST, partida_id#1429 ASC NULLS FIRST]
+
+(40) Project [codegen id : 10]
+Output [5]: [temporada#1430, data#1432, clube#1447, resultado#1473, ordem#1474]
+Input [7]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473, ordem#1474]
+
+(41) Window
+Input [5]: [temporada#1430, data#1432, clube#1447, resultado#1473, ordem#1474]
+Arguments: [count(1) windowspecdefinition(temporada#1430, clube#1447, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS _total#1475L], [temporada#1430, clube#1447]
+
+(42) Scan ExistingRDD [codegen id : 7]
+Output [2]: [tipo#1476, resultado#1477]
+Arguments: [tipo#1476, resultado#1477], MapPartitionsRDD[114] at applySchemaToPythonRDD at DirectMethodHandleAccessor.java:104, ExistingRDD, UnknownPartitioning(0)
+
+(43) Filter [codegen id : 7]
+Input [2]: [tipo#1476, resultado#1477]
+Condition : (isnotnull(resultado#1477) AND isnotnull(tipo#1476))
+
+(44) BroadcastExchange
+Input [2]: [tipo#1476, resultado#1477]
+Arguments: HashedRelationBroadcastMode(List(input[1, string, false]),false), [plan_id=2212]
+
+(45) BroadcastQueryStage
+Output [2]: [tipo#1476, resultado#1477]
+Arguments: 3
+
+(46) BroadcastHashJoin [codegen id : 11]
+Left keys [1]: [resultado#1473]
+Right keys [1]: [resultado#1477]
+Join type: Inner
+Join condition: None
+
+(47) Project [codegen id : 11]
+Output [6]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476]
+Input [8]: [temporada#1430, data#1432, clube#1447, resultado#1473, ordem#1474, _total#1475L, tipo#1476, resultado#1477]
+
+(48) Sort [codegen id : 11]
+Input [6]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476]
+Arguments: [temporada#1430 ASC NULLS FIRST, clube#1447 ASC NULLS FIRST, tipo#1476 ASC NULLS FIRST, ordem#1474 ASC NULLS FIRST], false, 0
+
+(49) Window
+Input [6]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476]
+Arguments: [row_number() windowspecdefinition(temporada#1430, clube#1447, tipo#1476, ordem#1474 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we0#1401], [temporada#1430, clube#1447, tipo#1476], [ordem#1474 ASC NULLS FIRST]
+
+(50) Project [codegen id : 12]
+Output [7]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476, (ordem#1474 - _we0#1401) AS ilha#1399]
+Input [7]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476, _we0#1401]
+
+(51) HashAggregate [codegen id : 12]
+Input [7]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476, ilha#1399]
+Keys [4]: [temporada#1430, clube#1447, tipo#1476, ilha#1399]
+Functions [6]: [partial_count(1), partial_min(ordem#1474), partial_min(data#1432), partial_max(data#1432), partial_max(ordem#1474), partial_max(_total#1475L)]
+Aggregate Attributes [6]: [count#1782L, min#1783, min#1784, max#1785, max#1786, max#1787L]
+Results [10]: [temporada#1430, clube#1447, tipo#1476, ilha#1399, count#1788L, min#1789, min#1790, max#1791, max#1792, max#1793L]
+
+(52) HashAggregate [codegen id : 12]
+Input [10]: [temporada#1430, clube#1447, tipo#1476, ilha#1399, count#1788L, min#1789, min#1790, max#1791, max#1792, max#1793L]
+Keys [4]: [temporada#1430, clube#1447, tipo#1476, ilha#1399]
+Functions [6]: [count(1), min(ordem#1474), min(data#1432), max(data#1432), max(ordem#1474), max(_total#1475L)]
+Aggregate Attributes [6]: [count(1)#1421L, min(ordem#1474)#1422, min(data#1432)#1423, max(data#1432)#1424, max(ordem#1474)#1425, max(_total#1475L)#1426L]
+Results [8]: [temporada#1430, clube#1447, tipo#1476, count(1)#1421L AS jogos#1402L, min(ordem#1474)#1422 AS _primeiro#1403, min(data#1432)#1423 AS data_inicio#1404, max(data#1432)#1424 AS data_fim#1405, cast((cast(max(ordem#1474)#1425 as bigint) = max(_total#1475L)#1426L) as int) AS em_aberto#1406]
+
+(53) Sort [codegen id : 12]
+Input [8]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: [temporada#1430 ASC NULLS FIRST, clube#1447 ASC NULLS FIRST, tipo#1476 ASC NULLS FIRST, jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST], false, 0
+
+(54) WindowGroupLimit
+Input [8]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: [temporada#1430, clube#1447, tipo#1476], [jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST], row_number(), 1, Final
+
+(55) Window
+Input [8]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: [row_number() windowspecdefinition(temporada#1430, clube#1447, tipo#1476, jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _n#1427], [temporada#1430, clube#1447, tipo#1476], [jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST]
+
+(56) Filter [codegen id : 13]
+Input [9]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406, _n#1427]
+Condition : (_n#1427 = 1)
+
+(57) Project [codegen id : 13]
+Output [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Input [9]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406, _n#1427]
+
+(58) Exchange
+Input [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: hashpartitioning(temporada#1430, clube#1447, tipo#1476, 4), ENSURE_REQUIREMENTS, [plan_id=2709]
+
+(59) ShuffleQueryStage
+Output [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: 5
+
+(60) AQEShuffleRead
+Input [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: local
+
+(61) BroadcastExchange
+Input [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[1, string, true], input[2, string, true]),false), [plan_id=2832]
+
+(62) BroadcastQueryStage
+Output [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: 7
+
+(63) BroadcastHashJoin [codegen id : 15]
+Left keys [3]: [temporada#1, clube#1365, tipo#1397]
+Right keys [3]: [temporada#1430, clube#1447, tipo#1476]
+Join type: LeftOuter
+Join condition: None
+
+(64) Project [codegen id : 15]
+Output [7]: [temporada#1, clube#1365, tipo#1397, cast(coalesce(jogos#1402L, 0) as int) AS jogos#1480, data_inicio#1404, data_fim#1405, coalesce(em_aberto#1406, 0) AS em_aberto#1481]
+Input [10]: [temporada#1, clube#1365, tipo#1397, temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+
+(65) ResultQueryStage
+Output [7]: [temporada#1, clube#1365, tipo#1397, jogos#1480, data_inicio#1404, data_fim#1405, em_aberto#1481]
+Arguments: 8
+
+(66) Project
+Output [2]: [temporada#1, mandante#5 AS clube#1365]
+Input [2]: [mandante#5, temporada#1]
+
+(67) Project
+Output [2]: [temporada#1374, visitante#1379 AS clube#1369]
+Input [2]: [visitante#1379, temporada#1374]
+
+(68) Union
+
+(69) HashAggregate
+Input [2]: [temporada#1, clube#1365]
+Keys [2]: [temporada#1, clube#1365]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#1365]
+
+(70) Exchange
+Input [2]: [temporada#1, clube#1365]
+Arguments: hashpartitioning(temporada#1, clube#1365, 4), ENSURE_REQUIREMENTS, [plan_id=1995]
+
+(71) HashAggregate
+Input [2]: [temporada#1, clube#1365]
+Keys [2]: [temporada#1, clube#1365]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#1365]
+
+(72) Exchange
+Input [1]: [tipo#1397]
+Arguments: hashpartitioning(tipo#1397, 4), ENSURE_REQUIREMENTS, [plan_id=1997]
+
+(73) HashAggregate
+Input [1]: [tipo#1397]
+Keys [1]: [tipo#1397]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [tipo#1397]
+
+(74) BroadcastExchange
+Input [1]: [tipo#1397]
+Arguments: IdentityBroadcastMode, [plan_id=2000]
+
+(75) BroadcastNestedLoopJoin
+Join type: Cross
+Join condition: None
+
+(76) Exchange
+Input [3]: [temporada#1, clube#1365, tipo#1397]
+Arguments: hashpartitioning(temporada#1, clube#1365, tipo#1397, 4), ENSURE_REQUIREMENTS, [plan_id=2026]
+
+(77) Sort
+Input [3]: [temporada#1, clube#1365, tipo#1397]
+Arguments: [temporada#1 ASC NULLS FIRST, clube#1365 ASC NULLS FIRST, tipo#1397 ASC NULLS FIRST], false, 0
+
+(78) Filter
+Input [7]: [partida_id#1429, data#1432, hora#1433, mandante#1434, placar_mandante#1436, placar_visitante#1437, temporada#1430]
+Condition : isnotnull(mandante#1434)
+
+(79) Project
+Output [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, mandante#1434 AS clube#1447, CASE WHEN (placar_mandante#1436 > placar_visitante#1437) THEN V WHEN (placar_mandante#1436 = placar_visitante#1437) THEN E ELSE D END AS resultado#1473]
+Input [7]: [partida_id#1429, data#1432, hora#1433, mandante#1434, placar_mandante#1436, placar_visitante#1437, temporada#1430]
+
+(80) Filter
+Input [7]: [partida_id#1451, data#1454, hora#1455, visitante#1457, placar_mandante#1458, placar_visitante#1459, temporada#1452]
+Condition : isnotnull(visitante#1457)
+
+(81) Project
+Output [6]: [partida_id#1451, temporada#1452, data#1454, hora#1455, visitante#1457 AS clube#1469, CASE WHEN (placar_visitante#1459 > placar_mandante#1458) THEN V WHEN (placar_visitante#1459 = placar_mandante#1458) THEN E ELSE D END AS resultado#1483]
+Input [7]: [partida_id#1451, data#1454, hora#1455, visitante#1457, placar_mandante#1458, placar_visitante#1459, temporada#1452]
+
+(82) Union
+
+(83) Exchange
+Input [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: hashpartitioning(temporada#1430, clube#1447, 4), ENSURE_REQUIREMENTS, [plan_id=2002]
+
+(84) Sort
+Input [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: [temporada#1430 ASC NULLS FIRST, clube#1447 ASC NULLS FIRST, data#1432 ASC NULLS FIRST, hora#1433 ASC NULLS FIRST, partida_id#1429 ASC NULLS FIRST], false, 0
+
+(85) Window
+Input [6]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473]
+Arguments: [row_number() windowspecdefinition(temporada#1430, clube#1447, data#1432 ASC NULLS FIRST, hora#1433 ASC NULLS FIRST, partida_id#1429 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS ordem#1474], [temporada#1430, clube#1447], [data#1432 ASC NULLS FIRST, hora#1433 ASC NULLS FIRST, partida_id#1429 ASC NULLS FIRST]
+
+(86) Project
+Output [5]: [temporada#1430, data#1432, clube#1447, resultado#1473, ordem#1474]
+Input [7]: [partida_id#1429, temporada#1430, data#1432, hora#1433, clube#1447, resultado#1473, ordem#1474]
+
+(87) Window
+Input [5]: [temporada#1430, data#1432, clube#1447, resultado#1473, ordem#1474]
+Arguments: [count(1) windowspecdefinition(temporada#1430, clube#1447, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS _total#1475L], [temporada#1430, clube#1447]
+
+(88) BroadcastExchange
+Input [2]: [tipo#1476, resultado#1477]
+Arguments: HashedRelationBroadcastMode(List(input[1, string, false]),false), [plan_id=2008]
+
+(89) BroadcastHashJoin
+Left keys [1]: [resultado#1473]
+Right keys [1]: [resultado#1477]
+Join type: Inner
+Join condition: None
+
+(90) Project
+Output [6]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476]
+Input [8]: [temporada#1430, data#1432, clube#1447, resultado#1473, ordem#1474, _total#1475L, tipo#1476, resultado#1477]
+
+(91) Sort
+Input [6]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476]
+Arguments: [temporada#1430 ASC NULLS FIRST, clube#1447 ASC NULLS FIRST, tipo#1476 ASC NULLS FIRST, ordem#1474 ASC NULLS FIRST], false, 0
+
+(92) Window
+Input [6]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476]
+Arguments: [row_number() windowspecdefinition(temporada#1430, clube#1447, tipo#1476, ordem#1474 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we0#1401], [temporada#1430, clube#1447, tipo#1476], [ordem#1474 ASC NULLS FIRST]
+
+(93) Project
+Output [7]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476, (ordem#1474 - _we0#1401) AS ilha#1399]
+Input [7]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476, _we0#1401]
+
+(94) HashAggregate
+Input [7]: [temporada#1430, data#1432, clube#1447, ordem#1474, _total#1475L, tipo#1476, ilha#1399]
+Keys [4]: [temporada#1430, clube#1447, tipo#1476, ilha#1399]
+Functions [6]: [partial_count(1), partial_min(ordem#1474), partial_min(data#1432), partial_max(data#1432), partial_max(ordem#1474), partial_max(_total#1475L)]
+Aggregate Attributes [6]: [count#1782L, min#1783, min#1784, max#1785, max#1786, max#1787L]
+Results [10]: [temporada#1430, clube#1447, tipo#1476, ilha#1399, count#1788L, min#1789, min#1790, max#1791, max#1792, max#1793L]
+
+(95) HashAggregate
+Input [10]: [temporada#1430, clube#1447, tipo#1476, ilha#1399, count#1788L, min#1789, min#1790, max#1791, max#1792, max#1793L]
+Keys [4]: [temporada#1430, clube#1447, tipo#1476, ilha#1399]
+Functions [6]: [count(1), min(ordem#1474), min(data#1432), max(data#1432), max(ordem#1474), max(_total#1475L)]
+Aggregate Attributes [6]: [count(1)#1421L, min(ordem#1474)#1422, min(data#1432)#1423, max(data#1432)#1424, max(ordem#1474)#1425, max(_total#1475L)#1426L]
+Results [8]: [temporada#1430, clube#1447, tipo#1476, count(1)#1421L AS jogos#1402L, min(ordem#1474)#1422 AS _primeiro#1403, min(data#1432)#1423 AS data_inicio#1404, max(data#1432)#1424 AS data_fim#1405, cast((cast(max(ordem#1474)#1425 as bigint) = max(_total#1475L)#1426L) as int) AS em_aberto#1406]
+
+(96) Sort
+Input [8]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: [temporada#1430 ASC NULLS FIRST, clube#1447 ASC NULLS FIRST, tipo#1476 ASC NULLS FIRST, jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST], false, 0
+
+(97) WindowGroupLimit
+Input [8]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: [temporada#1430, clube#1447, tipo#1476], [jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST], row_number(), 1, Final
+
+(98) Window
+Input [8]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: [row_number() windowspecdefinition(temporada#1430, clube#1447, tipo#1476, jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _n#1427], [temporada#1430, clube#1447, tipo#1476], [jogos#1402L DESC NULLS LAST, _primeiro#1403 ASC NULLS FIRST]
+
+(99) Filter
+Input [9]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406, _n#1427]
+Condition : (_n#1427 = 1)
+
+(100) Project
+Output [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Input [9]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, _primeiro#1403, data_inicio#1404, data_fim#1405, em_aberto#1406, _n#1427]
+
+(101) Exchange
+Input [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: hashpartitioning(temporada#1430, clube#1447, tipo#1476, 4), ENSURE_REQUIREMENTS, [plan_id=2036]
+
+(102) Sort
+Input [7]: [temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+Arguments: [temporada#1430 ASC NULLS FIRST, clube#1447 ASC NULLS FIRST, tipo#1476 ASC NULLS FIRST], false, 0
+
+(103) SortMergeJoin
+Left keys [3]: [temporada#1, clube#1365, tipo#1397]
+Right keys [3]: [temporada#1430, clube#1447, tipo#1476]
+Join type: LeftOuter
+Join condition: None
+
+(104) Project
+Output [7]: [temporada#1, clube#1365, tipo#1397, cast(coalesce(jogos#1402L, 0) as int) AS jogos#1480, data_inicio#1404, data_fim#1405, coalesce(em_aberto#1406, 0) AS em_aberto#1481]
+Input [10]: [temporada#1, clube#1365, tipo#1397, temporada#1430, clube#1447, tipo#1476, jogos#1402L, data_inicio#1404, data_fim#1405, em_aberto#1406]
+
+(105) AdaptiveSparkPlan
+Output [7]: [temporada#1, clube#1365, tipo#1397, jogos#1480, data_inicio#1404, data_fim#1405, em_aberto#1481]
+Arguments: isFinalPlan=true
+
+

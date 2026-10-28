@@ -1,4 +1,5 @@
-"""CLI: `python -m brasileirao.pipeline lakehouse --temporada N | --todas` e `... gold`."""
+"""CLI: `python -m brasileirao.pipeline lakehouse --temporada N | --todas`, `... gold` e
+`... explain [--destino DIR]`."""
 
 import argparse
 import logging
@@ -7,7 +8,7 @@ import time
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-from brasileirao.aggregate import gold
+from brasileirao.aggregate import explain, gold
 from brasileirao.aggregate import qualidade as qualidade_gold
 from brasileirao.ingestion import bronze
 from brasileirao.transform import qualidade, silver
@@ -102,12 +103,20 @@ def main(argv: list[str] | None = None) -> None:
     alvo.add_argument("--temporada", type=int, help="processa só essa temporada")
     alvo.add_argument("--todas", action="store_true", help="todas as temporadas encerradas")
     comandos.add_parser("gold", help="silver → gold, todas as tabelas com overwrite")
+    cmd = comandos.add_parser("explain", help="planos físicos de algumas tabelas gold em texto")
+    cmd.add_argument(
+        "--destino",
+        default=explain.DESTINO_PADRAO,
+        help=f"diretório dos .txt (padrão: {explain.DESTINO_PADRAO})",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
         if args.comando == "gold":
             gold.processar_gold(get_spark())
+        elif args.comando == "explain":
+            explain.gerar_planos(get_spark(), args.destino)
         else:
             lakehouse(get_spark(), None if args.todas else args.temporada)
     except (

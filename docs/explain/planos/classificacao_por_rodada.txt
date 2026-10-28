@@ -1,0 +1,844 @@
+== Physical Plan ==
+AdaptiveSparkPlan (119)
++- == Final Plan ==
+   ResultQueryStage (64)
+   +- * Project (63)
+      +- Window (62)
+         +- * Sort (61)
+            +- * Project (60)
+               +- * Project (59)
+                  +- * BroadcastHashJoin LeftOuter BuildRight (58)
+                     :- * Project (47)
+                     :  +- Window (46)
+                     :     +- * Sort (45)
+                     :        +- Window (44)
+                     :           +- * Sort (43)
+                     :              +- AQEShuffleRead (42), coalesced
+                     :                 +- ShuffleQueryStage (41), Statistics(sizeInBytes=1940.7 KiB, rowCount=1.83E+4)
+                     :                    +- Exchange (40)
+                     :                       +- * Project (39)
+                     :                          +- * BroadcastHashJoin LeftOuter BuildRight (38)
+                     :                             :- * Project (16)
+                     :                             :  +- * BroadcastHashJoin Inner BuildRight (15)
+                     :                             :     :- * HashAggregate (12)
+                     :                             :     :  +- AQEShuffleRead (11), coalesced
+                     :                             :     :     +- ShuffleQueryStage (10), Statistics(sizeInBytes=33.4 KiB, rowCount=940)
+                     :                             :     :        +- Exchange (9)
+                     :                             :     :           +- * HashAggregate (8)
+                     :                             :     :              +- Union (7)
+                     :                             :     :                 :- * Project (3)
+                     :                             :     :                 :  +- * ColumnarToRow (2)
+                     :                             :     :                 :     +- Scan parquet  (1)
+                     :                             :     :                 +- * Project (6)
+                     :                             :     :                    +- * ColumnarToRow (5)
+                     :                             :     :                       +- Scan parquet  (4)
+                     :                             :     +- BroadcastQueryStage (14), Statistics(sizeInBytes=32.0 MiB, rowCount=894)
+                     :                             :        +- ReusedExchange (13)
+                     :                             +- BroadcastQueryStage (37), Statistics(sizeInBytes=5.0 MiB, rowCount=1.83E+4)
+                     :                                +- BroadcastExchange (36)
+                     :                                   +- SortAggregate (35)
+                     :                                      +- SortAggregate (34)
+                     :                                         +- * Sort (33)
+                     :                                            +- * Project (32)
+                     :                                               +- * Filter (31)
+                     :                                                  +- Window (30)
+                     :                                                     +- * Sort (29)
+                     :                                                        +- AQEShuffleRead (28), coalesced
+                     :                                                           +- ShuffleQueryStage (27), Statistics(sizeInBytes=1940.5 KiB, rowCount=1.83E+4)
+                     :                                                              +- Exchange (26)
+                     :                                                                 +- Union (25)
+                     :                                                                    :- * Project (20)
+                     :                                                                    :  +- * Filter (19)
+                     :                                                                    :     +- * ColumnarToRow (18)
+                     :                                                                    :        +- Scan parquet  (17)
+                     :                                                                    +- * Project (24)
+                     :                                                                       +- * Filter (23)
+                     :                                                                          +- * ColumnarToRow (22)
+                     :                                                                             +- Scan parquet  (21)
+                     +- BroadcastQueryStage (57), Statistics(sizeInBytes=2.0 MiB, rowCount=13)
+                        +- BroadcastExchange (56)
+                           +- * HashAggregate (55)
+                              +- AQEShuffleRead (54), coalesced
+                                 +- ShuffleQueryStage (53), Statistics(sizeInBytes=648.0 B, rowCount=14)
+                                    +- Exchange (52)
+                                       +- * HashAggregate (51)
+                                          +- * Project (50)
+                                             +- * Filter (49)
+                                                +- * Scan ExistingRDD (48)
++- == Initial Plan ==
+   Project (118)
+   +- Window (117)
+      +- Sort (116)
+         +- Project (115)
+            +- Project (114)
+               +- BroadcastHashJoin LeftOuter BuildRight (113)
+                  :- Project (109)
+                  :  +- Window (108)
+                  :     +- Sort (107)
+                  :        +- Window (106)
+                  :           +- Sort (105)
+                  :              +- Exchange (104)
+                  :                 +- Project (103)
+                  :                    +- BroadcastHashJoin LeftOuter BuildRight (102)
+                  :                       :- Project (85)
+                  :                       :  +- BroadcastHashJoin Inner BuildRight (84)
+                  :                       :     :- HashAggregate (72)
+                  :                       :     :  +- Exchange (71)
+                  :                       :     :     +- HashAggregate (70)
+                  :                       :     :        +- Union (69)
+                  :                       :     :           :- Project (66)
+                  :                       :     :           :  +- Scan parquet  (65)
+                  :                       :     :           +- Project (68)
+                  :                       :     :              +- Scan parquet  (67)
+                  :                       :     +- BroadcastExchange (83)
+                  :                       :        +- Generate (82)
+                  :                       :           +- Filter (81)
+                  :                       :              +- HashAggregate (80)
+                  :                       :                 +- Exchange (79)
+                  :                       :                    +- HashAggregate (78)
+                  :                       :                       +- Union (77)
+                  :                       :                          :- Project (74)
+                  :                       :                          :  +- Scan parquet  (73)
+                  :                       :                          +- Project (76)
+                  :                       :                             +- Scan parquet  (75)
+                  :                       +- BroadcastExchange (101)
+                  :                          +- SortAggregate (100)
+                  :                             +- SortAggregate (99)
+                  :                                +- Sort (98)
+                  :                                   +- Project (97)
+                  :                                      +- Filter (96)
+                  :                                         +- Window (95)
+                  :                                            +- Sort (94)
+                  :                                               +- Exchange (93)
+                  :                                                  +- Union (92)
+                  :                                                     :- Project (88)
+                  :                                                     :  +- Filter (87)
+                  :                                                     :     +- Scan parquet  (86)
+                  :                                                     +- Project (91)
+                  :                                                        +- Filter (90)
+                  :                                                           +- Scan parquet  (89)
+                  +- BroadcastExchange (112)
+                     +- HashAggregate (111)
+                        +- Exchange (110)
+                           +- HashAggregate (51)
+                              +- Project (50)
+                                 +- Filter (49)
+                                    +- Scan ExistingRDD (48)
+
+
+(1) Scan parquet 
+Output [2]: [mandante#5, temporada#1]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#1), dynamicpruningexpression(temporada#1 IN dynamicpruning#1057)]
+ReadSchema: struct<mandante:string>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [2]: [mandante#5, temporada#1]
+
+(3) Project [codegen id : 1]
+Output [2]: [temporada#1, mandante#5 AS clube#23]
+Input [2]: [mandante#5, temporada#1]
+
+(4) Scan parquet 
+Output [2]: [visitante#38, temporada#33]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#33), dynamicpruningexpression(temporada#33 IN dynamicpruning#1057)]
+ReadSchema: struct<visitante:string>
+
+(5) ColumnarToRow [codegen id : 2]
+Input [2]: [visitante#38, temporada#33]
+
+(6) Project [codegen id : 2]
+Output [2]: [temporada#33, visitante#38 AS clube#28]
+Input [2]: [visitante#38, temporada#33]
+
+(7) Union
+
+(8) HashAggregate [codegen id : 3]
+Input [2]: [temporada#1, clube#23]
+Keys [2]: [temporada#1, clube#23]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#23]
+
+(9) Exchange
+Input [2]: [temporada#1, clube#23]
+Arguments: hashpartitioning(temporada#1, clube#23, 4), ENSURE_REQUIREMENTS, [plan_id=717]
+
+(10) ShuffleQueryStage
+Output [2]: [temporada#1, clube#23]
+Arguments: 0
+
+(11) AQEShuffleRead
+Input [2]: [temporada#1, clube#23]
+Arguments: coalesced
+
+(12) HashAggregate [codegen id : 14]
+Input [2]: [temporada#1, clube#23]
+Keys [2]: [temporada#1, clube#23]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#23]
+
+(13) ReusedExchange [Reuses operator id: 126]
+Output [2]: [temporada#68, rodada#66]
+
+(14) BroadcastQueryStage
+Output [2]: [temporada#68, rodada#66]
+Arguments: 6
+
+(15) BroadcastHashJoin [codegen id : 14]
+Left keys [1]: [temporada#1]
+Right keys [1]: [temporada#68]
+Join type: Inner
+Join condition: None
+
+(16) Project [codegen id : 14]
+Output [3]: [temporada#1, clube#23, rodada#66]
+Input [4]: [temporada#1, clube#23, temporada#68, rodada#66]
+
+(17) Scan parquet 
+Output [8]: [partida_id#145, rodada#147, data#148, hora#149, mandante#150, placar_mandante#152, placar_visitante#153, temporada#146]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#146), dynamicpruningexpression(true)]
+PushedFilters: [IsNotNull(mandante)]
+ReadSchema: struct<partida_id:int,rodada:int,data:date,hora:string,mandante:string,placar_mandante:int,placar_visitante:int>
+
+(18) ColumnarToRow [codegen id : 7]
+Input [8]: [partida_id#145, rodada#147, data#148, hora#149, mandante#150, placar_mandante#152, placar_visitante#153, temporada#146]
+
+(19) Filter [codegen id : 7]
+Input [8]: [partida_id#145, rodada#147, data#148, hora#149, mandante#150, placar_mandante#152, placar_visitante#153, temporada#146]
+Condition : isnotnull(mandante#150)
+
+(20) Project [codegen id : 7]
+Output [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, mandante#150 AS clube#163, placar_mandante#152 AS gols_pro#165, placar_visitante#153 AS gols_contra#166, CASE WHEN (placar_mandante#152 > placar_visitante#153) THEN V WHEN (placar_mandante#152 = placar_visitante#153) THEN E ELSE D END AS resultado#189]
+Input [8]: [partida_id#145, rodada#147, data#148, hora#149, mandante#150, placar_mandante#152, placar_visitante#153, temporada#146]
+
+(21) Scan parquet 
+Output [8]: [partida_id#167, rodada#169, data#170, hora#171, visitante#173, placar_mandante#174, placar_visitante#175, temporada#168]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#168), dynamicpruningexpression(true)]
+PushedFilters: [IsNotNull(visitante)]
+ReadSchema: struct<partida_id:int,rodada:int,data:date,hora:string,visitante:string,placar_mandante:int,placar_visitante:int>
+
+(22) ColumnarToRow [codegen id : 8]
+Input [8]: [partida_id#167, rodada#169, data#170, hora#171, visitante#173, placar_mandante#174, placar_visitante#175, temporada#168]
+
+(23) Filter [codegen id : 8]
+Input [8]: [partida_id#167, rodada#169, data#170, hora#171, visitante#173, placar_mandante#174, placar_visitante#175, temporada#168]
+Condition : isnotnull(visitante#173)
+
+(24) Project [codegen id : 8]
+Output [9]: [partida_id#167, temporada#168, rodada#169, data#170, hora#171, visitante#173 AS clube#185, placar_visitante#175 AS gols_pro#187, placar_mandante#174 AS gols_contra#188, CASE WHEN (placar_visitante#175 > placar_mandante#174) THEN V WHEN (placar_visitante#175 = placar_mandante#174) THEN E ELSE D END AS resultado#239]
+Input [8]: [partida_id#167, rodada#169, data#170, hora#171, visitante#173, placar_mandante#174, placar_visitante#175, temporada#168]
+
+(25) Union
+
+(26) Exchange
+Input [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: hashpartitioning(temporada#146, clube#163, 4), ENSURE_REQUIREMENTS, [plan_id=833]
+
+(27) ShuffleQueryStage
+Output [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: 2
+
+(28) AQEShuffleRead
+Input [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: coalesced
+
+(29) Sort [codegen id : 12]
+Input [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: [temporada#146 ASC NULLS FIRST, clube#163 ASC NULLS FIRST, rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST], false, 0
+
+(30) Window
+Input [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: [collect_list(resultado#189, 0, 0, true) windowspecdefinition(temporada#146, clube#163, rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -4, currentrow$())) AS _we0#116, row_number() windowspecdefinition(temporada#146, clube#163, rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _ordem#117], [temporada#146, clube#163], [rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST]
+
+(31) Filter [codegen id : 13]
+Input [11]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189, _we0#116, _ordem#117]
+Condition : isnotnull(rodada#147)
+
+(32) Project [codegen id : 13]
+Output [10]: [temporada#146, rodada#147, clube#163, gols_pro#165, gols_contra#166, array_join(_we0#116, , None) AS ultimos_5#114, _ordem#117, (resultado#189 = V) AS _common_expr_3#234, (resultado#189 = E) AS _common_expr_4#235, (resultado#189 = D) AS _common_expr_5#236]
+Input [11]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189, _we0#116, _ordem#117]
+
+(33) Sort [codegen id : 13]
+Input [10]: [temporada#146, rodada#147, clube#163, gols_pro#165, gols_contra#166, ultimos_5#114, _ordem#117, _common_expr_3#234, _common_expr_4#235, _common_expr_5#236]
+Arguments: [temporada#146 ASC NULLS FIRST, rodada#147 ASC NULLS FIRST, clube#163 ASC NULLS FIRST], false, 0
+
+(34) SortAggregate
+Input [10]: [temporada#146, rodada#147, clube#163, gols_pro#165, gols_contra#166, ultimos_5#114, _ordem#117, _common_expr_3#234, _common_expr_4#235, _common_expr_5#236]
+Keys [3]: [temporada#146, rodada#147, clube#163]
+Functions [7]: [partial_count(1), partial_count(if (NOT _common_expr_3#234) null else _common_expr_3#234), partial_count(if (NOT _common_expr_4#235) null else _common_expr_4#235), partial_count(if (NOT _common_expr_5#236) null else _common_expr_5#236), partial_sum(gols_pro#165), partial_sum(gols_contra#166), partial_max_by(ultimos_5#114, _ordem#117)]
+Aggregate Attributes [8]: [count#1061L, count#1062L, count#1063L, count#1064L, sum#1065L, sum#1066L, valueWithExtremumOrdering#1067, extremumOrdering#1068]
+Results [11]: [temporada#146, rodada#147, clube#163, count#1069L, count#1070L, count#1071L, count#1072L, sum#1073L, sum#1074L, valueWithExtremumOrdering#1075, extremumOrdering#1076]
+
+(35) SortAggregate
+Input [11]: [temporada#146, rodada#147, clube#163, count#1069L, count#1070L, count#1071L, count#1072L, sum#1073L, sum#1074L, valueWithExtremumOrdering#1075, extremumOrdering#1076]
+Keys [3]: [temporada#146, rodada#147, clube#163]
+Functions [7]: [count(1), count(if (NOT _common_expr_3#234) null else _common_expr_3#234), count(if (NOT _common_expr_4#235) null else _common_expr_4#235), count(if (NOT _common_expr_5#236) null else _common_expr_5#236), sum(gols_pro#165), sum(gols_contra#166), max_by(ultimos_5#114, _ordem#117)]
+Aggregate Attributes [7]: [count(1)#138L, count(if (NOT _common_expr_3#234) null else _common_expr_3#234)#139L, count(if (NOT _common_expr_4#235) null else _common_expr_4#235)#140L, count(if (NOT _common_expr_5#236) null else _common_expr_5#236)#141L, sum(gols_pro#165)#142L, sum(gols_contra#166)#143L, max_by(ultimos_5#114, _ordem#117)#144]
+Results [10]: [temporada#146, rodada#147, clube#163, count(1)#138L AS jogos#119L, count(if (NOT _common_expr_3#234) null else _common_expr_3#234)#139L AS vitorias#120L, count(if (NOT _common_expr_4#235) null else _common_expr_4#235)#140L AS empates#121L, count(if (NOT _common_expr_5#236) null else _common_expr_5#236)#141L AS derrotas#122L, sum(gols_pro#165)#142L AS gols_pro#123L, sum(gols_contra#166)#143L AS gols_contra#124L, max_by(ultimos_5#114, _ordem#117)#144 AS ultimos_5#125]
+
+(36) BroadcastExchange
+Input [10]: [temporada#146, rodada#147, clube#163, jogos#119L, vitorias#120L, empates#121L, derrotas#122L, gols_pro#123L, gols_contra#124L, ultimos_5#125]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[1, int, true], input[2, string, true]),false), [plan_id=1485]
+
+(37) BroadcastQueryStage
+Output [10]: [temporada#146, rodada#147, clube#163, jogos#119L, vitorias#120L, empates#121L, derrotas#122L, gols_pro#123L, gols_contra#124L, ultimos_5#125]
+Arguments: 7
+
+(38) BroadcastHashJoin [codegen id : 14]
+Left keys [3]: [temporada#1, rodada#66, clube#23]
+Right keys [3]: [temporada#146, rodada#147, clube#163]
+Join type: LeftOuter
+Join condition: None
+
+(39) Project [codegen id : 14]
+Output [10]: [temporada#1, rodada#66, clube#23, coalesce(jogos#119L, 0) AS _w0#208L, coalesce(vitorias#120L, 0) AS _w1#209L, coalesce(empates#121L, 0) AS _w2#210L, coalesce(derrotas#122L, 0) AS _w3#211L, coalesce(gols_pro#123L, 0) AS _w4#212L, coalesce(gols_contra#124L, 0) AS _w5#213L, ultimos_5#125]
+Input [13]: [temporada#1, clube#23, rodada#66, temporada#146, rodada#147, clube#163, jogos#119L, vitorias#120L, empates#121L, derrotas#122L, gols_pro#123L, gols_contra#124L, ultimos_5#125]
+
+(40) Exchange
+Input [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: hashpartitioning(temporada#1, 4), ENSURE_REQUIREMENTS, [plan_id=1714]
+
+(41) ShuffleQueryStage
+Output [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: 8
+
+(42) AQEShuffleRead
+Input [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: coalesced
+
+(43) Sort [codegen id : 15]
+Input [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: [temporada#1 ASC NULLS FIRST], false, 0
+
+(44) Window
+Input [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: [max(rodada#66) windowspecdefinition(temporada#1, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS _ultima#199], [temporada#1]
+
+(45) Sort [codegen id : 16]
+Input [11]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125, _ultima#199]
+Arguments: [temporada#1 ASC NULLS FIRST, clube#23 ASC NULLS FIRST, rodada#66 ASC NULLS FIRST], false, 0
+
+(46) Window
+Input [11]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125, _ultima#199]
+Arguments: [sum(_w0#208L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we0#214L, sum(_w1#209L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we1#215L, sum(_w2#210L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we2#216L, sum(_w3#211L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we3#217L, sum(_w4#212L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we4#218L, sum(_w5#213L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we5#219L, last(ultimos_5#125, true) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS ultimos_5#198], [temporada#1, clube#23], [rodada#66 ASC NULLS FIRST]
+
+(47) Project [codegen id : 17]
+Output [11]: [temporada#1, rodada#66, clube#23, cast(_we0#214L as int) AS jogos#192, cast(_we1#215L as int) AS vitorias#193, cast(_we2#216L as int) AS empates#194, cast(_we3#217L as int) AS derrotas#195, cast(_we4#218L as int) AS gols_pro#196, cast(_we5#219L as int) AS gols_contra#197, ultimos_5#198, _ultima#199]
+Input [18]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125, _ultima#199, _we0#214L, _we1#215L, _we2#216L, _we3#217L, _we4#218L, _we5#219L, ultimos_5#198]
+
+(48) Scan ExistingRDD [codegen id : 9]
+Output [5]: [temporada#18, clube#19, pontos#20, motivo#21, fonte#22]
+Arguments: [temporada#18, clube#19, pontos#20, motivo#21, fonte#22], MapPartitionsRDD[4] at applySchemaToPythonRDD at DirectMethodHandleAccessor.java:104, ExistingRDD, UnknownPartitioning(0)
+
+(49) Filter [codegen id : 9]
+Input [5]: [temporada#18, clube#19, pontos#20, motivo#21, fonte#22]
+Condition : (isnotnull(temporada#18) AND isnotnull(clube#19))
+
+(50) Project [codegen id : 9]
+Output [3]: [temporada#18, clube#19, pontos#20]
+Input [5]: [temporada#18, clube#19, pontos#20, motivo#21, fonte#22]
+
+(51) HashAggregate [codegen id : 9]
+Input [3]: [temporada#18, clube#19, pontos#20]
+Keys [2]: [temporada#18, clube#19]
+Functions [1]: [partial_sum(pontos#20)]
+Aggregate Attributes [1]: [sum#1077L]
+Results [3]: [temporada#18, clube#19, sum#1078L]
+
+(52) Exchange
+Input [3]: [temporada#18, clube#19, sum#1078L]
+Arguments: hashpartitioning(temporada#18, clube#19, 4), ENSURE_REQUIREMENTS, [plan_id=871]
+
+(53) ShuffleQueryStage
+Output [3]: [temporada#18, clube#19, sum#1078L]
+Arguments: 3
+
+(54) AQEShuffleRead
+Input [3]: [temporada#18, clube#19, sum#1078L]
+Arguments: coalesced
+
+(55) HashAggregate [codegen id : 10]
+Input [3]: [temporada#18, clube#19, sum#1078L]
+Keys [2]: [temporada#18, clube#19]
+Functions [1]: [sum(pontos#20)]
+Aggregate Attributes [1]: [sum(pontos#20)#226L]
+Results [3]: [temporada#18, clube#19, cast(sum(pontos#20)#226L as int) AS _ajuste#220]
+
+(56) BroadcastExchange
+Input [3]: [temporada#18, clube#19, _ajuste#220]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[1, string, true]),false), [plan_id=1089]
+
+(57) BroadcastQueryStage
+Output [3]: [temporada#18, clube#19, _ajuste#220]
+Arguments: 4
+
+(58) BroadcastHashJoin [codegen id : 17]
+Left keys [2]: [temporada#1, clube#23]
+Right keys [2]: [temporada#18, clube#19]
+Join type: LeftOuter
+Join condition: None
+
+(59) Project [codegen id : 17]
+Output [11]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, CASE WHEN (rodada#66 = _ultima#199) THEN coalesce(_ajuste#220, 0) ELSE 0 END AS ajuste_pontos#227]
+Input [14]: [temporada#1, rodada#66, clube#23, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, _ultima#199, temporada#18, clube#19, _ajuste#220]
+
+(60) Project [codegen id : 17]
+Output [14]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, (((vitorias#193 * 3) + empates#194) + ajuste_pontos#227) AS pontos#228, (gols_pro#196 - gols_contra#197) AS saldo#229, CASE WHEN (jogos#192 > 0) THEN round((cast(((vitorias#193 * 3) + empates#194) as double) / cast((jogos#192 * 3) as double)), 4) END AS aproveitamento#230]
+Input [11]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227]
+
+(61) Sort [codegen id : 17]
+Input [14]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, pontos#228, saldo#229, aproveitamento#230]
+Arguments: [temporada#1 ASC NULLS FIRST, rodada#66 ASC NULLS FIRST, pontos#228 DESC NULLS LAST, vitorias#193 DESC NULLS LAST, saldo#229 DESC NULLS LAST, gols_pro#196 DESC NULLS LAST, clube#23 ASC NULLS FIRST], false, 0
+
+(62) Window
+Input [14]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, pontos#228, saldo#229, aproveitamento#230]
+Arguments: [row_number() windowspecdefinition(temporada#1, rodada#66, pontos#228 DESC NULLS LAST, vitorias#193 DESC NULLS LAST, saldo#229 DESC NULLS LAST, gols_pro#196 DESC NULLS LAST, clube#23 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we0#233], [temporada#1, rodada#66], [pontos#228 DESC NULLS LAST, vitorias#193 DESC NULLS LAST, saldo#229 DESC NULLS LAST, gols_pro#196 DESC NULLS LAST, clube#23 ASC NULLS FIRST]
+
+(63) Project [codegen id : 18]
+Output [15]: [temporada#1, rodada#66, clube#23, _we0#233 AS posicao#231, pontos#228, ajuste_pontos#227, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, saldo#229, aproveitamento#230, ultimos_5#198]
+Input [15]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, pontos#228, saldo#229, aproveitamento#230, _we0#233]
+
+(64) ResultQueryStage
+Output [15]: [temporada#1, rodada#66, clube#23, posicao#231, pontos#228, ajuste_pontos#227, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, saldo#229, aproveitamento#230, ultimos_5#198]
+Arguments: 9
+
+(65) Scan parquet 
+Output [2]: [mandante#5, temporada#1]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#1), dynamicpruningexpression(temporada#1 IN dynamicpruning#1057)]
+ReadSchema: struct<mandante:string>
+
+(66) Project
+Output [2]: [temporada#1, mandante#5 AS clube#23]
+Input [2]: [mandante#5, temporada#1]
+
+(67) Scan parquet 
+Output [2]: [visitante#38, temporada#33]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#33), dynamicpruningexpression(temporada#33 IN dynamicpruning#1057)]
+ReadSchema: struct<visitante:string>
+
+(68) Project
+Output [2]: [temporada#33, visitante#38 AS clube#28]
+Input [2]: [visitante#38, temporada#33]
+
+(69) Union
+
+(70) HashAggregate
+Input [2]: [temporada#1, clube#23]
+Keys [2]: [temporada#1, clube#23]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#23]
+
+(71) Exchange
+Input [2]: [temporada#1, clube#23]
+Arguments: hashpartitioning(temporada#1, clube#23, 4), ENSURE_REQUIREMENTS, [plan_id=477]
+
+(72) HashAggregate
+Input [2]: [temporada#1, clube#23]
+Keys [2]: [temporada#1, clube#23]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1, clube#23]
+
+(73) Scan parquet 
+Output [2]: [rodada#69, temporada#68]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#68)]
+ReadSchema: struct<rodada:int>
+
+(74) Project
+Output [2]: [temporada#68, rodada#69]
+Input [2]: [rodada#69, temporada#68]
+
+(75) Scan parquet 
+Output [2]: [rodada#91, temporada#90]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#90)]
+ReadSchema: struct<rodada:int>
+
+(76) Project
+Output [2]: [temporada#90, rodada#91]
+Input [2]: [rodada#91, temporada#90]
+
+(77) Union
+
+(78) HashAggregate
+Input [2]: [temporada#68, rodada#69]
+Keys [1]: [temporada#68]
+Functions [1]: [partial_max(rodada#69)]
+Aggregate Attributes [1]: [max#1059]
+Results [2]: [temporada#68, max#1060]
+
+(79) Exchange
+Input [2]: [temporada#68, max#1060]
+Arguments: hashpartitioning(temporada#68, 4), ENSURE_REQUIREMENTS, [plan_id=479]
+
+(80) HashAggregate
+Input [2]: [temporada#68, max#1060]
+Keys [1]: [temporada#68]
+Functions [1]: [max(rodada#69)]
+Aggregate Attributes [1]: [max(rodada#69)#63]
+Results [2]: [temporada#68, sequence(1, max(rodada#69)#63, None, Some(America/Fortaleza)) AS _gen_input_0#64]
+
+(81) Filter
+Input [2]: [temporada#68, _gen_input_0#64]
+Condition : ((size(_gen_input_0#64, false) > 0) AND isnotnull(_gen_input_0#64))
+
+(82) Generate
+Input [2]: [temporada#68, _gen_input_0#64]
+Arguments: explode(_gen_input_0#64), [temporada#68], false, [rodada#66]
+
+(83) BroadcastExchange
+Input [2]: [temporada#68, rodada#66]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=484]
+
+(84) BroadcastHashJoin
+Left keys [1]: [temporada#1]
+Right keys [1]: [temporada#68]
+Join type: Inner
+Join condition: None
+
+(85) Project
+Output [3]: [temporada#1, clube#23, rodada#66]
+Input [4]: [temporada#1, clube#23, temporada#68, rodada#66]
+
+(86) Scan parquet 
+Output [8]: [partida_id#145, rodada#147, data#148, hora#149, mandante#150, placar_mandante#152, placar_visitante#153, temporada#146]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#146), dynamicpruningexpression(temporada#146 IN dynamicpruning#1058)]
+PushedFilters: [IsNotNull(mandante)]
+ReadSchema: struct<partida_id:int,rodada:int,data:date,hora:string,mandante:string,placar_mandante:int,placar_visitante:int>
+
+(87) Filter
+Input [8]: [partida_id#145, rodada#147, data#148, hora#149, mandante#150, placar_mandante#152, placar_visitante#153, temporada#146]
+Condition : isnotnull(mandante#150)
+
+(88) Project
+Output [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, mandante#150 AS clube#163, placar_mandante#152 AS gols_pro#165, placar_visitante#153 AS gols_contra#166, CASE WHEN (placar_mandante#152 > placar_visitante#153) THEN V WHEN (placar_mandante#152 = placar_visitante#153) THEN E ELSE D END AS resultado#189]
+Input [8]: [partida_id#145, rodada#147, data#148, hora#149, mandante#150, placar_mandante#152, placar_visitante#153, temporada#146]
+
+(89) Scan parquet 
+Output [8]: [partida_id#167, rodada#169, data#170, hora#171, visitante#173, placar_mandante#174, placar_visitante#175, temporada#168]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#168), dynamicpruningexpression(temporada#168 IN dynamicpruning#1058)]
+PushedFilters: [IsNotNull(visitante)]
+ReadSchema: struct<partida_id:int,rodada:int,data:date,hora:string,visitante:string,placar_mandante:int,placar_visitante:int>
+
+(90) Filter
+Input [8]: [partida_id#167, rodada#169, data#170, hora#171, visitante#173, placar_mandante#174, placar_visitante#175, temporada#168]
+Condition : isnotnull(visitante#173)
+
+(91) Project
+Output [9]: [partida_id#167, temporada#168, rodada#169, data#170, hora#171, visitante#173 AS clube#185, placar_visitante#175 AS gols_pro#187, placar_mandante#174 AS gols_contra#188, CASE WHEN (placar_visitante#175 > placar_mandante#174) THEN V WHEN (placar_visitante#175 = placar_mandante#174) THEN E ELSE D END AS resultado#239]
+Input [8]: [partida_id#167, rodada#169, data#170, hora#171, visitante#173, placar_mandante#174, placar_visitante#175, temporada#168]
+
+(92) Union
+
+(93) Exchange
+Input [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: hashpartitioning(temporada#146, clube#163, 4), ENSURE_REQUIREMENTS, [plan_id=487]
+
+(94) Sort
+Input [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: [temporada#146 ASC NULLS FIRST, clube#163 ASC NULLS FIRST, rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST], false, 0
+
+(95) Window
+Input [9]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189]
+Arguments: [collect_list(resultado#189, 0, 0, true) windowspecdefinition(temporada#146, clube#163, rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -4, currentrow$())) AS _we0#116, row_number() windowspecdefinition(temporada#146, clube#163, rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _ordem#117], [temporada#146, clube#163], [rodada#147 ASC NULLS FIRST, data#148 ASC NULLS FIRST, hora#149 ASC NULLS FIRST, partida_id#145 ASC NULLS FIRST]
+
+(96) Filter
+Input [11]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189, _we0#116, _ordem#117]
+Condition : isnotnull(rodada#147)
+
+(97) Project
+Output [10]: [temporada#146, rodada#147, clube#163, gols_pro#165, gols_contra#166, array_join(_we0#116, , None) AS ultimos_5#114, _ordem#117, (resultado#189 = V) AS _common_expr_3#234, (resultado#189 = E) AS _common_expr_4#235, (resultado#189 = D) AS _common_expr_5#236]
+Input [11]: [partida_id#145, temporada#146, rodada#147, data#148, hora#149, clube#163, gols_pro#165, gols_contra#166, resultado#189, _we0#116, _ordem#117]
+
+(98) Sort
+Input [10]: [temporada#146, rodada#147, clube#163, gols_pro#165, gols_contra#166, ultimos_5#114, _ordem#117, _common_expr_3#234, _common_expr_4#235, _common_expr_5#236]
+Arguments: [temporada#146 ASC NULLS FIRST, rodada#147 ASC NULLS FIRST, clube#163 ASC NULLS FIRST], false, 0
+
+(99) SortAggregate
+Input [10]: [temporada#146, rodada#147, clube#163, gols_pro#165, gols_contra#166, ultimos_5#114, _ordem#117, _common_expr_3#234, _common_expr_4#235, _common_expr_5#236]
+Keys [3]: [temporada#146, rodada#147, clube#163]
+Functions [7]: [partial_count(1), partial_count(if (NOT _common_expr_3#234) null else _common_expr_3#234), partial_count(if (NOT _common_expr_4#235) null else _common_expr_4#235), partial_count(if (NOT _common_expr_5#236) null else _common_expr_5#236), partial_sum(gols_pro#165), partial_sum(gols_contra#166), partial_max_by(ultimos_5#114, _ordem#117)]
+Aggregate Attributes [8]: [count#1061L, count#1062L, count#1063L, count#1064L, sum#1065L, sum#1066L, valueWithExtremumOrdering#1067, extremumOrdering#1068]
+Results [11]: [temporada#146, rodada#147, clube#163, count#1069L, count#1070L, count#1071L, count#1072L, sum#1073L, sum#1074L, valueWithExtremumOrdering#1075, extremumOrdering#1076]
+
+(100) SortAggregate
+Input [11]: [temporada#146, rodada#147, clube#163, count#1069L, count#1070L, count#1071L, count#1072L, sum#1073L, sum#1074L, valueWithExtremumOrdering#1075, extremumOrdering#1076]
+Keys [3]: [temporada#146, rodada#147, clube#163]
+Functions [7]: [count(1), count(if (NOT _common_expr_3#234) null else _common_expr_3#234), count(if (NOT _common_expr_4#235) null else _common_expr_4#235), count(if (NOT _common_expr_5#236) null else _common_expr_5#236), sum(gols_pro#165), sum(gols_contra#166), max_by(ultimos_5#114, _ordem#117)]
+Aggregate Attributes [7]: [count(1)#138L, count(if (NOT _common_expr_3#234) null else _common_expr_3#234)#139L, count(if (NOT _common_expr_4#235) null else _common_expr_4#235)#140L, count(if (NOT _common_expr_5#236) null else _common_expr_5#236)#141L, sum(gols_pro#165)#142L, sum(gols_contra#166)#143L, max_by(ultimos_5#114, _ordem#117)#144]
+Results [10]: [temporada#146, rodada#147, clube#163, count(1)#138L AS jogos#119L, count(if (NOT _common_expr_3#234) null else _common_expr_3#234)#139L AS vitorias#120L, count(if (NOT _common_expr_4#235) null else _common_expr_4#235)#140L AS empates#121L, count(if (NOT _common_expr_5#236) null else _common_expr_5#236)#141L AS derrotas#122L, sum(gols_pro#165)#142L AS gols_pro#123L, sum(gols_contra#166)#143L AS gols_contra#124L, max_by(ultimos_5#114, _ordem#117)#144 AS ultimos_5#125]
+
+(101) BroadcastExchange
+Input [10]: [temporada#146, rodada#147, clube#163, jogos#119L, vitorias#120L, empates#121L, derrotas#122L, gols_pro#123L, gols_contra#124L, ultimos_5#125]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[1, int, true], input[2, string, true]),false), [plan_id=497]
+
+(102) BroadcastHashJoin
+Left keys [3]: [temporada#1, rodada#66, clube#23]
+Right keys [3]: [temporada#146, rodada#147, clube#163]
+Join type: LeftOuter
+Join condition: None
+
+(103) Project
+Output [10]: [temporada#1, rodada#66, clube#23, coalesce(jogos#119L, 0) AS _w0#208L, coalesce(vitorias#120L, 0) AS _w1#209L, coalesce(empates#121L, 0) AS _w2#210L, coalesce(derrotas#122L, 0) AS _w3#211L, coalesce(gols_pro#123L, 0) AS _w4#212L, coalesce(gols_contra#124L, 0) AS _w5#213L, ultimos_5#125]
+Input [13]: [temporada#1, clube#23, rodada#66, temporada#146, rodada#147, clube#163, jogos#119L, vitorias#120L, empates#121L, derrotas#122L, gols_pro#123L, gols_contra#124L, ultimos_5#125]
+
+(104) Exchange
+Input [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: hashpartitioning(temporada#1, 4), ENSURE_REQUIREMENTS, [plan_id=501]
+
+(105) Sort
+Input [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: [temporada#1 ASC NULLS FIRST], false, 0
+
+(106) Window
+Input [10]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125]
+Arguments: [max(rodada#66) windowspecdefinition(temporada#1, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS _ultima#199], [temporada#1]
+
+(107) Sort
+Input [11]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125, _ultima#199]
+Arguments: [temporada#1 ASC NULLS FIRST, clube#23 ASC NULLS FIRST, rodada#66 ASC NULLS FIRST], false, 0
+
+(108) Window
+Input [11]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125, _ultima#199]
+Arguments: [sum(_w0#208L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we0#214L, sum(_w1#209L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we1#215L, sum(_w2#210L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we2#216L, sum(_w3#211L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we3#217L, sum(_w4#212L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we4#218L, sum(_w5#213L) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we5#219L, last(ultimos_5#125, true) windowspecdefinition(temporada#1, clube#23, rodada#66 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS ultimos_5#198], [temporada#1, clube#23], [rodada#66 ASC NULLS FIRST]
+
+(109) Project
+Output [11]: [temporada#1, rodada#66, clube#23, cast(_we0#214L as int) AS jogos#192, cast(_we1#215L as int) AS vitorias#193, cast(_we2#216L as int) AS empates#194, cast(_we3#217L as int) AS derrotas#195, cast(_we4#218L as int) AS gols_pro#196, cast(_we5#219L as int) AS gols_contra#197, ultimos_5#198, _ultima#199]
+Input [18]: [temporada#1, rodada#66, clube#23, _w0#208L, _w1#209L, _w2#210L, _w3#211L, _w4#212L, _w5#213L, ultimos_5#125, _ultima#199, _we0#214L, _we1#215L, _we2#216L, _we3#217L, _we4#218L, _we5#219L, ultimos_5#198]
+
+(110) Exchange
+Input [3]: [temporada#18, clube#19, sum#1078L]
+Arguments: hashpartitioning(temporada#18, clube#19, 4), ENSURE_REQUIREMENTS, [plan_id=508]
+
+(111) HashAggregate
+Input [3]: [temporada#18, clube#19, sum#1078L]
+Keys [2]: [temporada#18, clube#19]
+Functions [1]: [sum(pontos#20)]
+Aggregate Attributes [1]: [sum(pontos#20)#226L]
+Results [3]: [temporada#18, clube#19, cast(sum(pontos#20)#226L as int) AS _ajuste#220]
+
+(112) BroadcastExchange
+Input [3]: [temporada#18, clube#19, _ajuste#220]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[1, string, true]),false), [plan_id=511]
+
+(113) BroadcastHashJoin
+Left keys [2]: [temporada#1, clube#23]
+Right keys [2]: [temporada#18, clube#19]
+Join type: LeftOuter
+Join condition: None
+
+(114) Project
+Output [11]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, CASE WHEN (rodada#66 = _ultima#199) THEN coalesce(_ajuste#220, 0) ELSE 0 END AS ajuste_pontos#227]
+Input [14]: [temporada#1, rodada#66, clube#23, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, _ultima#199, temporada#18, clube#19, _ajuste#220]
+
+(115) Project
+Output [14]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, (((vitorias#193 * 3) + empates#194) + ajuste_pontos#227) AS pontos#228, (gols_pro#196 - gols_contra#197) AS saldo#229, CASE WHEN (jogos#192 > 0) THEN round((cast(((vitorias#193 * 3) + empates#194) as double) / cast((jogos#192 * 3) as double)), 4) END AS aproveitamento#230]
+Input [11]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227]
+
+(116) Sort
+Input [14]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, pontos#228, saldo#229, aproveitamento#230]
+Arguments: [temporada#1 ASC NULLS FIRST, rodada#66 ASC NULLS FIRST, pontos#228 DESC NULLS LAST, vitorias#193 DESC NULLS LAST, saldo#229 DESC NULLS LAST, gols_pro#196 DESC NULLS LAST, clube#23 ASC NULLS FIRST], false, 0
+
+(117) Window
+Input [14]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, pontos#228, saldo#229, aproveitamento#230]
+Arguments: [row_number() windowspecdefinition(temporada#1, rodada#66, pontos#228 DESC NULLS LAST, vitorias#193 DESC NULLS LAST, saldo#229 DESC NULLS LAST, gols_pro#196 DESC NULLS LAST, clube#23 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS _we0#233], [temporada#1, rodada#66], [pontos#228 DESC NULLS LAST, vitorias#193 DESC NULLS LAST, saldo#229 DESC NULLS LAST, gols_pro#196 DESC NULLS LAST, clube#23 ASC NULLS FIRST]
+
+(118) Project
+Output [15]: [temporada#1, rodada#66, clube#23, _we0#233 AS posicao#231, pontos#228, ajuste_pontos#227, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, saldo#229, aproveitamento#230, ultimos_5#198]
+Input [15]: [temporada#1, clube#23, rodada#66, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, ultimos_5#198, ajuste_pontos#227, pontos#228, saldo#229, aproveitamento#230, _we0#233]
+
+(119) AdaptiveSparkPlan
+Output [15]: [temporada#1, rodada#66, clube#23, posicao#231, pontos#228, ajuste_pontos#227, jogos#192, vitorias#193, empates#194, derrotas#195, gols_pro#196, gols_contra#197, saldo#229, aproveitamento#230, ultimos_5#198]
+Arguments: isFinalPlan=true
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 1 Hosting Expression = temporada#1 IN dynamicpruning#1057
+AdaptiveSparkPlan (140)
++- == Final Plan ==
+   ResultQueryStage (128)
+   +- BroadcastQueryStage (127), Statistics(sizeInBytes=32.0 MiB, rowCount=894)
+      +- BroadcastExchange (126)
+         +- * Generate (125)
+            +- * Filter (124)
+               +- * HashAggregate (123)
+                  +- AQEShuffleRead (122), coalesced
+                     +- ShuffleQueryStage (121), Statistics(sizeInBytes=1104.0 B, rowCount=46)
+                        +- ReusedExchange (120)
++- == Initial Plan ==
+   BroadcastExchange (139)
+   +- Generate (138)
+      +- Filter (137)
+         +- HashAggregate (136)
+            +- Exchange (135)
+               +- HashAggregate (134)
+                  +- Union (133)
+                     :- Project (130)
+                     :  +- Scan parquet  (129)
+                     +- Project (132)
+                        +- Scan parquet  (131)
+
+
+(120) ReusedExchange [Reuses operator id: 147]
+Output [2]: [temporada#68, max#1060]
+
+(121) ShuffleQueryStage
+Output [2]: [temporada#68, max#1060]
+Arguments: 1
+
+(122) AQEShuffleRead
+Input [2]: [temporada#68, max#1060]
+Arguments: coalesced
+
+(123) HashAggregate [codegen id : 4]
+Input [2]: [temporada#68, max#1060]
+Keys [1]: [temporada#68]
+Functions [1]: [max(rodada#69)]
+Aggregate Attributes [1]: [max(rodada#69)#63]
+Results [2]: [temporada#68, sequence(1, max(rodada#69)#63, None, Some(America/Fortaleza)) AS _gen_input_0#64]
+
+(124) Filter [codegen id : 4]
+Input [2]: [temporada#68, _gen_input_0#64]
+Condition : ((size(_gen_input_0#64, false) > 0) AND isnotnull(_gen_input_0#64))
+
+(125) Generate [codegen id : 4]
+Input [2]: [temporada#68, _gen_input_0#64]
+Arguments: explode(_gen_input_0#64), [temporada#68], false, [rodada#66]
+
+(126) BroadcastExchange
+Input [2]: [temporada#68, rodada#66]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=1145]
+
+(127) BroadcastQueryStage
+Output [2]: [temporada#68, rodada#66]
+Arguments: 2
+
+(128) ResultQueryStage
+Output [2]: [temporada#68, rodada#66]
+Arguments: 3
+
+(129) Scan parquet 
+Output [2]: [rodada#69, temporada#68]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#68)]
+ReadSchema: struct<rodada:int>
+
+(130) Project
+Output [2]: [temporada#68, rodada#69]
+Input [2]: [rodada#69, temporada#68]
+
+(131) Scan parquet 
+Output [2]: [rodada#91, temporada#90]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#90)]
+ReadSchema: struct<rodada:int>
+
+(132) Project
+Output [2]: [temporada#90, rodada#91]
+Input [2]: [rodada#91, temporada#90]
+
+(133) Union
+
+(134) HashAggregate
+Input [2]: [temporada#68, rodada#69]
+Keys [1]: [temporada#68]
+Functions [1]: [partial_max(rodada#69)]
+Aggregate Attributes [1]: [max#1059]
+Results [2]: [temporada#68, max#1060]
+
+(135) Exchange
+Input [2]: [temporada#68, max#1060]
+Arguments: hashpartitioning(temporada#68, 4), ENSURE_REQUIREMENTS, [plan_id=349]
+
+(136) HashAggregate
+Input [2]: [temporada#68, max#1060]
+Keys [1]: [temporada#68]
+Functions [1]: [max(rodada#69)]
+Aggregate Attributes [1]: [max(rodada#69)#63]
+Results [2]: [temporada#68, sequence(1, max(rodada#69)#63, None, Some(America/Fortaleza)) AS _gen_input_0#64]
+
+(137) Filter
+Input [2]: [temporada#68, _gen_input_0#64]
+Condition : ((size(_gen_input_0#64, false) > 0) AND isnotnull(_gen_input_0#64))
+
+(138) Generate
+Input [2]: [temporada#68, _gen_input_0#64]
+Arguments: explode(_gen_input_0#64), [temporada#68], false, [rodada#66]
+
+(139) BroadcastExchange
+Input [2]: [temporada#68, rodada#66]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=655]
+
+(140) AdaptiveSparkPlan
+Output [2]: [temporada#68, rodada#66]
+Arguments: isFinalPlan=true
+
+Subquery:2 Hosting operator id = 4 Hosting Expression = temporada#33 IN dynamicpruning#1057
+
+
+===== Adaptively Optimized Out Exchanges =====
+
+Subplan:1
+Exchange (147)
++- * HashAggregate (146)
+   +- Union (145)
+      :- * Project (142)
+      :  +- * ColumnarToRow (141)
+      :     +- Scan parquet  (73)
+      +- * Project (144)
+         +- * ColumnarToRow (143)
+            +- Scan parquet  (75)
+
+
+(141) ColumnarToRow [codegen id : 4]
+Input [2]: [rodada#69, temporada#68]
+
+(142) Project [codegen id : 4]
+Output [2]: [temporada#68, rodada#69]
+Input [2]: [rodada#69, temporada#68]
+
+(143) ColumnarToRow [codegen id : 5]
+Input [2]: [rodada#91, temporada#90]
+
+(144) Project [codegen id : 5]
+Output [2]: [temporada#90, rodada#91]
+Input [2]: [rodada#91, temporada#90]
+
+(145) Union
+
+(146) HashAggregate [codegen id : 6]
+Input [2]: [temporada#68, rodada#69]
+Keys [1]: [temporada#68]
+Functions [1]: [partial_max(rodada#69)]
+Aggregate Attributes [1]: [max#1059]
+Results [2]: [temporada#68, max#1060]
+
+(147) Exchange
+Input [2]: [temporada#68, max#1060]
+Arguments: hashpartitioning(temporada#68, 4), ENSURE_REQUIREMENTS, [plan_id=758]
+
+
+

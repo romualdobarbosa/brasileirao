@@ -1,0 +1,736 @@
+== Physical Plan ==
+AdaptiveSparkPlan (123)
++- == Final Plan ==
+   ResultQueryStage (77)
+   +- * Project (76)
+      +- * Project (75)
+         +- * SortMergeJoin FullOuter (74)
+            :- * Sort (50)
+            :  +- AQEShuffleRead (49), coalesced
+            :     +- ShuffleQueryStage (48), Statistics(sizeInBytes=14.3 KiB, rowCount=240)
+            :        +- Exchange (47)
+            :           +- * Project (46)
+            :              +- * BroadcastHashJoin Inner BuildRight (45)
+            :                 :- * HashAggregate (12)
+            :                 :  +- AQEShuffleRead (11), coalesced
+            :                 :     +- ShuffleQueryStage (10), Statistics(sizeInBytes=40.8 KiB, rowCount=940)
+            :                 :        +- Exchange (9)
+            :                 :           +- * HashAggregate (8)
+            :                 :              +- Union (7)
+            :                 :                 :- * Project (3)
+            :                 :                 :  +- * ColumnarToRow (2)
+            :                 :                 :     +- Scan parquet  (1)
+            :                 :                 +- * Project (6)
+            :                 :                    +- * ColumnarToRow (5)
+            :                 :                       +- Scan parquet  (4)
+            :                 +- BroadcastQueryStage (44), Statistics(sizeInBytes=32.0 MiB, rowCount=12)
+            :                    +- BroadcastExchange (43)
+            :                       +- * HashAggregate (42)
+            :                          +- AQEShuffleRead (41), coalesced
+            :                             +- ShuffleQueryStage (40), Statistics(sizeInBytes=392.0 B, rowCount=12)
+            :                                +- Exchange (39)
+            :                                   +- * HashAggregate (38)
+            :                                      +- Union (37)
+            :                                         :- * HashAggregate (19)
+            :                                         :  +- AQEShuffleRead (18), coalesced
+            :                                         :     +- ShuffleQueryStage (17), Statistics(sizeInBytes=7.9 KiB, rowCount=220)
+            :                                         :        +- Exchange (16)
+            :                                         :           +- * HashAggregate (15)
+            :                                         :              +- * ColumnarToRow (14)
+            :                                         :                 +- Scan parquet  (13)
+            :                                         +- * HashAggregate (36)
+            :                                            +- AQEShuffleRead (35), coalesced
+            :                                               +- ShuffleQueryStage (34), Statistics(sizeInBytes=720.0 B, rowCount=20)
+            :                                                  +- Exchange (33)
+            :                                                     +- * HashAggregate (32)
+            :                                                        +- * BroadcastHashJoin LeftAnti BuildRight (31)
+            :                                                           :- * ColumnarToRow (21)
+            :                                                           :  +- Scan parquet  (20)
+            :                                                           +- BroadcastQueryStage (30), Statistics(sizeInBytes=32.0 MiB, rowCount=11)
+            :                                                              +- BroadcastExchange (29)
+            :                                                                 +- * HashAggregate (28)
+            :                                                                    +- AQEShuffleRead (27), coalesced
+            :                                                                       +- ShuffleQueryStage (26), Statistics(sizeInBytes=176.0 B, rowCount=11)
+            :                                                                          +- Exchange (25)
+            :                                                                             +- * HashAggregate (24)
+            :                                                                                +- * ColumnarToRow (23)
+            :                                                                                   +- Scan parquet  (22)
+            +- * Sort (73)
+               +- AQEShuffleRead (72), coalesced
+                  +- ShuffleQueryStage (71), Statistics(sizeInBytes=16.2 KiB, rowCount=240)
+                     +- Exchange (70)
+                        +- Union (69)
+                           :- * HashAggregate (58)
+                           :  +- AQEShuffleRead (57), coalesced
+                           :     +- ShuffleQueryStage (56), Statistics(sizeInBytes=11.3 KiB, rowCount=220)
+                           :        +- Exchange (55)
+                           :           +- * HashAggregate (54)
+                           :              +- * Project (53)
+                           :                 +- * ColumnarToRow (52)
+                           :                    +- Scan parquet  (51)
+                           +- * HashAggregate (68)
+                              +- AQEShuffleRead (67), coalesced
+                                 +- ShuffleQueryStage (66), Statistics(sizeInBytes=1040.0 B, rowCount=20)
+                                    +- Exchange (65)
+                                       +- * HashAggregate (64)
+                                          +- * BroadcastHashJoin LeftAnti BuildRight (63)
+                                             :- * ColumnarToRow (60)
+                                             :  +- Scan parquet  (59)
+                                             +- BroadcastQueryStage (62), Statistics(sizeInBytes=32.0 MiB, rowCount=11)
+                                                +- ReusedExchange (61)
++- == Initial Plan ==
+   Project (122)
+   +- Project (121)
+      +- SortMergeJoin FullOuter (120)
+         :- Sort (103)
+         :  +- Exchange (102)
+         :     +- Project (101)
+         :        +- BroadcastHashJoin Inner BuildRight (100)
+         :           :- HashAggregate (83)
+         :           :  +- Exchange (82)
+         :           :     +- HashAggregate (81)
+         :           :        +- Union (80)
+         :           :           :- Project (78)
+         :           :           :  +- Scan parquet  (1)
+         :           :           +- Project (79)
+         :           :              +- Scan parquet  (4)
+         :           +- BroadcastExchange (99)
+         :              +- HashAggregate (98)
+         :                 +- Exchange (97)
+         :                    +- HashAggregate (96)
+         :                       +- Union (95)
+         :                          :- HashAggregate (86)
+         :                          :  +- Exchange (85)
+         :                          :     +- HashAggregate (84)
+         :                          :        +- Scan parquet  (13)
+         :                          +- HashAggregate (94)
+         :                             +- Exchange (93)
+         :                                +- HashAggregate (92)
+         :                                   +- BroadcastHashJoin LeftAnti BuildRight (91)
+         :                                      :- Scan parquet  (20)
+         :                                      +- BroadcastExchange (90)
+         :                                         +- HashAggregate (89)
+         :                                            +- Exchange (88)
+         :                                               +- HashAggregate (87)
+         :                                                  +- Scan parquet  (22)
+         +- Sort (119)
+            +- Exchange (118)
+               +- Union (117)
+                  :- HashAggregate (107)
+                  :  +- Exchange (106)
+                  :     +- HashAggregate (105)
+                  :        +- Project (104)
+                  :           +- Scan parquet  (51)
+                  +- HashAggregate (116)
+                     +- Exchange (115)
+                        +- HashAggregate (114)
+                           +- BroadcastHashJoin LeftAnti BuildRight (113)
+                              :- Scan parquet  (59)
+                              +- BroadcastExchange (112)
+                                 +- HashAggregate (111)
+                                    +- Exchange (110)
+                                       +- HashAggregate (109)
+                                          +- Scan parquet  (108)
+
+
+(1) Scan parquet 
+Output [2]: [mandante#5, temporada#1]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#1)]
+ReadSchema: struct<mandante:string>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [2]: [mandante#5, temporada#1]
+
+(3) Project [codegen id : 1]
+Output [2]: [temporada#1, mandante#5 AS clube#1891]
+Input [2]: [mandante#5, temporada#1]
+
+(4) Scan parquet 
+Output [2]: [visitante#1905, temporada#1900]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/partidas]
+PartitionFilters: [isnotnull(temporada#1900)]
+ReadSchema: struct<visitante:string>
+
+(5) ColumnarToRow [codegen id : 2]
+Input [2]: [visitante#1905, temporada#1900]
+
+(6) Project [codegen id : 2]
+Output [2]: [temporada#1900, visitante#1905 AS clube#1895]
+Input [2]: [visitante#1905, temporada#1900]
+
+(7) Union
+
+(8) HashAggregate [codegen id : 3]
+Input [2]: [temporada#1, clube#1891]
+Keys [2]: [temporada#1, clube#1891]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#3125L]
+Results [3]: [temporada#1, clube#1891, count#3126L]
+
+(9) Exchange
+Input [3]: [temporada#1, clube#1891, count#3126L]
+Arguments: hashpartitioning(temporada#1, clube#1891, 4), ENSURE_REQUIREMENTS, [plan_id=3395]
+
+(10) ShuffleQueryStage
+Output [3]: [temporada#1, clube#1891, count#3126L]
+Arguments: 0
+
+(11) AQEShuffleRead
+Input [3]: [temporada#1, clube#1891, count#3126L]
+Arguments: coalesced
+
+(12) HashAggregate [codegen id : 18]
+Input [3]: [temporada#1, clube#1891, count#3126L]
+Keys [2]: [temporada#1, clube#1891]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#1930L]
+Results [3]: [temporada#1, clube#1891, count(1)#1930L AS jogos#1919L]
+
+(13) Scan parquet 
+Output [2]: [clube#1823, temporada#1821]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/cartoes]
+PartitionFilters: [isnotnull(temporada#1821)]
+ReadSchema: struct<clube:string>
+
+(14) ColumnarToRow [codegen id : 4]
+Input [2]: [clube#1823, temporada#1821]
+
+(15) HashAggregate [codegen id : 4]
+Input [2]: [clube#1823, temporada#1821]
+Keys [2]: [temporada#1821, clube#1823]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, clube#1823]
+
+(16) Exchange
+Input [2]: [temporada#1821, clube#1823]
+Arguments: hashpartitioning(temporada#1821, clube#1823, 4), ENSURE_REQUIREMENTS, [plan_id=3422]
+
+(17) ShuffleQueryStage
+Output [2]: [temporada#1821, clube#1823]
+Arguments: 1
+
+(18) AQEShuffleRead
+Input [2]: [temporada#1821, clube#1823]
+Arguments: coalesced
+
+(19) HashAggregate [codegen id : 12]
+Input [2]: [temporada#1821, clube#1823]
+Keys [2]: [temporada#1821, clube#1823]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, cartoes AS fonte#1878]
+
+(20) Scan parquet 
+Output [2]: [clube#1833, temporada#1831]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/estatisticas]
+PartitionFilters: [isnotnull(temporada#1831)]
+ReadSchema: struct<clube:string>
+
+(21) ColumnarToRow [codegen id : 10]
+Input [2]: [clube#1833, temporada#1831]
+
+(22) Scan parquet 
+Output [1]: [temporada#1881]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/cartoes]
+PartitionFilters: [isnotnull(temporada#1881)]
+ReadSchema: struct<>
+
+(23) ColumnarToRow [codegen id : 5]
+Input [1]: [temporada#1881]
+
+(24) HashAggregate [codegen id : 5]
+Input [1]: [temporada#1881]
+Keys [1]: [temporada#1881]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [temporada#1881]
+
+(25) Exchange
+Input [1]: [temporada#1881]
+Arguments: hashpartitioning(temporada#1881, 4), ENSURE_REQUIREMENTS, [plan_id=3439]
+
+(26) ShuffleQueryStage
+Output [1]: [temporada#1881]
+Arguments: 2
+
+(27) AQEShuffleRead
+Input [1]: [temporada#1881]
+Arguments: coalesced
+
+(28) HashAggregate [codegen id : 8]
+Input [1]: [temporada#1881]
+Keys [1]: [temporada#1881]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [temporada#1881]
+
+(29) BroadcastExchange
+Input [1]: [temporada#1881]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=4025]
+
+(30) BroadcastQueryStage
+Output [1]: [temporada#1881]
+Arguments: 6
+
+(31) BroadcastHashJoin [codegen id : 10]
+Left keys [1]: [temporada#1831]
+Right keys [1]: [temporada#1881]
+Join type: LeftAnti
+Join condition: None
+
+(32) HashAggregate [codegen id : 10]
+Input [2]: [clube#1833, temporada#1831]
+Keys [2]: [temporada#1831, clube#1833]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1831, clube#1833]
+
+(33) Exchange
+Input [2]: [temporada#1831, clube#1833]
+Arguments: hashpartitioning(temporada#1831, clube#1833, 4), ENSURE_REQUIREMENTS, [plan_id=4201]
+
+(34) ShuffleQueryStage
+Output [2]: [temporada#1831, clube#1833]
+Arguments: 9
+
+(35) AQEShuffleRead
+Input [2]: [temporada#1831, clube#1833]
+Arguments: coalesced
+
+(36) HashAggregate [codegen id : 13]
+Input [2]: [temporada#1831, clube#1833]
+Keys [2]: [temporada#1831, clube#1833]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1831, estatisticas AS fonte#1879]
+
+(37) Union
+
+(38) HashAggregate [codegen id : 14]
+Input [2]: [temporada#1821, fonte#1878]
+Keys [2]: [temporada#1821, fonte#1878]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, fonte#1878]
+
+(39) Exchange
+Input [2]: [temporada#1821, fonte#1878]
+Arguments: hashpartitioning(temporada#1821, fonte#1878, 4), ENSURE_REQUIREMENTS, [plan_id=4346]
+
+(40) ShuffleQueryStage
+Output [2]: [temporada#1821, fonte#1878]
+Arguments: 11
+
+(41) AQEShuffleRead
+Input [2]: [temporada#1821, fonte#1878]
+Arguments: coalesced
+
+(42) HashAggregate [codegen id : 17]
+Input [2]: [temporada#1821, fonte#1878]
+Keys [2]: [temporada#1821, fonte#1878]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, fonte#1878]
+
+(43) BroadcastExchange
+Input [2]: [temporada#1821, fonte#1878]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=4494]
+
+(44) BroadcastQueryStage
+Output [2]: [temporada#1821, fonte#1878]
+Arguments: 13
+
+(45) BroadcastHashJoin [codegen id : 18]
+Left keys [1]: [temporada#1]
+Right keys [1]: [temporada#1821]
+Join type: Inner
+Join condition: None
+
+(46) Project [codegen id : 18]
+Output [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Input [5]: [temporada#1, clube#1891, jogos#1919L, temporada#1821, fonte#1878]
+
+(47) Exchange
+Input [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Arguments: hashpartitioning(temporada#1, clube#1891, fonte#1878, 4), ENSURE_REQUIREMENTS, [plan_id=4580]
+
+(48) ShuffleQueryStage
+Output [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Arguments: 14
+
+(49) AQEShuffleRead
+Input [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Arguments: coalesced
+
+(50) Sort [codegen id : 19]
+Input [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Arguments: [temporada#1 ASC NULLS FIRST, clube#1891 ASC NULLS FIRST, fonte#1878 ASC NULLS FIRST], false, 0
+
+(51) Scan parquet 
+Output [3]: [clube#1934, cartao#1935, temporada#1932]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/cartoes]
+ReadSchema: struct<clube:string,cartao:string>
+
+(52) ColumnarToRow [codegen id : 6]
+Input [3]: [clube#1934, cartao#1935, temporada#1932]
+
+(53) Project [codegen id : 6]
+Output [4]: [temporada#1932, clube#1934, (cartao#1935 = Amarelo) AS _common_expr_8#1984, (cartao#1935 = Vermelho) AS _common_expr_9#1985]
+Input [3]: [clube#1934, cartao#1935, temporada#1932]
+
+(54) HashAggregate [codegen id : 6]
+Input [4]: [temporada#1932, clube#1934, _common_expr_8#1984, _common_expr_9#1985]
+Keys [2]: [temporada#1932, clube#1934]
+Functions [2]: [partial_count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984), partial_count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)]
+Aggregate Attributes [2]: [count#3127L, count#3128L]
+Results [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+
+(55) Exchange
+Input [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+Arguments: hashpartitioning(temporada#1932, clube#1934, 4), ENSURE_REQUIREMENTS, [plan_id=3501]
+
+(56) ShuffleQueryStage
+Output [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+Arguments: 3
+
+(57) AQEShuffleRead
+Input [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+Arguments: coalesced
+
+(58) HashAggregate [codegen id : 15]
+Input [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+Keys [2]: [temporada#1932, clube#1934]
+Functions [2]: [count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984), count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)]
+Aggregate Attributes [2]: [count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984)#1856L, count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)#1857L]
+Results [5]: [temporada#1932, clube#1934, count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984)#1856L AS amarelos#1941L, count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)#1857L AS vermelhos#1942L, cartoes AS fonte#1943]
+
+(59) Scan parquet 
+Output [4]: [clube#1947, cartao_amarelo#1954, cartao_vermelho#1955, temporada#1945]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/estatisticas]
+ReadSchema: struct<clube:string,cartao_amarelo:int,cartao_vermelho:int>
+
+(60) ColumnarToRow [codegen id : 11]
+Input [4]: [clube#1947, cartao_amarelo#1954, cartao_vermelho#1955, temporada#1945]
+
+(61) ReusedExchange [Reuses operator id: 29]
+Output [1]: [temporada#1959]
+
+(62) BroadcastQueryStage
+Output [1]: [temporada#1959]
+Arguments: 8
+
+(63) BroadcastHashJoin [codegen id : 11]
+Left keys [1]: [temporada#1945]
+Right keys [1]: [temporada#1959]
+Join type: LeftAnti
+Join condition: None
+
+(64) HashAggregate [codegen id : 11]
+Input [4]: [clube#1947, cartao_amarelo#1954, cartao_vermelho#1955, temporada#1945]
+Keys [2]: [temporada#1945, clube#1947]
+Functions [2]: [partial_sum(coalesce(cartao_amarelo#1954, 0)), partial_sum(coalesce(cartao_vermelho#1955, 0))]
+Aggregate Attributes [2]: [sum#3131L, sum#3132L]
+Results [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+
+(65) Exchange
+Input [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+Arguments: hashpartitioning(temporada#1945, clube#1947, 4), ENSURE_REQUIREMENTS, [plan_id=4244]
+
+(66) ShuffleQueryStage
+Output [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+Arguments: 10
+
+(67) AQEShuffleRead
+Input [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+Arguments: coalesced
+
+(68) HashAggregate [codegen id : 16]
+Input [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+Keys [2]: [temporada#1945, clube#1947]
+Functions [2]: [sum(coalesce(cartao_amarelo#1954, 0)), sum(coalesce(cartao_vermelho#1955, 0))]
+Aggregate Attributes [2]: [sum(coalesce(cartao_amarelo#1954, 0))#1876L, sum(coalesce(cartao_vermelho#1955, 0))#1877L]
+Results [5]: [temporada#1945, clube#1947, sum(coalesce(cartao_amarelo#1954, 0))#1876L AS amarelos#1968L, sum(coalesce(cartao_vermelho#1955, 0))#1877L AS vermelhos#1969L, estatisticas AS fonte#1970]
+
+(69) Union
+
+(70) Exchange
+Input [5]: [temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+Arguments: hashpartitioning(temporada#1932, clube#1934, fonte#1943, 4), ENSURE_REQUIREMENTS, [plan_id=4438]
+
+(71) ShuffleQueryStage
+Output [5]: [temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+Arguments: 12
+
+(72) AQEShuffleRead
+Input [5]: [temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+Arguments: coalesced
+
+(73) Sort [codegen id : 20]
+Input [5]: [temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+Arguments: [temporada#1932 ASC NULLS FIRST, clube#1934 ASC NULLS FIRST, fonte#1943 ASC NULLS FIRST], false, 0
+
+(74) SortMergeJoin [codegen id : 21]
+Left keys [3]: [temporada#1, clube#1891, fonte#1878]
+Right keys [3]: [temporada#1932, clube#1934, fonte#1943]
+Join type: FullOuter
+Join condition: None
+
+(75) Project [codegen id : 21]
+Output [6]: [coalesce(temporada#1, temporada#1932) AS temporada#1974, coalesce(clube#1891, clube#1934) AS clube#1975, cast(coalesce(jogos#1919L, 0) as int) AS jogos#1977, cast(coalesce(amarelos#1941L, 0) as int) AS amarelos#1978, cast(coalesce(vermelhos#1942L, 0) as int) AS vermelhos#1979, coalesce(fonte#1878, fonte#1943) AS fonte#1976]
+Input [9]: [temporada#1, clube#1891, jogos#1919L, fonte#1878, temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+
+(76) Project [codegen id : 21]
+Output [8]: [temporada#1974, clube#1975, jogos#1977, amarelos#1978, vermelhos#1979, CASE WHEN (jogos#1977 > 0) THEN round((cast(amarelos#1978 as double) / cast(jogos#1977 as double)), 2) END AS amarelos_por_jogo#1980, CASE WHEN (jogos#1977 > 0) THEN round((cast(vermelhos#1979 as double) / cast(jogos#1977 as double)), 2) END AS vermelhos_por_jogo#1981, fonte#1976]
+Input [6]: [temporada#1974, clube#1975, jogos#1977, amarelos#1978, vermelhos#1979, fonte#1976]
+
+(77) ResultQueryStage
+Output [8]: [temporada#1974, clube#1975, jogos#1977, amarelos#1978, vermelhos#1979, amarelos_por_jogo#1980, vermelhos_por_jogo#1981, fonte#1976]
+Arguments: 15
+
+(78) Project
+Output [2]: [temporada#1, mandante#5 AS clube#1891]
+Input [2]: [mandante#5, temporada#1]
+
+(79) Project
+Output [2]: [temporada#1900, visitante#1905 AS clube#1895]
+Input [2]: [visitante#1905, temporada#1900]
+
+(80) Union
+
+(81) HashAggregate
+Input [2]: [temporada#1, clube#1891]
+Keys [2]: [temporada#1, clube#1891]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#3125L]
+Results [3]: [temporada#1, clube#1891, count#3126L]
+
+(82) Exchange
+Input [3]: [temporada#1, clube#1891, count#3126L]
+Arguments: hashpartitioning(temporada#1, clube#1891, 4), ENSURE_REQUIREMENTS, [plan_id=3282]
+
+(83) HashAggregate
+Input [3]: [temporada#1, clube#1891, count#3126L]
+Keys [2]: [temporada#1, clube#1891]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#1930L]
+Results [3]: [temporada#1, clube#1891, count(1)#1930L AS jogos#1919L]
+
+(84) HashAggregate
+Input [2]: [clube#1823, temporada#1821]
+Keys [2]: [temporada#1821, clube#1823]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, clube#1823]
+
+(85) Exchange
+Input [2]: [temporada#1821, clube#1823]
+Arguments: hashpartitioning(temporada#1821, clube#1823, 4), ENSURE_REQUIREMENTS, [plan_id=3284]
+
+(86) HashAggregate
+Input [2]: [temporada#1821, clube#1823]
+Keys [2]: [temporada#1821, clube#1823]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, cartoes AS fonte#1878]
+
+(87) HashAggregate
+Input [1]: [temporada#1881]
+Keys [1]: [temporada#1881]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [temporada#1881]
+
+(88) Exchange
+Input [1]: [temporada#1881]
+Arguments: hashpartitioning(temporada#1881, 4), ENSURE_REQUIREMENTS, [plan_id=3286]
+
+(89) HashAggregate
+Input [1]: [temporada#1881]
+Keys [1]: [temporada#1881]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [temporada#1881]
+
+(90) BroadcastExchange
+Input [1]: [temporada#1881]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=3289]
+
+(91) BroadcastHashJoin
+Left keys [1]: [temporada#1831]
+Right keys [1]: [temporada#1881]
+Join type: LeftAnti
+Join condition: None
+
+(92) HashAggregate
+Input [2]: [clube#1833, temporada#1831]
+Keys [2]: [temporada#1831, clube#1833]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1831, clube#1833]
+
+(93) Exchange
+Input [2]: [temporada#1831, clube#1833]
+Arguments: hashpartitioning(temporada#1831, clube#1833, 4), ENSURE_REQUIREMENTS, [plan_id=3293]
+
+(94) HashAggregate
+Input [2]: [temporada#1831, clube#1833]
+Keys [2]: [temporada#1831, clube#1833]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1831, estatisticas AS fonte#1879]
+
+(95) Union
+
+(96) HashAggregate
+Input [2]: [temporada#1821, fonte#1878]
+Keys [2]: [temporada#1821, fonte#1878]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, fonte#1878]
+
+(97) Exchange
+Input [2]: [temporada#1821, fonte#1878]
+Arguments: hashpartitioning(temporada#1821, fonte#1878, 4), ENSURE_REQUIREMENTS, [plan_id=3298]
+
+(98) HashAggregate
+Input [2]: [temporada#1821, fonte#1878]
+Keys [2]: [temporada#1821, fonte#1878]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [temporada#1821, fonte#1878]
+
+(99) BroadcastExchange
+Input [2]: [temporada#1821, fonte#1878]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=3301]
+
+(100) BroadcastHashJoin
+Left keys [1]: [temporada#1]
+Right keys [1]: [temporada#1821]
+Join type: Inner
+Join condition: None
+
+(101) Project
+Output [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Input [5]: [temporada#1, clube#1891, jogos#1919L, temporada#1821, fonte#1878]
+
+(102) Exchange
+Input [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Arguments: hashpartitioning(temporada#1, clube#1891, fonte#1878, 4), ENSURE_REQUIREMENTS, [plan_id=3318]
+
+(103) Sort
+Input [4]: [temporada#1, clube#1891, jogos#1919L, fonte#1878]
+Arguments: [temporada#1 ASC NULLS FIRST, clube#1891 ASC NULLS FIRST, fonte#1878 ASC NULLS FIRST], false, 0
+
+(104) Project
+Output [4]: [temporada#1932, clube#1934, (cartao#1935 = Amarelo) AS _common_expr_8#1984, (cartao#1935 = Vermelho) AS _common_expr_9#1985]
+Input [3]: [clube#1934, cartao#1935, temporada#1932]
+
+(105) HashAggregate
+Input [4]: [temporada#1932, clube#1934, _common_expr_8#1984, _common_expr_9#1985]
+Keys [2]: [temporada#1932, clube#1934]
+Functions [2]: [partial_count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984), partial_count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)]
+Aggregate Attributes [2]: [count#3127L, count#3128L]
+Results [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+
+(106) Exchange
+Input [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+Arguments: hashpartitioning(temporada#1932, clube#1934, 4), ENSURE_REQUIREMENTS, [plan_id=3304]
+
+(107) HashAggregate
+Input [4]: [temporada#1932, clube#1934, count#3129L, count#3130L]
+Keys [2]: [temporada#1932, clube#1934]
+Functions [2]: [count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984), count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)]
+Aggregate Attributes [2]: [count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984)#1856L, count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)#1857L]
+Results [5]: [temporada#1932, clube#1934, count(if (NOT _common_expr_8#1984) null else _common_expr_8#1984)#1856L AS amarelos#1941L, count(if (NOT _common_expr_9#1985) null else _common_expr_9#1985)#1857L AS vermelhos#1942L, cartoes AS fonte#1943]
+
+(108) Scan parquet 
+Output [1]: [temporada#1959]
+Batched: true
+Location: PreparedDeltaFileIndex [$BRASILEIRAO_DATA_ROOT/silver/cartoes]
+PartitionFilters: [isnotnull(temporada#1959)]
+ReadSchema: struct<>
+
+(109) HashAggregate
+Input [1]: [temporada#1959]
+Keys [1]: [temporada#1959]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [temporada#1959]
+
+(110) Exchange
+Input [1]: [temporada#1959]
+Arguments: hashpartitioning(temporada#1959, 4), ENSURE_REQUIREMENTS, [plan_id=3306]
+
+(111) HashAggregate
+Input [1]: [temporada#1959]
+Keys [1]: [temporada#1959]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [temporada#1959]
+
+(112) BroadcastExchange
+Input [1]: [temporada#1959]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=3309]
+
+(113) BroadcastHashJoin
+Left keys [1]: [temporada#1945]
+Right keys [1]: [temporada#1959]
+Join type: LeftAnti
+Join condition: None
+
+(114) HashAggregate
+Input [4]: [clube#1947, cartao_amarelo#1954, cartao_vermelho#1955, temporada#1945]
+Keys [2]: [temporada#1945, clube#1947]
+Functions [2]: [partial_sum(coalesce(cartao_amarelo#1954, 0)), partial_sum(coalesce(cartao_vermelho#1955, 0))]
+Aggregate Attributes [2]: [sum#3131L, sum#3132L]
+Results [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+
+(115) Exchange
+Input [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+Arguments: hashpartitioning(temporada#1945, clube#1947, 4), ENSURE_REQUIREMENTS, [plan_id=3313]
+
+(116) HashAggregate
+Input [4]: [temporada#1945, clube#1947, sum#3133L, sum#3134L]
+Keys [2]: [temporada#1945, clube#1947]
+Functions [2]: [sum(coalesce(cartao_amarelo#1954, 0)), sum(coalesce(cartao_vermelho#1955, 0))]
+Aggregate Attributes [2]: [sum(coalesce(cartao_amarelo#1954, 0))#1876L, sum(coalesce(cartao_vermelho#1955, 0))#1877L]
+Results [5]: [temporada#1945, clube#1947, sum(coalesce(cartao_amarelo#1954, 0))#1876L AS amarelos#1968L, sum(coalesce(cartao_vermelho#1955, 0))#1877L AS vermelhos#1969L, estatisticas AS fonte#1970]
+
+(117) Union
+
+(118) Exchange
+Input [5]: [temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+Arguments: hashpartitioning(temporada#1932, clube#1934, fonte#1943, 4), ENSURE_REQUIREMENTS, [plan_id=3319]
+
+(119) Sort
+Input [5]: [temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+Arguments: [temporada#1932 ASC NULLS FIRST, clube#1934 ASC NULLS FIRST, fonte#1943 ASC NULLS FIRST], false, 0
+
+(120) SortMergeJoin
+Left keys [3]: [temporada#1, clube#1891, fonte#1878]
+Right keys [3]: [temporada#1932, clube#1934, fonte#1943]
+Join type: FullOuter
+Join condition: None
+
+(121) Project
+Output [6]: [coalesce(temporada#1, temporada#1932) AS temporada#1974, coalesce(clube#1891, clube#1934) AS clube#1975, cast(coalesce(jogos#1919L, 0) as int) AS jogos#1977, cast(coalesce(amarelos#1941L, 0) as int) AS amarelos#1978, cast(coalesce(vermelhos#1942L, 0) as int) AS vermelhos#1979, coalesce(fonte#1878, fonte#1943) AS fonte#1976]
+Input [9]: [temporada#1, clube#1891, jogos#1919L, fonte#1878, temporada#1932, clube#1934, amarelos#1941L, vermelhos#1942L, fonte#1943]
+
+(122) Project
+Output [8]: [temporada#1974, clube#1975, jogos#1977, amarelos#1978, vermelhos#1979, CASE WHEN (jogos#1977 > 0) THEN round((cast(amarelos#1978 as double) / cast(jogos#1977 as double)), 2) END AS amarelos_por_jogo#1980, CASE WHEN (jogos#1977 > 0) THEN round((cast(vermelhos#1979 as double) / cast(jogos#1977 as double)), 2) END AS vermelhos_por_jogo#1981, fonte#1976]
+Input [6]: [temporada#1974, clube#1975, jogos#1977, amarelos#1978, vermelhos#1979, fonte#1976]
+
+(123) AdaptiveSparkPlan
+Output [8]: [temporada#1974, clube#1975, jogos#1977, amarelos#1978, vermelhos#1979, amarelos_por_jogo#1980, vermelhos_por_jogo#1981, fonte#1976]
+Arguments: isFinalPlan=true
+
+

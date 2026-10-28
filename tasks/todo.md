@@ -77,7 +77,7 @@ Fixture: minicampeonato de 4 times, turno e returno (12 partidas, 6 rodadas), nu
 - [x] Campeão de 2003–2025 bate com o oficial: 2003 Cruzeiro, 2004 Santos, 2005 Corinthians, 2006–08 São Paulo, 2009 Flamengo, 2010 Fluminense, 2011 Corinthians, 2012 Fluminense, 2013–14 Cruzeiro, 2015 Corinthians, 2016 Palmeiras, 2017 Corinthians, 2018 Palmeiras, 2019–20 Flamengo, 2021 Atlético-MG, 2022–23 Palmeiras, 2024 Botafogo-RJ, 2025 Flamengo
 - [x] Pontos finais dos clubes ajustados e rebaixados de 2003, 2004, 2010, 2013, 2016 e 2018 batem com a spec
 - [x] `make gold` 2× sem mudança de conteúdo; tempo anotado
-- [ ] Revisão com o Romualdo
+- [x] Revisão com o Romualdo
 
 Resultado (27/10/2026): 18.332 linhas, N × rodadas em todas as 23 temporadas; os 23 campeões batem; os 13 pontos ajustados da spec e os rebaixados das 6 temporadas batem (ordem inclusa); hash do conteúdo igual em 2 execuções; `make gold` 14,5s (10,7s no gold). `make lint` só reprova o bloco de código do `SPEC-gold.md` (já reprovava no f69ac9a).
 
@@ -141,7 +141,7 @@ Resultado (27/10/2026): 18.332 linhas, N × rodadas em todas as 23 temporadas; o
 ### Checkpoint: Partidas
 - [x] `make lint`, `make test`, `make gold` nos dados reais
 - [x] Amostras: títulos no ranking batem com a lista de campeões do checkpoint da Fase 1; a maior invencibilidade do campeão de 2025 confere com o calendário da silver
-- [ ] Revisão com o Romualdo
+- [x] Revisão com o Romualdo
 
 Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.880 / 46 linhas; 23 títulos no ranking, batendo clube a clube; Barueri e Grêmio Prudente separados; maior invencibilidade do Flamengo em 2025 = 12 jogos, 20/07 (1 × 0 Fluminense, R15) a 02/10 (0 × 0 Cruzeiro, R26), entre as derrotas para Santos (16/07) e Bahia (05/10), conferida no calendário da silver; hash das 4 tabelas igual em 2 execuções. Suíte: 183 testes, 99%, 2min46s.
 
@@ -226,7 +226,7 @@ Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.8
 ### Checkpoint: Gold completo
 - [x] `make gold` nos dados reais grava as 8 tabelas em menos de 2 minutos, com todas as checagens passando
 - [x] Amostras: artilheiro de 2 temporadas e o campeão no `resumo_temporada` batem com o oficial; `disciplina` de 2025 vem de `estatisticas`
-- [ ] Revisão com o Romualdo
+- [x] Revisão com o Romualdo
 
 Resultado (27/10/2026): `make gold` 24,5s (20,6s no gold), sem aviso, com 18.332 / 940 / 1.880 / 46 / 240 / 3.606 / 144 / 23 linhas. Artilheiros: 2019 Gabriel Barbosa (Flamengo) 25, 2021 Hulk (Atlético-MG) 19, 2022 Germán Cano (Fluminense) 26. Campeões do `resumo_temporada` iguais aos da Fase 1; artilheiro nulo em 2003–2013. `disciplina`: 2014–2024 de `cartoes` e 2025 de `estatisticas` (1.849 / 94), 20 clubes por temporada. `gols_por_minuto` soma 10.820, igual à `silver/gols` em cada temporada. Hash das 8 tabelas igual em 2 execuções. Suíte: 198 testes, 99%, 2min58s.
 
@@ -239,11 +239,11 @@ Resultado (27/10/2026): `make gold` 24,5s (20,6s no gold), sem aviso, com 18.332
 **Descrição:** `aggregate/explain.py` lê a silver real, chama as funções `calcular_*` escolhidas e grava `df.explain("formatted")` em `docs/explain/planos/<tabela>.txt`. Os planos são `classificacao_por_rodada`, `sequencias` e um join com broadcast (`disciplina` ou `artilharia`, o que mostrar `BroadcastHashJoin` com mais clareza). Subcomando `explain` na CLI e alvo `make explain`. `shuffle.partitions` fixo para o texto variar pouco entre execuções.
 
 **Critérios de aceite:**
-- [ ] `make explain` regrava os 3 arquivos
-- [ ] Teste de integração: com a silver das fixtures, `explain` grava arquivos não vazios num diretório temporário (o diretório de saída é parâmetro, com default `docs/explain/planos`)
+- [x] `make explain` regrava os 3 arquivos
+- [x] Teste de integração: com a silver das fixtures, `explain` grava arquivos não vazios num diretório temporário (o diretório de saída é parâmetro, com default `docs/explain/planos`)
 
 **Verificação:**
-- [ ] `make explain && ls docs/explain/planos`
+- [x] `make explain && ls docs/explain/planos`
 
 **Dependências:** T10
 
@@ -256,12 +256,12 @@ Resultado (27/10/2026): `make gold` 24,5s (20,6s no gold), sem aviso, com 18.332
 **Descrição:** Leitura comentada dos 3 planos (exchange e sort da window, as duas windows das sequências sobre a mesma partição, o broadcast, o que o AQE mudou) e a decisão de não particionar o gold. O texto é público e passa pela skill `voz-romualdo`. Depois, conferir os 7 critérios de sucesso da spec nos dados reais e anotar o resultado aqui, como no T10 do lakehouse.
 
 **Critérios de aceite:**
-- [ ] README comenta os 3 planos citando trechos reais dos `.txt`
-- [ ] Seção sobre particionamento com o número real de linhas e arquivos de cada tabela gold
-- [ ] Os 7 critérios de sucesso conferidos e anotados abaixo
+- [x] README comenta os 3 planos citando trechos reais dos `.txt`
+- [x] Seção sobre particionamento com o número real de linhas e arquivos de cada tabela gold
+- [x] Os 7 critérios de sucesso conferidos e anotados abaixo
 
 **Verificação:**
-- [ ] Leitura do Romualdo; `make lint && make test`
+- [x] Leitura do Romualdo; `make lint && make test`
 
 **Dependências:** T11
 
@@ -269,5 +269,17 @@ Resultado (27/10/2026): `make gold` 24,5s (20,6s no gold), sem aviso, com 18.332
 
 **Tamanho:** S
 
+**Resultado (27/10/2026, dados reais):**
+
+1. **OK.** `make gold` levou 25,1s (22,0s no gold) e gravou as 8 tabelas em `data/gold/`, sem aviso.
+2. **OK.** Rodado 2×: contagem e hash de conteúdo (soma de `xxhash64` de todas as colunas) das 8 tabelas idênticos. `test_rodar_duas_vezes_e_igual_a_uma` cobre o mesmo nas fixtures.
+3. **OK.** As 5 checagens de falha passaram nos dados reais (o `make gold` só grava se todas passam).
+4. **OK.** Os 23 campeões de 2003–2025 batem com a lista do checkpoint da Fase 1. Os 13 pontos finais ajustados batem com os totais da spec (2003 Ponte Preta 50, Paysandu 49, Internacional 72, Juventude 53, São Caetano 74, Corinthians 59, Fluminense 52; 2004 São Caetano 53; 2010 Grêmio Prudente 28; 2013 Flamengo 45, Portuguesa 44; 2016 Santa Cruz 28; 2018 Sport 39). Rebaixados: 2003 Fortaleza, Bahia; 2004 Criciúma, Guarani, Vitória, Grêmio; 2010 Vitória, Guarani, Goiás, Grêmio Prudente; 2013 Portuguesa, Vasco, Ponte Preta, Náutico; 2016 Internacional, Figueirense, Santa Cruz, América-MG; 2018 América-MG, Sport, Vitória, Paraná.
+5. **OK.** `classificacao_por_rodada`: 24 × 46 = 1.104 em 2003 e 2004, 22 × 42 = 924 em 2005, 20 × 38 = 760 em 2006–2025 (18.332 no total).
+6. **OK.** `docs/explain/README.md` comenta a classificação (um `Exchange` por `temporada` para as três windows), as sequências (`row_number` e `count` por (`temporada`, `clube`) sobre o mesmo `Sort`/`Exchange`, e a window do gaps-and-islands sem shuffle novo), o broadcast da `disciplina`, o que o AQE mudou (estágios medidos, `coalesced`, `SortMergeJoin` → `BroadcastHashJoin` nas sequências) e a decisão de não particionar. Os `.txt` têm o plano final e o inicial (o `explain` roda depois de executar a consulta). `make explain` leva ~16s.
+7. **OK.** `make lint` limpo; `make test` com 202 testes passando, 99% de cobertura, 3min14s.
+
+Gold (versão atual de cada tabela Delta): 1 arquivo por tabela; 18.332 / 940 / 1.880 / 46 / 240 / 3.606 / 144 / 23 linhas; 164 / 11 / 20 / 7 / 4 / 32 / 3 / 6 KB, ~248 KB no total.
+
 ### Checkpoint: Completo
-- [ ] Revisão com o Romualdo antes de fechar o módulo
+- [x] Revisão com o Romualdo antes de fechar o módulo
