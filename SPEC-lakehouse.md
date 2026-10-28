@@ -75,7 +75,8 @@ src/brasileirao/
 │   ├── spark.py            # get_spark(): builder por ambiente, com Delta configurado
 │   └── temporada.py        # derivação da temporada a partir da data
 └── reference/
-    └── times.csv           # mapa nome_fonte → nome_canonico (versionado, vai no wheel)
+    ├── times.csv           # mapa nome_fonte → nome_canonico (versionado, vai no wheel)
+    └── atletas.csv         # mapa nome_fonte (+ clube) → nome_popular dos artilheiros
 
 tests/
 ├── conftest.py             # fixture de SparkSession por sessão, data root em tmp_path
@@ -138,9 +139,9 @@ Tabelas Delta por caminho, particionadas por `temporada`. Times sempre pelo nome
 
 Mapeamento da fonte: `ID` → `partida_id`, `rodata` → `rodada`, `data` (`dd/MM/yyyy`) → date, `vencedor = "-"` → nulo (empate), `mandante_Estado` → `uf_mandante`, `arena` com `trim` (5 mil linhas vêm com espaço no início). String vazia vira nulo em todas as colunas.
 
-**`silver/gols`**: `partida_id`, `temporada`, `rodada`, `clube` (canônico), `atleta`, `minuto` (int), `acrescimo` (int, `"45+2"` vira 45 e 2; nulo sem acréscimo), `tipo_de_gol` (`Penalty`, `Gol Contra` ou nulo para gol normal).
+**`silver/gols`**: `partida_id`, `temporada`, `rodada`, `clube` (canônico), `atleta` (nome popular, ver regras de domínio), `minuto` (int), `acrescimo` (int, `"45+2"` vira 45 e 2; nulo sem acréscimo), `tipo_de_gol` (`Penalty`, `Gol Contra` ou nulo para gol normal).
 
-**`silver/cartoes`**: `partida_id`, `temporada`, `rodada`, `clube` (canônico), `cartao` (`Amarelo` | `Vermelho`), `atleta`, `num_camisa` (int), `posicao`, `minuto`, `acrescimo`. A `posicao` "Zagueira" (22 linhas) vira "Zagueiro"; vazia vira nulo.
+**`silver/cartoes`**: `partida_id`, `temporada`, `rodada`, `clube` (canônico), `cartao` (`Amarelo` | `Vermelho`), `atleta` (nome popular), `num_camisa` (int), `posicao`, `minuto`, `acrescimo`. A `posicao` "Zagueira" (22 linhas) vira "Zagueiro"; vazia vira nulo.
 
 **`silver/estatisticas`**: uma linha por (`partida_id`, `clube`). Colunas numéricas como int; percentuais (`posse_de_bola`, `precisao_passes`) como double entre 0 e 1 (`"45%"` → 0.45; `"None"` e vazio → nulo). **Linhas sem dado real são descartadas:** a fonte preenche com zeros as partidas sem estatística (antes de 2014 e em 2024), e partida com 0 chutes e 0 passes não existe de verdade. A regra é descartar a linha quando `chutes`, `passes` e `posse_de_bola` estão todos zerados ou nulos.
 
@@ -150,6 +151,7 @@ As três tabelas filhas são escritas com overwrite de partição (`replaceWhere
 
 - **Temporada.** O CSV não tem temporada, então ela sai da data. Atenção à temporada 2020, que terminou em fevereiro de 2021 por causa da pandemia: partidas de jan–mar/2021 pertencem a 2020 (na fonte são 112, em jan e fev, o que fecha 2020 e 2021 com 380 cada). A regra fica em `utils/temporada.py`, com teste dedicado.
 - **Nomes dos times.** `reference/times.csv` com colunas `nome_fonte,nome_canonico,uf`. Todo nome que aparece na fonte (mandante, visitante, vencedor, clube) precisa estar lá. A versão 18 já vem consistente: são 46 nomes, sem acento e sem alias ("Athletico-PR" até em 2003). Por isso o mapa cumpre dois papéis. O primeiro é dar o nome de exibição com acento ("Gremio" → "Grêmio", "Sao Paulo" → "São Paulo") e a UF. O segundo é proteger contra alias que apareça numa versão futura da fonte.
+- **Nomes dos atletas** (adicionado em 28/10/2026). A fonte usa o nome do registro do jogador: às vezes é o apelido (`Hulk`), às vezes o nome civil (`Mário Sérgio Santos Costa` = Marinho), e a grafia pode mudar entre temporadas (`Gabriel Barbosa Almeida` em 2022). O seed `reference/atletas.csv` (`nome_fonte,clube,nome_popular`) troca esse nome pelo nome que o torcedor reconhece, em gols e cartões, depois de canonizar o clube. Linha com `clube` vale só praquele clube e ganha da linha geral. O mesmo seed separa homônimos que a fonte junta num nome só: o jogador famoso fica sem sufixo e o outro vira "Apelido (Clube)" (Fred do Grêmio 2016, Paulinho do Vasco 2023). Sem isso, os gols dele somariam no artilheiro. Nome sem mapeamento continua como veio da fonte, sem ir pra qualidade. Escopo: os artilheiros do top 10 de cada temporada e as outras grafias deles. O seed não tem temporada, então um homônimo marcado por clube também pega o jogador famoso se ele passou por aquele clube (Paulinho no Vasco 2017 aparece como "Paulinho (Vasco)").
 - **Temporada em andamento.** Fica fora de bronze e silver. É a maior temporada da fonte quando ela tem menos partidas que o esperado. `--todas` ignora essa temporada e `--temporada N` com ela dá erro explicando o motivo.
 - **Deduplicação.** Em `partidas`, se o mesmo `partida_id` aparecer mais de uma vez, fica o registro de `_ingested_at` mais recente.
 
