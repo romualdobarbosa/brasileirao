@@ -154,12 +154,12 @@ Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.8
 **Descrição:** `calcular_disciplina(partidas, cartoes, estatisticas)`: 2014–2024 de `cartoes` e 2025 de `estatisticas`, com `fonte`, `jogos` do clube na temporada e as médias com 2 casas. A regra de qual temporada usa qual fonte é "temporada sem nenhuma linha em `cartoes` usa `estatisticas`", sem ano fixo no código. Aviso (não falha) para clube sem partida na temporada.
 
 **Critérios de aceite:**
-- [ ] Fixture com uma temporada que tem cartões e uma que só tem estatísticas: `fonte` certa em cada uma
-- [ ] Clube sem nenhum cartão na temporada aparece com 0, não some
-- [ ] Temporada antes de 2014 não aparece
+- [x] Fixture com uma temporada que tem cartões e uma que só tem estatísticas: `fonte` certa em cada uma
+- [x] Clube sem nenhum cartão na temporada aparece com 0, não some
+- [x] Temporada antes de 2014 não aparece
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_disciplina.py tests/integration/test_gold.py`
+- [x] `uv run pytest tests/unit/aggregate/test_disciplina.py tests/integration/test_gold.py`
 
 **Dependências:** T3
 
@@ -172,12 +172,12 @@ Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.8
 **Descrição:** `calcular_artilharia(gols)`: uma linha por (`temporada`, `atleta`), sem gol contra, `clubes` em ordem alfabética separados por `", "`, `penaltis` e `posicao` com `rank()`.
 
 **Critérios de aceite:**
-- [ ] Gol contra não conta para ninguém
-- [ ] Atleta com gols por dois clubes: uma linha, `clubes = "A, B"`, gols somados
-- [ ] Empate no topo divide a posição 1, e o próximo fica em 3
+- [x] Gol contra não conta para ninguém
+- [x] Atleta com gols por dois clubes: uma linha, `clubes = "A, B"`, gols somados
+- [x] Empate no topo divide a posição 1, e o próximo fica em 3
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_artilharia.py tests/integration/test_gold.py`
+- [x] `uv run pytest tests/unit/aggregate/test_artilharia.py tests/integration/test_gold.py`
 
 **Dependências:** T3
 
@@ -190,13 +190,13 @@ Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.8
 **Descrição:** `calcular_gols_por_minuto(gols, partidas)`: faixa pelo `minuto`, `lado` pelo clube que marcou contra o mandante da partida, `gols` e `pct_gols`. Inclui a checagem de falha da spec (total de gols da tabela = gols da silver na temporada).
 
 **Critérios de aceite:**
-- [ ] Gol aos 45+2 em `31-45+`, aos 90+3 em `76-90+`, aos 0 em `0-15`, aos 46 em `46-60`
-- [ ] Gol contra entra no `lado` do beneficiado
-- [ ] `pct_gols` soma 1 por temporada (tolerância de arredondamento)
-- [ ] Teste da checagem com um DataFrame que perde um gol
+- [x] Gol aos 45+2 em `31-45+`, aos 90+3 em `76-90+`, aos 0 em `0-15`, aos 46 em `46-60`
+- [x] Gol contra entra no `lado` do beneficiado
+- [x] `pct_gols` soma 1 por temporada (tolerância de arredondamento)
+- [x] Teste da checagem com um DataFrame que perde um gol
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_gols_por_minuto.py tests/unit/aggregate/test_qualidade.py tests/integration/test_gold.py`
+- [x] `uv run pytest tests/unit/aggregate/test_gols_por_minuto.py tests/unit/aggregate/test_qualidade.py tests/integration/test_gold.py`
 
 **Dependências:** T3
 
@@ -209,13 +209,13 @@ Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.8
 **Descrição:** `calcular_resumo(partidas, classificacao, artilharia)`: uma linha por temporada com os totais, percentuais, campeão, vice, `rebaixados` pela regra do T1 (ordem da classificação, separados por `", "`) e artilheiro (empate junta os nomes; nulo sem dado de gols).
 
 **Critérios de aceite:**
-- [ ] Na fixture, campeão, vice e rebaixados batem com a classificação final (com ajuste)
-- [ ] `pct_vitoria_mandante + pct_empate + pct_vitoria_visitante = 1` (tolerância de arredondamento)
-- [ ] Temporada sem gols na silver de gols: `artilheiro` e `gols_artilheiro` nulos
-- [ ] Artilheiros empatados: os dois nomes em ordem alfabética
+- [x] Na fixture, campeão, vice e rebaixados batem com a classificação final (com ajuste)
+- [x] `pct_vitoria_mandante + pct_empate + pct_vitoria_visitante = 1` (tolerância de arredondamento)
+- [x] Temporada sem gols na silver de gols: `artilheiro` e `gols_artilheiro` nulos
+- [x] Artilheiros empatados: os dois nomes em ordem alfabética
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_resumo.py tests/integration/test_gold.py`
+- [x] `uv run pytest tests/unit/aggregate/test_resumo.py tests/integration/test_gold.py`
 
 **Dependências:** T8
 
@@ -224,9 +224,11 @@ Resultado (27/10/2026): `make gold` 18,9s (15,0s no gold) com 18.332 / 940 / 1.8
 **Tamanho:** S
 
 ### Checkpoint: Gold completo
-- [ ] `make gold` nos dados reais grava as 8 tabelas em menos de 2 minutos, com todas as checagens passando
-- [ ] Amostras: artilheiro de 2 temporadas e o campeão no `resumo_temporada` batem com o oficial; `disciplina` de 2025 vem de `estatisticas`
+- [x] `make gold` nos dados reais grava as 8 tabelas em menos de 2 minutos, com todas as checagens passando
+- [x] Amostras: artilheiro de 2 temporadas e o campeão no `resumo_temporada` batem com o oficial; `disciplina` de 2025 vem de `estatisticas`
 - [ ] Revisão com o Romualdo
+
+Resultado (27/10/2026): `make gold` 24,5s (20,6s no gold), sem aviso, com 18.332 / 940 / 1.880 / 46 / 240 / 3.606 / 144 / 23 linhas. Artilheiros: 2019 Gabriel Barbosa (Flamengo) 25, 2021 Hulk (Atlético-MG) 19, 2022 Germán Cano (Fluminense) 26. Campeões do `resumo_temporada` iguais aos da Fase 1; artilheiro nulo em 2003–2013. `disciplina`: 2014–2024 de `cartoes` e 2025 de `estatisticas` (1.849 / 94), 20 clubes por temporada. `gols_por_minuto` soma 10.820, igual à `silver/gols` em cada temporada. Hash das 8 tabelas igual em 2 execuções. Suíte: 198 testes, 99%, 2min58s.
 
 ---
 

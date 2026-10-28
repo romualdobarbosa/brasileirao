@@ -128,3 +128,38 @@ def checar_classificacao(
         for titulo, exemplos in checagens
         if exemplos
     ]
+
+
+def avisos_disciplina(disciplina: DataFrame) -> list[str]:
+    """Clube com cartão e sem partida na temporada. É aviso, não reprova o gold."""
+    linhas = (
+        disciplina.where(F.col("jogos") == 0)
+        .orderBy("temporada", "clube")
+        .limit(LIMITE_EXEMPLOS)
+        .collect()
+    )
+    if not linhas:
+        return []
+    exemplos = ", ".join(f"{r['temporada']} {r['clube']}" for r in linhas)
+    return [f"disciplina: clube sem partida na temporada: {exemplos}"]
+
+
+def checar_gols_por_minuto(gols_por_minuto: DataFrame, gols: DataFrame) -> list[str]:
+    """Temporadas em que o total de `gols_por_minuto` difere do número de linhas de
+    `silver/gols`."""
+    na_tabela = gols_por_minuto.groupBy("temporada").agg(F.sum("gols").alias("tabela"))
+    na_silver = gols.groupBy("temporada").agg(F.count(F.lit(1)).alias("silver"))
+    linhas = (
+        na_tabela.join(na_silver, on="temporada", how="full")
+        .where(~F.col("tabela").eqNullSafe(F.col("silver")))
+        .orderBy("temporada")
+        .limit(LIMITE_EXEMPLOS)
+        .collect()
+    )
+    if not linhas:
+        return []
+    exemplos = ", ".join(
+        f"{r['temporada']}: {r['tabela'] or 0} na tabela, {r['silver'] or 0} na silver"
+        for r in linhas
+    )
+    return [f"gols_por_minuto: total de gols ≠ silver/gols: {exemplos}"]

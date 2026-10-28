@@ -10,10 +10,14 @@ from pyspark.sql import DataFrame, SparkSession
 
 from brasileirao import config
 from brasileirao.aggregate import qualidade
+from brasileirao.aggregate.artilharia import calcular_artilharia
 from brasileirao.aggregate.classificacao import calcular_classificacao
 from brasileirao.aggregate.desempenho import calcular_desempenho
+from brasileirao.aggregate.disciplina import calcular_disciplina
+from brasileirao.aggregate.gols_por_minuto import calcular_gols_por_minuto
 from brasileirao.aggregate.ranking import calcular_ranking
 from brasileirao.aggregate.referencia import carregar_ajustes
+from brasileirao.aggregate.resumo import calcular_resumo
 from brasileirao.aggregate.sequencias import calcular_sequencias
 from brasileirao.transform.silver import carregar_mapa_times
 
@@ -30,13 +34,15 @@ class TabelaGold:
 
     `entradas` e `entradas_checagem` nomeiam o que `calcular` e `checar` recebem, em ordem:
     `silver/<tabela>`, uma referência (`ajustes`, `mapa_times`) ou uma tabela gold calculada
-    antes no registro. `checar` recebe o DataFrame calculado e devolve os problemas.
+    antes no registro. `checar` recebe o DataFrame calculado e devolve os problemas, que
+    reprovam o gold; `avisar` recebe só o DataFrame calculado e devolve avisos para o log.
     """
 
     calcular: Callable[..., DataFrame]
     entradas: tuple[str, ...]
     checar: Callable[..., list[str]] | None = None
     entradas_checagem: tuple[str, ...] = ()
+    avisar: Callable[[DataFrame], list[str]] | None = None
 
 
 # Em ordem de dependência: tabela que usa outra vem depois dela.
@@ -50,6 +56,21 @@ TABELAS: dict[str, TabelaGold] = {
     "desempenho_mandante_visitante": TabelaGold(calcular_desempenho, ("silver/partidas",)),
     "sequencias": TabelaGold(calcular_sequencias, ("silver/partidas",)),
     "ranking_historico": TabelaGold(calcular_ranking, ("classificacao_por_rodada",)),
+    "disciplina": TabelaGold(
+        calcular_disciplina,
+        ("silver/partidas", "silver/cartoes", "silver/estatisticas"),
+        avisar=qualidade.avisos_disciplina,
+    ),
+    "artilharia": TabelaGold(calcular_artilharia, ("silver/gols",)),
+    "gols_por_minuto": TabelaGold(
+        calcular_gols_por_minuto,
+        ("silver/gols", "silver/partidas"),
+        qualidade.checar_gols_por_minuto,
+        ("silver/gols",),
+    ),
+    "resumo_temporada": TabelaGold(
+        calcular_resumo, ("silver/partidas", "classificacao_por_rodada", "artilharia")
+    ),
 }
 
 
@@ -115,6 +136,10 @@ def processar_gold(spark: SparkSession) -> dict[str, int]:
     ]
     if problemas:
         raise qualidade.QualidadeGoldError(problemas)
+    for nome, tabela in TABELAS.items():
+        if tabela.avisar is not None:
+            for aviso in tabela.avisar(calculadas[nome]):
+                log.warning(aviso)
     linhas = {}
     for nome, df in calculadas.items():
         gravar(df, nome)

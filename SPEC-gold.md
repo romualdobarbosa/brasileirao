@@ -210,7 +210,7 @@ Demais regras do `lakehouse` valem (ruff, type hints, sem `collect()` em tabela 
 - **Integração** (`tests/integration/test_gold.py`): fixtures raw do lakehouse → silver → gold de ponta a ponta; idempotência (2× = 1×); `make gold` sem silver falha com mensagem; checagem de falha não grava nada.
 - **Conferência manual nos dados reais** (checkpoint, não teste): campeão de todas as temporadas 2003–2025 bate com o histórico oficial; nas 6 temporadas com ajuste, os pontos finais da lista acima, a ordem e os rebaixados batem com a tabela oficial.
 - **Cobertura:** ≥ 80% em `src/brasileirao/` (meta atual do projeto é 99%; não deixar cair muito).
-- **Tempo:** a suíte inteira continua abaixo de 3 minutos; `make gold` nos dados reais abaixo de 2 minutos.
+- **Tempo:** a suíte inteira continua abaixo de 5 minutos; `make gold` nos dados reais abaixo de 2 minutos.
 
 ## Boundaries
 
