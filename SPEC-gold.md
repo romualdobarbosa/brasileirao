@@ -183,21 +183,24 @@ Igual ao `lakehouse`: funções puras `DataFrame → DataFrame` separadas de I/O
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
-ACUMULADO = (
-    Window.partitionBy("temporada", "clube")
-    .orderBy("rodada")
-    .rowsBetween(Window.unboundedPreceding, Window.currentRow)
-)
-
 
 def acumular(jogos_por_rodada: DataFrame) -> DataFrame:
     """Soma acumulada por rodada. A grade já tem linha zerada nas rodadas sem jogo."""
+    acumulado = (
+        Window.partitionBy("temporada", "clube")
+        .orderBy("rodada")
+        .rowsBetween(Window.unboundedPreceding, Window.currentRow)
+    )
     metricas = ["jogos", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra"]
     return jogos_por_rodada.select(
-        "temporada", "rodada", "clube",
-        *[F.sum(m).over(ACUMULADO).alias(m) for m in metricas],
+        "temporada",
+        "rodada",
+        "clube",
+        *[F.sum(m).over(acumulado).alias(m) for m in metricas],
     )
 ```
+
+A `Window` é montada dentro da função: em nível de módulo, o PySpark 4.2 exige uma sessão ativa já no import.
 
 Demais regras do `lakehouse` valem (ruff, type hints, sem `collect()` em tabela inteira fora de teste, caminhos via `config.py`).
 

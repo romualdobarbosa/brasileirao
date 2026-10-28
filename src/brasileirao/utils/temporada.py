@@ -25,3 +25,10 @@ def partidas_esperadas(temporada: int) -> int:
     if temporada == 2016:
         return 379
     return 380
+
+
+def rebaixados_por_temporada(temporada: int) -> int:
+    """Nº de rebaixados: 2 em 2003, 4 a partir de 2004."""
+    if temporada < 2003:
+        raise ValueError(f"Temporada {temporada} fora da fonte, que começa em 2003")
+    return 2 if temporada == 2003 else 4

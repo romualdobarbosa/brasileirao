@@ -1,7 +1,11 @@
 import pytest
 from pyspark.sql import functions as F
 
-from brasileirao.utils.temporada import derivar_temporada, partidas_esperadas
+from brasileirao.utils.temporada import (
+    derivar_temporada,
+    partidas_esperadas,
+    rebaixados_por_temporada,
+)
 
 
 @pytest.mark.parametrize(
@@ -38,3 +42,13 @@ def test_temporada_e_int(spark):
 )
 def test_partidas_esperadas(temporada, esperado):
     assert partidas_esperadas(temporada) == esperado
+
+
+@pytest.mark.parametrize(("temporada", "esperado"), [(2003, 2), (2004, 4), (2025, 4)])
+def test_rebaixados_por_temporada(temporada, esperado):
+    assert rebaixados_por_temporada(temporada) == esperado
+
+
+def test_rebaixados_antes_de_2003():
+    with pytest.raises(ValueError, match="2002"):
+        rebaixados_por_temporada(2002)

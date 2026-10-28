@@ -1,4 +1,4 @@
-"""CLI: `python -m brasileirao.pipeline lakehouse --temporada N | --todas`."""
+"""CLI: `python -m brasileirao.pipeline lakehouse --temporada N | --todas` e `... gold`."""
 
 import argparse
 import logging
@@ -7,6 +7,8 @@ import time
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
+from brasileirao.aggregate import gold
+from brasileirao.aggregate import qualidade as qualidade_gold
 from brasileirao.ingestion import bronze
 from brasileirao.transform import qualidade, silver
 from brasileirao.utils.spark import get_spark
@@ -99,12 +101,21 @@ def main(argv: list[str] | None = None) -> None:
     alvo = cmd.add_mutually_exclusive_group(required=True)
     alvo.add_argument("--temporada", type=int, help="processa só essa temporada")
     alvo.add_argument("--todas", action="store_true", help="todas as temporadas encerradas")
+    comandos.add_parser("gold", help="silver → gold, todas as tabelas com overwrite")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
-        lakehouse(get_spark(), None if args.todas else args.temporada)
-    except (TemporadaInvalidaError, qualidade.QualidadeError) as erro:
+        if args.comando == "gold":
+            gold.processar_gold(get_spark())
+        else:
+            lakehouse(get_spark(), None if args.todas else args.temporada)
+    except (
+        TemporadaInvalidaError,
+        qualidade.QualidadeError,
+        qualidade_gold.QualidadeGoldError,
+        gold.SilverAusenteError,
+    ) as erro:
         raise SystemExit(f"Erro: {erro}") from erro
 
 

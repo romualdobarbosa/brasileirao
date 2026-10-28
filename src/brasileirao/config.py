@@ -4,7 +4,7 @@ import os
 
 DATA_ROOT_PADRAO = "./data"
 SPARK_ENV_PADRAO = "local"
-CAMADAS = ("raw", "bronze", "silver")
+CAMADAS = ("raw", "bronze", "silver", "gold")
 
 
 def data_root() -> str:

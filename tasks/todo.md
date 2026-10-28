@@ -13,14 +13,14 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 **Descrição:** Preparar o terreno: camada `gold` em `config.CAMADAS`, `rebaixados_por_temporada(temporada)` em `utils/temporada.py` (2 em 2003, 4 a partir de 2004), `reference/ajustes_pontos.csv` com as 14 linhas da spec e um leitor `carregar_ajustes(spark)` no pacote `aggregate`, no mesmo molde do `carregar_mapa_times`.
 
 **Critérios de aceite:**
-- [ ] `config.caminho_tabela("gold", "x")` funciona; camada desconhecida continua dando erro
-- [ ] `rebaixados_por_temporada` testado para 2003, 2004 e 2025; temporada antes de 2003 dá erro
-- [ ] `ajustes_pontos.csv` com colunas `temporada,clube,pontos,motivo,fonte`, as 14 linhas da tabela da spec, nomes canônicos e URL da página da temporada na Wikipédia
-- [ ] `carregar_ajustes` devolve DataFrame com `temporada int, clube string, pontos int, motivo string, fonte string`
-- [ ] Teste unitário: todo `clube` do CSV existe como `nome_canonico` em `times.csv`; a soma por temporada e clube bate com os totais da spec (ex.: Ponte Preta 2003 = −1)
+- [x] `config.caminho_tabela("gold", "x")` funciona; camada desconhecida continua dando erro
+- [x] `rebaixados_por_temporada` testado para 2003, 2004 e 2025; temporada antes de 2003 dá erro
+- [x] `ajustes_pontos.csv` com colunas `temporada,clube,pontos,motivo,fonte`, as 14 linhas da tabela da spec, nomes canônicos e URL da página da temporada na Wikipédia
+- [x] `carregar_ajustes` devolve DataFrame com `temporada int, clube string, pontos int, motivo string, fonte string`
+- [x] Teste unitário: todo `clube` do CSV existe como `nome_canonico` em `times.csv`; a soma por temporada e clube bate com os totais da spec (ex.: Ponte Preta 2003 = −1)
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/test_config.py tests/unit/test_temporada.py tests/unit/aggregate/`
+- [x] `uv run pytest tests/unit/test_config.py tests/unit/test_temporada.py tests/unit/aggregate/`
 
 **Dependências:** nenhuma
 
@@ -35,15 +35,15 @@ Toda tarefa só conta como feita com `make lint` e `make test` passando.
 Fixture: minicampeonato de 4 times, turno e returno (12 partidas, 6 rodadas), num módulo de fixtures de `tests/unit/aggregate/` reaproveitável pelas próximas tarefas. A tabela final esperada é calculada à mão e escrita no teste.
 
 **Critérios de aceite:**
-- [ ] 4 × 6 = 24 linhas; `posicao` 1..4 sem repetição em toda rodada
-- [ ] Partida da rodada 2 jogada depois da rodada 4: entra na rodada 2 (a classificação segue a rodada) e o time tem linha nas 6 rodadas
-- [ ] Empate em pontos decidido por vitórias num caso e por saldo em outro
-- [ ] Ajuste negativo aparece só na rodada 6, muda a posição final e não entra no `aproveitamento`
-- [ ] `ultimos_5` certo na rodada 1 (`"V"`, uma letra) e na rodada 6 (5 letras, mais antigo primeiro)
-- [ ] `aproveitamento` com 4 casas
+- [x] 4 × 6 = 24 linhas; `posicao` 1..4 sem repetição em toda rodada
+- [x] Partida da rodada 2 jogada depois da rodada 4: entra na rodada 2 (a classificação segue a rodada) e o time tem linha nas 6 rodadas
+- [x] Empate em pontos decidido por vitórias num caso e por saldo em outro
+- [x] Ajuste negativo aparece só na rodada 6, muda a posição final e não entra no `aproveitamento`
+- [x] `ultimos_5` certo na rodada 1 (`"V"`, uma letra) e na rodada 6 (5 letras, mais antigo primeiro)
+- [x] `aproveitamento` com 4 casas
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/aggregate/test_classificacao.py`
+- [x] `uv run pytest tests/unit/aggregate/test_classificacao.py`
 
 **Dependências:** T1
 
@@ -56,15 +56,15 @@ Fixture: minicampeonato de 4 times, turno e returno (12 partidas, 6 rodadas), nu
 **Descrição:** `aggregate/gold.py` com o registro ordenado de tabelas (por enquanto só `classificacao_por_rodada`), leitura da silver (erro claro se não existir), cálculo, checagens e gravação com overwrite (sem particionar, `overwriteSchema` desligado). `aggregate/qualidade.py` com as checagens de falha da classificação e dos ajustes: posição, jogos na última rodada (exceção de 2016), Σ vitórias = Σ derrotas, clube do ajuste sem jogo na temporada. Subcomando `gold` na CLI e alvo `make gold`.
 
 **Critérios de aceite:**
-- [ ] `python -m brasileirao.pipeline gold` grava `gold/classificacao_por_rodada`; sem silver, falha com mensagem que manda rodar `make lakehouse`
-- [ ] Cada checagem de falha tem teste unitário com um DataFrame que a dispara
-- [ ] Integração: fixtures raw do lakehouse → silver → gold; rodar `gold` 2× deixa o conteúdo igual a 1×
-- [ ] Integração: com uma checagem forçada a falhar, nenhuma tabela gold é gravada
-- [ ] Resumo no log: linhas por tabela e tempo total
+- [x] `python -m brasileirao.pipeline gold` grava `gold/classificacao_por_rodada`; sem silver, falha com mensagem que manda rodar `make lakehouse`
+- [x] Cada checagem de falha tem teste unitário com um DataFrame que a dispara
+- [x] Integração: fixtures raw do lakehouse → silver → gold; rodar `gold` 2× deixa o conteúdo igual a 1×
+- [x] Integração: com uma checagem forçada a falhar, nenhuma tabela gold é gravada
+- [x] Resumo no log: linhas por tabela e tempo total
 
 **Verificação:**
-- [ ] `make lint && make test`
-- [ ] `make gold` nos dados reais (dados em `data/silver/`)
+- [x] `make lint && make test`
+- [x] `make gold` nos dados reais (dados em `data/silver/`)
 
 **Dependências:** T2
 
@@ -73,11 +73,13 @@ Fixture: minicampeonato de 4 times, turno e returno (12 partidas, 6 rodadas), nu
 **Tamanho:** M
 
 ### Checkpoint: Classificação nos dados reais
-- [ ] Linhas por temporada: 24 × 46 (2003–04), 22 × 42 (2005), 20 × 38 (2006–2025)
-- [ ] Campeão de 2003–2025 bate com o oficial: 2003 Cruzeiro, 2004 Santos, 2005 Corinthians, 2006–08 São Paulo, 2009 Flamengo, 2010 Fluminense, 2011 Corinthians, 2012 Fluminense, 2013–14 Cruzeiro, 2015 Corinthians, 2016 Palmeiras, 2017 Corinthians, 2018 Palmeiras, 2019–20 Flamengo, 2021 Atlético-MG, 2022–23 Palmeiras, 2024 Botafogo-RJ, 2025 Flamengo
-- [ ] Pontos finais dos clubes ajustados e rebaixados de 2003, 2004, 2010, 2013, 2016 e 2018 batem com a spec
-- [ ] `make gold` 2× sem mudança de conteúdo; tempo anotado
+- [x] Linhas por temporada: 24 × 46 (2003–04), 22 × 42 (2005), 20 × 38 (2006–2025)
+- [x] Campeão de 2003–2025 bate com o oficial: 2003 Cruzeiro, 2004 Santos, 2005 Corinthians, 2006–08 São Paulo, 2009 Flamengo, 2010 Fluminense, 2011 Corinthians, 2012 Fluminense, 2013–14 Cruzeiro, 2015 Corinthians, 2016 Palmeiras, 2017 Corinthians, 2018 Palmeiras, 2019–20 Flamengo, 2021 Atlético-MG, 2022–23 Palmeiras, 2024 Botafogo-RJ, 2025 Flamengo
+- [x] Pontos finais dos clubes ajustados e rebaixados de 2003, 2004, 2010, 2013, 2016 e 2018 batem com a spec
+- [x] `make gold` 2× sem mudança de conteúdo; tempo anotado
 - [ ] Revisão com o Romualdo
+
+Resultado (27/10/2026): 18.332 linhas, N × rodadas em todas as 23 temporadas; os 23 campeões batem; os 13 pontos ajustados da spec e os rebaixados das 6 temporadas batem (ordem inclusa); hash do conteúdo igual em 2 execuções; `make gold` 14,5s (10,7s no gold). `make lint` só reprova o bloco de código do `SPEC-gold.md` (já reprovava no f69ac9a).
 
 ---
 

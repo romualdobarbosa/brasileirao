@@ -15,9 +15,14 @@ def test_data_root_por_env_sem_barra_final(monkeypatch):
     assert config.caminho_tabela("silver", "gols") == "s3://bucket/lake/silver/gols"
 
 
+def test_camada_gold(monkeypatch):
+    monkeypatch.setenv("BRASILEIRAO_DATA_ROOT", "/lake")
+    assert config.caminho_tabela("gold", "x") == "/lake/gold/x"
+
+
 def test_camada_desconhecida():
-    with pytest.raises(ValueError, match="gold"):
-        config.caminho_camada("gold")
+    with pytest.raises(ValueError, match="platina"):
+        config.caminho_camada("platina")
 
 
 def test_spark_env(monkeypatch):

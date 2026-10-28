@@ -1,4 +1,4 @@
-.PHONY: setup download lakehouse test lint fmt
+.PHONY: setup download lakehouse gold test lint fmt
 
 setup:
 	uv sync --all-groups
@@ -12,6 +12,9 @@ ifdef TEMPORADA
 else
 	uv run python -m brasileirao.pipeline lakehouse --todas
 endif
+
+gold:
+	uv run python -m brasileirao.pipeline gold
 
 test:
 	uv run pytest --cov=brasileirao --cov-report=term-missing
