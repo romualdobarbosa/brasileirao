@@ -73,8 +73,9 @@ serving/                       # tudo o que vai pra VM
 ├── Caddyfile                  # <subdominio>.duckdns.org → metabase:3000
 ├── .env.example               # senhas e nomes, sem valor real
 └── initdb/
-    ├── 01-papeis.sql          # papéis carga, leitor e metabase; bancos brasileirao e metabase
-    └── 02-gold.sql            # schemas gold e gold_carga; DDL das 8 tabelas com PK; grants
+    ├── 01-papeis.sql          # papéis carga, leitor e metabase (sem senha); banco metabase
+    ├── 02-gold.sql            # schemas gold e gold_carga; DDL das 8 tabelas com PK; grants
+    └── 03-senhas.sh           # define as senhas dos papéis a partir do ambiente
 
 docs/serving/
 ├── README.md                  # arquitetura do serving, segurança, como a carga funciona
