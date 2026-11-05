@@ -103,13 +103,13 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 **Descrição:** O job `test` do `ci.yml` ganha um service container `postgres` (mesma tag do compose), com healthcheck, e `BRASILEIRAO_PG_TESTE_URL` no ambiente do `make test`. A chave do cache do Ivy passa a incluir a versão do driver JDBC além da do `delta-spark`.
 
 **Critérios de aceite:**
-- [ ] `actionlint` limpo
+- [x] `actionlint` limpo
 - [ ] No CI, os testes `postgres` rodam (não aparecem como pulados) e passam
 - [ ] O tempo do job `test` sobe pouco (registrar antes e depois)
-- [ ] Nenhum segredo novo no repositório: a senha do Postgres do CI é descartável e fica no próprio workflow
+- [x] Nenhum segredo novo no repositório: a senha do Postgres do CI é descartável e fica no próprio workflow
 
 **Verificação:**
-- [ ] `actionlint` local. O push e a conferência da execução ficam com a sessão principal (o agente não commita)
+- [x] `actionlint` local. O push e a conferência da execução ficam com a sessão principal (o agente não commita)
 
 **Dependências:** T3
 
@@ -122,13 +122,13 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 **Descrição:** Para cada pergunta da seção "Dashboard" da spec: aba, pergunta, tabela, colunas, tipo de gráfico, filtros ligados (`temporada`, `rodada`, `clube`) e o SQL equivalente, rodado no Postgres local como `leitor` contra o gold real. Inclui o cartão de notas (buracos da fonte, W.O. de 2016, Barueri e Grêmio Prudente) como rascunho, marcado para passar pela `voz-romualdo` na Fase 5, e um passo a passo curto de como montar o dashboard e ligar o Public Sharing.
 
 **Critérios de aceite:**
-- [ ] Os 12 SQLs rodam como `leitor` sem erro e devolvem linhas para 2025 (e 2019 nos de 2014+)
-- [ ] A classificação da última rodada de 2025 no SQL bate com a tabela final do gold
-- [ ] Os filtros do Metabase aparecem no SQL como variáveis (`{{temporada}}`, `{{rodada}}`), com o padrão definido na spec
-- [ ] Nenhum card usa tabela fora de `gold`
+- [x] Os 12 SQLs rodam como `leitor` sem erro e devolvem linhas para 2025 (e 2019 nos de 2014+)
+- [x] A classificação da última rodada de 2025 no SQL bate com a tabela final do gold
+- [x] Os filtros do Metabase aparecem no SQL como variáveis (`{{temporada}}`, `{{rodada}}`), com o padrão definido na spec
+- [x] Nenhum card usa tabela fora de `gold`
 
 **Verificação:**
-- [ ] Saída de cada SQL (primeiras linhas) colada no relatório
+- [x] Saída de cada SQL (primeiras linhas) colada no relatório
 
 **Dependências:** T3
 
@@ -148,14 +148,14 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 - `docs/serving/oracle.md`: passo a passo da Fase 3. Conta e escolha da home region; Pay As You Go e orçamento com o menor alerta aceito; como achar o que gerou custo e parar a VM; VM A1 (conferir o limite Always Free no console, shape sugerido, Ubuntu 24.04 ARM, chave SSH); security list só com 22/80/443; `iptables` da imagem Ubuntu da Oracle; instalação do Docker com o plugin compose; Docker no boot; DuckDNS (subdomínio e IP); criação do `.env` na VM; primeiro `make deploy`; conferência com `dig` antes do Caddy pedir o certificado; checagens de fora (`nc -zv` em 5432, 3000, 80, 443).
 
 **Critérios de aceite:**
-- [ ] `docker compose -f serving/docker-compose.yml --profile publico config` válido; sem o profile, o Caddy não sobe
-- [ ] `make carga-remota` testado contra `localhost` (com `VM_HOST=localhost`, se houver `sshd` local; senão revisão do alvo e do `trap` na sessão principal): o túnel fecha em sucesso e em falha
-- [ ] `make -n deploy` e `make -n backup-metabase` mostram os comandos certos
-- [ ] `oracle.md` cobre todos os itens acima, com os comandos prontos pra copiar
-- [ ] Nenhum IP, senha ou domínio real versionado
+- [x] `docker compose -f serving/docker-compose.yml --profile publico config` válido; sem o profile, o Caddy não sobe
+- [x] `make carga-remota` testado contra `localhost` (com `VM_HOST=localhost`, se houver `sshd` local; senão revisão do alvo e do `trap` na sessão principal): o túnel fecha em sucesso e em falha
+- [x] `make -n deploy` e `make -n backup-metabase` mostram os comandos certos
+- [x] `oracle.md` cobre todos os itens acima, com os comandos prontos pra copiar
+- [x] Nenhum IP, senha ou domínio real versionado
 
 **Verificação:**
-- [ ] Saídas do `compose config` e dos `make -n` no relatório
+- [x] Saídas do `compose config` e dos `make -n` no relatório
 
 **Dependências:** T3
 

@@ -1,0 +1,5 @@
+# HTTPS automático (Let's Encrypt) para o Metabase. DOMINIO vem do .env da VM,
+# ex.: meu-subdominio.duckdns.org. O certificado fica no volume caddy_dados.
+{$DOMINIO} {
+	reverse_proxy metabase:3000
+}

@@ -1,5 +1,6 @@
 # Sem profile: Postgres e Metabase locais, só em 127.0.0.1.
 # Uso: `make serving-up` / `make serving-down` (lê o .env da raiz).
+# Com `--profile publico` (na VM, via `make deploy`): + Caddy nas portas 80 e 443.
 name: brasileirao
 
 services:
@@ -48,5 +49,26 @@ services:
       retries: 30
       start_period: 60s
 
+  caddy:
+    image: caddy:2.11.8
+    profiles: [publico]
+    restart: unless-stopped
+    depends_on:
+      metabase:
+        condition: service_healthy
+    environment:
+      # `:-` e não `:?`: o compose interpola até serviço fora do profile, e o local não tem
+      # DOMINIO. Vazio, o Caddyfile não é válido e o Caddy não sobe.
+      DOMINIO: ${DOMINIO:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro,z
+      - caddy_dados:/data
+      - caddy_config:/config
+
 volumes:
   postgres:
+  caddy_dados:
+  caddy_config:
