@@ -232,21 +232,31 @@ def descartar_estatisticas_sem_dado(estatisticas: DataFrame) -> DataFrame:
 def padronizar_atletas(filha: DataFrame, mapa: DataFrame) -> DataFrame:
     """Troca o nome do atleta na fonte pelo popular (`Gabriel Barbosa` → `Gabigol`).
 
-    Linha do mapa com `clube` (canônico) vale só para aquele clube e ganha da linha sem
-    clube; é assim que o homônimo desconhecido ganha sufixo (`Fred (Goiás)`). Diferente dos
-    times, nome sem mapeamento continua como veio da fonte.
+    Vale a linha mais específica do mapa: clube e temporada, depois só clube (canônico),
+    depois a geral. É assim que o homônimo desconhecido ganha sufixo (`Fred (Goiás)`) e que
+    dois homônimos do mesmo clube em épocas diferentes se separam (`Leandro` do Palmeiras
+    em 2015 é o Leandro Pereira). Diferente dos times, nome sem mapeamento continua como veio
+    da fonte.
     """
     fonte = F.col("nome_fonte").alias("atleta")
-    por_clube = mapa.where(F.col("clube").isNotNull()).select(
+    com_clube = mapa.where(F.col("clube").isNotNull())
+    por_temporada = com_clube.where(F.col("temporada").isNotNull()).select(
+        fonte, "clube", "temporada", F.col("nome_popular").alias("_popular_da_temporada")
+    )
+    por_clube = com_clube.where(F.col("temporada").isNull()).select(
         fonte, "clube", F.col("nome_popular").alias("_popular_do_clube")
     )
     geral = mapa.where(F.col("clube").isNull()).select(
         fonte, F.col("nome_popular").alias("_popular")
     )
     return (
-        filha.join(F.broadcast(por_clube), on=["atleta", "clube"], how="left")
+        filha.join(F.broadcast(por_temporada), on=["atleta", "clube", "temporada"], how="left")
+        .join(F.broadcast(por_clube), on=["atleta", "clube"], how="left")
         .join(F.broadcast(geral), on="atleta", how="left")
-        .withColumn("atleta", F.coalesce("_popular_do_clube", "_popular", "atleta"))
+        .withColumn(
+            "atleta",
+            F.coalesce("_popular_da_temporada", "_popular_do_clube", "_popular", "atleta"),
+        )
         .select(*filha.columns)
     )
 

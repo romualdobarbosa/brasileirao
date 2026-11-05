@@ -16,7 +16,7 @@ from brasileirao.transform import limpeza, qualidade
 log = logging.getLogger(__name__)
 
 SCHEMA_MAPA_TIMES = "nome_fonte string, nome_canonico string, uf string"
-SCHEMA_MAPA_ATLETAS = "nome_fonte string, clube string, nome_popular string"
+SCHEMA_MAPA_ATLETAS = "nome_fonte string, clube string, temporada string, nome_popular string"
 LIMPEZA_FILHAS = {
     "gols": (limpeza.limpar_gols, limpeza.COLUNAS_GOLS),
     "cartoes": (limpeza.limpar_cartoes, limpeza.COLUNAS_CARTOES),
@@ -38,7 +38,7 @@ class CargaSilver:
 def _ler_referencia(spark: SparkSession, arquivo: str, schema: str) -> DataFrame:
     """CSV de `reference/` lido do pacote, para funcionar igual a partir do wheel."""
     texto = resources.files("brasileirao.reference").joinpath(arquivo).read_text("utf-8")
-    # Célula vazia vira nulo (o `clube` opcional de `atletas.csv`).
+    # Célula vazia vira nulo (o `clube` e a `temporada` opcionais de `atletas.csv`).
     leitor = csv.DictReader(io.StringIO(texto))
     linhas = [tuple(valor or None for valor in linha.values()) for linha in leitor]
     return spark.createDataFrame(linhas, schema)
@@ -50,8 +50,10 @@ def carregar_mapa_times(spark: SparkSession) -> DataFrame:
 
 
 def carregar_mapa_atletas(spark: SparkSession) -> DataFrame:
-    """`reference/atletas.csv`: nome da fonte (e clube, para homônimos) → nome popular."""
-    return _ler_referencia(spark, "atletas.csv", SCHEMA_MAPA_ATLETAS)
+    """`reference/atletas.csv`: nome da fonte (e clube e temporada, para homônimos) → nome
+    popular."""
+    mapa = _ler_referencia(spark, "atletas.csv", SCHEMA_MAPA_ATLETAS)
+    return mapa.withColumn("temporada", F.col("temporada").cast("int"))
 
 
 def ler_bronze(spark: SparkSession, entidade: str, temporada: int) -> DataFrame:
