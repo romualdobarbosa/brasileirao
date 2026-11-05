@@ -1,4 +1,4 @@
-.PHONY: setup download lakehouse gold explain serving-up serving-down carga carga-remota deploy \
+.PHONY: setup download lakehouse gold exportar app explain serving-up serving-down carga carga-remota deploy \
 	backup-metabase test lint fmt
 
 # Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
@@ -32,6 +32,13 @@ endif
 
 gold:
 	uv run python -m brasileirao.pipeline gold
+
+# gold → app/dados/<tabela>.parquet, que vão pro git e são o que o app lê.
+exportar:
+	uv run python -m brasileirao.pipeline exportar
+
+app:
+	uv run --group app streamlit run app/streamlit_app.py
 
 explain:
 	uv run python -m brasileirao.pipeline explain
@@ -74,7 +81,7 @@ serving-down:
 	$(COMPOSE) down
 
 test:
-	uv run pytest --cov=brasileirao --cov-report=term-missing
+	uv run --group app pytest --cov=brasileirao --cov-report=term-missing
 
 lint:
 	uv run ruff check . && uv run ruff format --check .

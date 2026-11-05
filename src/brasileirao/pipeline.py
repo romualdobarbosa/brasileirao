@@ -1,5 +1,5 @@
 """CLI: `python -m brasileirao.pipeline lakehouse --temporada N | --todas`, `... gold`,
-`... explain [--destino DIR]` e `... carga`."""
+`... explain [--destino DIR]`, `... carga` e `... exportar [--destino DIR]`."""
 
 import argparse
 import logging
@@ -8,7 +8,7 @@ import time
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-from brasileirao.aggregate import explain, gold
+from brasileirao.aggregate import explain, exportar, gold
 from brasileirao.aggregate import qualidade as qualidade_gold
 from brasileirao.config import VariavelAusenteError
 from brasileirao.ingestion import bronze
@@ -113,6 +113,12 @@ def main(argv: list[str] | None = None) -> None:
         help=f"diretório dos .txt (padrão: {explain.DESTINO_PADRAO})",
     )
     comandos.add_parser("carga", help="gold → Postgres do .env (gold_carga e troca)")
+    cmd = comandos.add_parser("exportar", help="gold → um Parquet por tabela, para o app")
+    cmd.add_argument(
+        "--destino",
+        default=exportar.DESTINO_PADRAO,
+        help=f"diretório dos .parquet (padrão: {exportar.DESTINO_PADRAO})",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -121,6 +127,8 @@ def main(argv: list[str] | None = None) -> None:
             gold.processar_gold(get_spark())
         elif args.comando == "carga":
             carga.carregar(get_spark(pacotes=[DRIVER_JDBC]))
+        elif args.comando == "exportar":
+            exportar.exportar(get_spark(), args.destino)
         elif args.comando == "explain":
             explain.gerar_planos(get_spark(), args.destino)
         else:
@@ -131,6 +139,7 @@ def main(argv: list[str] | None = None) -> None:
         qualidade_gold.QualidadeGoldError,
         gold.SilverAusenteError,
         carga.GoldAusenteError,
+        exportar.GoldIncompletoError,
         carga.CargaError,
         postgres.PostgresIndisponivelError,
         VariavelAusenteError,

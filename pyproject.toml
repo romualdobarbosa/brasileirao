@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [dependency-groups]
+app = [
+    "altair==6.3.0",
+    "pandas==2.3.3",
+    "pyarrow==26.0.0",
+    "streamlit==1.66.1",
+]
 dev = [
     "chispa>=0.12.0",
     "pre-commit>=4.7.0",
