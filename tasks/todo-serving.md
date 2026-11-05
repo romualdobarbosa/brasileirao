@@ -104,8 +104,8 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 
 **Critérios de aceite:**
 - [x] `actionlint` limpo
-- [ ] No CI, os testes `postgres` rodam (não aparecem como pulados) e passam
-- [ ] O tempo do job `test` sobe pouco (registrar antes e depois)
+- [x] No CI, os testes `postgres` rodam (não aparecem como pulados) e passam (run 42056650350: 231 passed, 0 skipped)
+- [x] O tempo do job `test` sobe pouco (registrar antes e depois): 6m18s antes (run 42048144823), 6m22s depois (run 42056650350, com miss no Ivy)
 - [x] Nenhum segredo novo no repositório: a senha do Postgres do CI é descartável e fica no próprio workflow
 
 **Verificação:**
