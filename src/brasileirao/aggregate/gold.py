@@ -11,14 +11,31 @@ from pyspark.sql import DataFrame, SparkSession
 from brasileirao import config
 from brasileirao.aggregate import qualidade
 from brasileirao.aggregate.artilharia import calcular_artilharia
+from brasileirao.aggregate.campanhas import calcular_campanhas, checar_campanhas
+from brasileirao.aggregate.cartoes_jogadores import (
+    calcular_cartoes_jogadores,
+    checar_cartoes_jogadores,
+)
 from brasileirao.aggregate.classificacao import calcular_classificacao
+from brasileirao.aggregate.confrontos import calcular_confrontos, checar_confrontos
 from brasileirao.aggregate.desempenho import calcular_desempenho
 from brasileirao.aggregate.disciplina import calcular_disciplina
+from brasileirao.aggregate.esquemas import calcular_esquemas_taticos, checar_esquemas_taticos
+from brasileirao.aggregate.faltas import calcular_faltas_clubes, checar_faltas_clubes
+from brasileirao.aggregate.goleadas import calcular_goleadas, checar_goleadas
+from brasileirao.aggregate.gols_decisivos import calcular_gols_decisivos, checar_gols_decisivos
 from brasileirao.aggregate.gols_por_minuto import calcular_gols_por_minuto
+from brasileirao.aggregate.linha_corte import calcular_linha_corte, checar_linha_corte
 from brasileirao.aggregate.ranking import calcular_ranking
 from brasileirao.aggregate.referencia import carregar_ajustes
 from brasileirao.aggregate.resumo import calcular_resumo
 from brasileirao.aggregate.sequencias import calcular_sequencias
+from brasileirao.aggregate.tecnicos import (
+    calcular_passagens_tecnicos,
+    carregar_seed_tecnicos,
+    checar_passagens_tecnicos,
+)
+from brasileirao.aggregate.viradas import calcular_viradas, checar_viradas
 from brasileirao.transform.silver import carregar_mapa_times
 
 log = logging.getLogger(__name__)
@@ -71,6 +88,53 @@ TABELAS: dict[str, TabelaGold] = {
     "resumo_temporada": TabelaGold(
         calcular_resumo, ("silver/partidas", "classificacao_por_rodada", "artilharia")
     ),
+    # As tabelas da vitrine (SPEC-vitrine.md) vão só para o app, não para o Postgres.
+    "confrontos": TabelaGold(
+        calcular_confrontos, ("silver/partidas",), checar_confrontos, ("silver/partidas",)
+    ),
+    "goleadas": TabelaGold(calcular_goleadas, ("silver/partidas",), checar_goleadas),
+    "campanhas": TabelaGold(
+        calcular_campanhas,
+        ("classificacao_por_rodada",),
+        checar_campanhas,
+        ("resumo_temporada",),
+    ),
+    "linha_corte": TabelaGold(
+        calcular_linha_corte, ("campanhas",), checar_linha_corte, ("campanhas",)
+    ),
+    "passagens_tecnicos": TabelaGold(
+        calcular_passagens_tecnicos,
+        ("silver/partidas", "tecnicos"),
+        checar_passagens_tecnicos,
+        ("silver/partidas",),
+    ),
+    "esquemas_taticos": TabelaGold(
+        calcular_esquemas_taticos, ("silver/partidas",), checar_esquemas_taticos
+    ),
+    "viradas": TabelaGold(
+        calcular_viradas,
+        ("silver/gols", "silver/partidas"),
+        checar_viradas,
+        ("silver/gols", "silver/partidas"),
+    ),
+    "gols_decisivos": TabelaGold(
+        calcular_gols_decisivos,
+        ("silver/gols", "silver/partidas"),
+        checar_gols_decisivos,
+        ("silver/gols", "silver/partidas"),
+    ),
+    "cartoes_jogadores": TabelaGold(
+        calcular_cartoes_jogadores,
+        ("silver/cartoes",),
+        checar_cartoes_jogadores,
+        ("silver/cartoes",),
+    ),
+    "faltas_clubes": TabelaGold(
+        calcular_faltas_clubes,
+        ("silver/estatisticas",),
+        checar_faltas_clubes,
+        ("silver/estatisticas",),
+    ),
 }
 
 
@@ -80,7 +144,11 @@ class Fontes:
     def __init__(self, spark: SparkSession) -> None:
         self.spark = spark
         self.carregadas: dict[str, DataFrame] = {}
-        self.referencias = {"ajustes": carregar_ajustes, "mapa_times": carregar_mapa_times}
+        self.referencias = {
+            "ajustes": carregar_ajustes,
+            "mapa_times": carregar_mapa_times,
+            "tecnicos": carregar_seed_tecnicos,
+        }
 
     def __getitem__(self, nome: str) -> DataFrame:
         if nome not in self.carregadas:

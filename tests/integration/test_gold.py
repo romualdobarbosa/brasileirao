@@ -48,9 +48,19 @@ def test_linhas_de_cada_tabela(gold_uma_vez):
         "sequencias": 16,
         "ranking_historico": 4,
         "disciplina": 5,
-        "artilharia": 2,
+        "artilharia": 7,
         "gols_por_minuto": 12,
         "resumo_temporada": 1,
+        "confrontos": 12,
+        "goleadas": 0,
+        "campanhas": 4,
+        "linha_corte": 1,
+        "passagens_tecnicos": 0,
+        "esquemas_taticos": 0,
+        "viradas": 1,
+        "gols_decisivos": 4,
+        "cartoes_jogadores": 2,
+        "faltas_clubes": 2,
     }
 
 
@@ -58,9 +68,8 @@ def test_colunas_batem_com_as_tabelas_do_serving(gold_uma_vez):
     """O DDL do Postgres (`serving/tabelas.py`) acompanha o schema que o gold grava."""
     _, tabelas = gold_uma_vez
 
-    assert {t.nome: t.colunas for t in TABELAS_SERVING} == {
-        nome: tuple(df.columns) for nome, df in tabelas.items()
-    }
+    for tabela in TABELAS_SERVING:
+        assert tabela.colunas == tuple(tabelas[tabela.nome].columns), tabela.nome
 
 
 def test_rodar_duas_vezes_e_igual_a_uma(spark, lake, gold_uma_vez, caplog):
@@ -99,13 +108,31 @@ def test_tabelas_de_eventos_das_fixtures(gold_uma_vez):
         "São Paulo": (6, 0, "cartoes"),
         "Grêmio": (0, 1, "cartoes"),
     }
-    assert tabelas["gols_por_minuto"].groupBy().sum("gols").first()[0] == 2
+    assert tabelas["gols_por_minuto"].groupBy().sum("gols").first()[0] == 21
     resumo = tabelas["resumo_temporada"].first()
     assert (resumo["campeao"], resumo["artilheiro"], resumo["gols_artilheiro"]) == (
         "Flamengo",
         "Arrascaeta, Gabriel",
+        5,
+    )
+    # São Paulo saiu na frente aos 5' da partida 5, e o Flamengo virou para 3 × 1.
+    virada = tabelas["viradas"].first()
+    assert (virada["partida_id"], virada["clube"], virada["maior_desvantagem"]) == (
+        5,
+        "Flamengo",
         1,
     )
+    # O empate do Flamengo aos 90+3 da partida 9: o Santos perde 2 pontos e o Flamengo ganha 1.
+    decisivos = {r["clube"]: r for r in tabelas["gols_decisivos"].collect()}
+    assert decisivos["Flamengo"]["pontos_ganhos_acrescimo"] == 1
+    assert decisivos["Santos"]["pontos_perdidos_acrescimo"] == 2
+    campanhas = {r["clube"]: r["situacao"] for r in tabelas["campanhas"].collect()}
+    assert campanhas == {
+        "Flamengo": "campeao",
+        "Palmeiras": "vice",
+        "Santos": "permaneceu",
+        "São Paulo": "rebaixado",
+    }
 
 
 def test_checagem_que_falha_nao_grava_nada(spark, lake, monkeypatch):

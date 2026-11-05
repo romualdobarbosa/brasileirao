@@ -63,7 +63,8 @@ def _oids(conexao):
 def test_carga_deixa_as_contagens_do_delta(spark, pg, lake_gold):
     _, linhas = lake_gold
 
-    assert carga.carregar(spark) == linhas
+    # O registro do gold tem mais tabelas: as da vitrine não vão para o Postgres.
+    assert carga.carregar(spark) == {t.nome: linhas[t.nome] for t in TABELAS}
 
     with pg.conectar() as conexao:
         final = conexao.execute(
@@ -83,7 +84,7 @@ def test_carga_deixa_as_contagens_do_delta(spark, pg, lake_gold):
         ("Santos", 7),
         ("São Paulo", 3),
     ]
-    assert resumo[:3] == ("Flamengo", "Arrascaeta, Gabriel", 1)
+    assert resumo[:3] == ("Flamengo", "Arrascaeta, Gabriel", 5)
     assert isinstance(resumo[3], float)
     # date do Delta chega como date, não como texto.
     assert invencibilidade[0] > 0 and invencibilidade[1] <= invencibilidade[2]
@@ -128,7 +129,7 @@ def test_contagem_diferente_e_falha(spark, pg, monkeypatch):
 
     monkeypatch.setattr(postgres, "contar", contar_errado)
 
-    with pytest.raises(carga.CargaError, match="artilharia: Delta 2, Postgres 0"):
+    with pytest.raises(carga.CargaError, match="artilharia: Delta 7, Postgres 0"):
         carga.carregar(spark)
 
 

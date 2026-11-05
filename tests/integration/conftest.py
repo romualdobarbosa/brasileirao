@@ -21,6 +21,9 @@ def silver(spark, tmp_path_factory):
     shutil.copytree(FIXTURES_RAW_GOLD, raiz / "raw")
     with pytest.MonkeyPatch.context() as mp:
         mp.setenv("BRASILEIRAO_DATA_ROOT", str(raiz))
+        # Com 4 times, a regra real de 2019 rebaixaria todo mundo, inclusive o campeão.
+        for modulo in ("campanhas", "resumo"):
+            mp.setattr(f"brasileirao.aggregate.{modulo}.rebaixados_por_temporada", lambda _: 1)
         assert pipeline.lakehouse(spark, None) == [2019]
         yield raiz
 
