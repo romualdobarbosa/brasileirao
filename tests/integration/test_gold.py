@@ -6,6 +6,7 @@ from chispa import assert_df_equality
 
 from brasileirao import config, pipeline
 from brasileirao.aggregate import gold, qualidade
+from brasileirao.serving.tabelas import TABELAS as TABELAS_SERVING
 
 
 @pytest.fixture(scope="module")
@@ -50,6 +51,15 @@ def test_linhas_de_cada_tabela(gold_uma_vez):
         "artilharia": 2,
         "gols_por_minuto": 12,
         "resumo_temporada": 1,
+    }
+
+
+def test_colunas_batem_com_as_tabelas_do_serving(gold_uma_vez):
+    """O DDL do Postgres (`serving/tabelas.py`) acompanha o schema que o gold grava."""
+    _, tabelas = gold_uma_vez
+
+    assert {t.nome: t.colunas for t in TABELAS_SERVING} == {
+        nome: tuple(df.columns) for nome, df in tabelas.items()
     }
 
 

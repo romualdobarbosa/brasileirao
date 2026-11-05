@@ -1,4 +1,12 @@
-.PHONY: setup download lakehouse gold explain test lint fmt
+.PHONY: setup download lakehouse gold explain serving-up serving-down carga test lint fmt
+
+# Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
+COMPOSE = docker compose -f serving/docker-compose.yml --env-file .env
 
 setup:
 	uv sync --all-groups
@@ -18,6 +26,16 @@ gold:
 
 explain:
 	uv run python -m brasileirao.pipeline explain
+
+# Precisa do Postgres de pé (local: `make serving-up`) e do .env.
+carga:
+	uv run python -m brasileirao.pipeline carga
+
+serving-up:
+	$(COMPOSE) up -d --wait
+
+serving-down:
+	$(COMPOSE) down
 
 test:
 	uv run pytest --cov=brasileirao --cov-report=term-missing

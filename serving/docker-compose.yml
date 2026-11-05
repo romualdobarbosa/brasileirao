@@ -1,0 +1,52 @@
+# Sem profile: Postgres e Metabase locais, só em 127.0.0.1.
+# Uso: `make serving-up` / `make serving-down` (lê o .env da raiz).
+name: brasileirao
+
+services:
+  postgres:
+    image: postgres:17.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: brasileirao
+      PG_SENHA_CARGA: ${PG_SENHA_CARGA:?defina PG_SENHA_CARGA no .env}
+      PG_SENHA_LEITOR: ${PG_SENHA_LEITOR:?defina PG_SENHA_LEITOR no .env}
+      PG_SENHA_METABASE: ${PG_SENHA_METABASE:?defina PG_SENHA_METABASE no .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      # `z`: rótulo do SELinux (Fedora) para o container ler o bind mount; sem efeito no Ubuntu.
+      - ./initdb:/docker-entrypoint-initdb.d:ro,z
+    healthcheck:
+      # Por TCP: durante o initdb o servidor temporário só escuta no socket.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "brasileirao"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  metabase:
+    image: metabase/metabase:v0.64.4.1
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres
+      MB_DB_PORT: "5432"
+      MB_DB_DBNAME: metabase
+      MB_DB_USER: metabase
+      MB_DB_PASS: ${PG_SENHA_METABASE}
+      JAVA_OPTS: -Xmx2g
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "-s", "-o", "/dev/null", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+volumes:
+  postgres:

@@ -4,11 +4,13 @@ from pathlib import Path
 
 import pytest
 
+from brasileirao.serving.tabelas import DRIVER_JDBC
 from brasileirao.utils.spark import get_spark
 
 
 @pytest.fixture(scope="session")
 def spark():
+    # O driver JDBC entra já na criação: a sessão é uma só e não aceita pacote depois.
     sessao = get_spark(
         app_name="brasileirao-testes",
         conf={
@@ -17,6 +19,7 @@ def spark():
             "spark.ui.enabled": "false",
             "spark.databricks.delta.snapshotPartitions": "2",
         },
+        pacotes=[DRIVER_JDBC],
     )
     yield sessao
     sessao.stop()

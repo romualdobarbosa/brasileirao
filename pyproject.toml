@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "delta-spark==4.4.1",
     "kagglehub>=1.0.3",
+    "psycopg[binary]>=3.3.6",
     "pyspark==4.2.0",
 ]
 
@@ -25,6 +26,11 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# -rs: teste pulado aparece com o motivo (ex.: os `postgres` sem BRASILEIRAO_PG_TESTE_URL).
+addopts = "-rs"
+markers = [
+    "postgres: precisa de um Postgres real em BRASILEIRAO_PG_TESTE_URL (pulado sem ela)",
+]
 
 [tool.ruff]
 line-length = 100

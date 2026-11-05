@@ -24,15 +24,15 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 `serving/.env.example` com todas as variáveis, sem valor real. `.env` e `backups/` no `.gitignore`. Alvos `serving-up` e `serving-down` no Makefile (`docker compose -f serving/docker-compose.yml --env-file .env ...`).
 
 **Critérios de aceite:**
-- [ ] `make serving-up` sobe os dois containers saudáveis (healthcheck no Postgres); `make serving-down` derruba sem apagar volume
-- [ ] Num volume novo, `psql` como superusuário mostra os 3 papéis, os 2 bancos, os 2 schemas e as 8 tabelas com PK
-- [ ] `leitor` conecta em `brasileirao`, faz `SELECT` em `gold.*` e leva erro de permissão em `INSERT`, em `CREATE TABLE gold.x`, em `gold_carga` e ao conectar no banco `metabase`
-- [ ] `ss -tlnp` (ou `docker port`) mostra 5432 e 3000 só em `127.0.0.1`
-- [ ] Nenhuma tag `latest`; tag do Metabase com manifest `linux/arm64` (registrar a saída no relatório)
-- [ ] `.env` fora do git
+- [x] `make serving-up` sobe os dois containers saudáveis (healthcheck no Postgres); `make serving-down` derruba sem apagar volume
+- [x] Num volume novo, `psql` como superusuário mostra os 3 papéis, os 2 bancos, os 2 schemas e as 8 tabelas com PK
+- [x] `leitor` conecta em `brasileirao`, faz `SELECT` em `gold.*` e leva erro de permissão em `INSERT`, em `CREATE TABLE gold.x`, em `gold_carga` e ao conectar no banco `metabase`
+- [x] `ss -tlnp` (ou `docker port`) mostra 5432 e 3000 só em `127.0.0.1`
+- [x] Nenhuma tag `latest`; tag do Metabase com manifest `linux/arm64` (registrar a saída no relatório)
+- [x] `.env` fora do git
 
 **Verificação:**
-- [ ] `make serving-up`, os `psql` acima e `make serving-down`, colados no relatório
+- [x] `make serving-up`, os `psql` acima e `make serving-down`, colados no relatório
 
 **Dependências:** nenhuma
 
@@ -50,14 +50,14 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 - A fixture `spark` de sessão (`tests/conftest.py`) passa a pedir o driver JDBC, já que a sessão é criada uma vez e não aceita pacote depois.
 
 **Critérios de aceite:**
-- [ ] Teste: os nomes de `TABELAS` são exatamente as chaves do registro de `aggregate/gold.py`, na mesma ordem
-- [ ] Teste: as colunas de cada `Tabela` batem, em nome e ordem, com o schema que o gold grava (gold montado das fixtures `raw_gold`)
-- [ ] Teste: a URL JDBC e as propriedades saem certas do ambiente; sem `BRASILEIRAO_PG_SENHA`, erro que diz qual variável falta
-- [ ] Teste: `get_spark` com pacotes extras repassa a lista (sem precisar baixar nada no teste unitário)
-- [ ] `make test` continua verde e o tempo da suíte não sobe mais que uns 10 s
+- [x] Teste: os nomes de `TABELAS` são exatamente as chaves do registro de `aggregate/gold.py`, na mesma ordem
+- [x] Teste: as colunas de cada `Tabela` batem, em nome e ordem, com o schema que o gold grava (gold montado das fixtures `raw_gold`)
+- [x] Teste: a URL JDBC e as propriedades saem certas do ambiente; sem `BRASILEIRAO_PG_SENHA`, erro que diz qual variável falta
+- [x] Teste: `get_spark` com pacotes extras repassa a lista (sem precisar baixar nada no teste unitário)
+- [x] `make test` continua verde e o tempo da suíte não sobe mais que uns 10 s (subiu 21 s com a montagem extra do gold nos testes do serving; aceito pelo Romualdo em 05/11/2026)
 
 **Verificação:**
-- [ ] `uv run pytest tests/unit/serving/ tests/unit/test_config.py` e `make test`
+- [x] `uv run pytest tests/unit/serving/ tests/unit/test_config.py` e `make test`
 
 **Dependências:** T1 (só pelo DDL, que os testes do T3 vão comparar)
 
@@ -75,18 +75,18 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 - `.env.example` ganha `BRASILEIRAO_PG_TESTE_URL` apontando pro Postgres local do compose.
 
 **Critérios de aceite (todos em `tests/integration/test_serving.py`, marcados `postgres`):**
-- [ ] Gold das fixtures → `carregar` → contagens de `gold` iguais às do Delta, e algumas linhas conferidas valor a valor
-- [ ] `carregar` 2× deixa o conteúdo de `gold` igual ao de 1×
-- [ ] Falha no meio de `trocar_gold` (ex.: tabela de `gold_carga` com coluna faltando) deixa `gold` exatamente como antes
-- [ ] O OID das tabelas de `gold` não muda entre duas cargas
-- [ ] O DDL do `02-gold.sql` (lido do `information_schema`) bate com `TABELAS`: nomes, colunas em ordem e PK
-- [ ] `leitor`: `SELECT` em `gold` funciona; `INSERT`, `CREATE`, acesso a `gold_carga` e conexão ao banco `metabase` falham
-- [ ] Sem gold, a carga falha com a mensagem que manda rodar `make gold`
-- [ ] Sem `BRASILEIRAO_PG_TESTE_URL`, os testes aparecem como pulados com o motivo; `make test` continua verde
-- [ ] Nos dados reais: `make gold && make serving-up && make carga` deixa as 8 tabelas com as contagens do Delta (colar no relatório)
+- [x] Gold das fixtures → `carregar` → contagens de `gold` iguais às do Delta, e algumas linhas conferidas valor a valor
+- [x] `carregar` 2× deixa o conteúdo de `gold` igual ao de 1×
+- [x] Falha no meio de `trocar_gold` (ex.: tabela de `gold_carga` com coluna faltando) deixa `gold` exatamente como antes
+- [x] O OID das tabelas de `gold` não muda entre duas cargas
+- [x] O DDL do `02-gold.sql` (lido do `information_schema`) bate com `TABELAS`: nomes, colunas em ordem e PK
+- [x] `leitor`: `SELECT` em `gold` funciona; `INSERT`, `CREATE`, acesso a `gold_carga` e conexão ao banco `metabase` falham
+- [x] Sem gold, a carga falha com a mensagem que manda rodar `make gold`
+- [x] Sem `BRASILEIRAO_PG_TESTE_URL`, os testes aparecem como pulados com o motivo; `make test` continua verde
+- [x] Nos dados reais: `make gold && make serving-up && make carga` deixa as 8 tabelas com as contagens do Delta (colar no relatório)
 
 **Verificação:**
-- [ ] `BRASILEIRAO_PG_TESTE_URL=... uv run pytest -m postgres` com o compose local de pé, e `make test`
+- [x] `BRASILEIRAO_PG_TESTE_URL=... uv run pytest -m postgres` com o compose local de pé, e `make test`
 
 **Dependências:** T2
 

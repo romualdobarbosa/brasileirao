@@ -7,11 +7,19 @@ AMBIENTES_FUTUROS = ("emr", "databricks")
 DELTA_CATALOG = "org.apache.spark.sql.delta.catalog.DeltaCatalog"
 
 
-def get_spark(app_name: str = "brasileirao", conf: dict[str, str] | None = None) -> SparkSession:
-    """Sessão Spark com Delta, escolhida por `BRASILEIRAO_SPARK_ENV`."""
+def get_spark(
+    app_name: str = "brasileirao",
+    conf: dict[str, str] | None = None,
+    pacotes: list[str] | None = None,
+) -> SparkSession:
+    """Sessão Spark com Delta, escolhida por `BRASILEIRAO_SPARK_ENV`.
+
+    `pacotes` são coordenadas Maven extras (ex.: o driver JDBC), baixadas pelo Ivy junto com
+    os jars do Delta. Só valem na criação da sessão: uma sessão já aberta não ganha pacote.
+    """
     ambiente = config.spark_env()
     if ambiente == "local":
-        return _spark_local(app_name, conf or {})
+        return _spark_local(app_name, conf or {}, pacotes)
     if ambiente in AMBIENTES_FUTUROS:
         raise NotImplementedError(f"Ambiente Spark {ambiente!r} ainda não foi implementado")
     raise ValueError(
@@ -20,7 +28,7 @@ def get_spark(app_name: str = "brasileirao", conf: dict[str, str] | None = None)
     )
 
 
-def _spark_local(app_name: str, conf: dict[str, str]) -> SparkSession:
+def _spark_local(app_name: str, conf: dict[str, str], pacotes: list[str] | None) -> SparkSession:
     builder = (
         SparkSession.builder.appName(app_name)
         .master("local[*]")
@@ -33,4 +41,4 @@ def _spark_local(app_name: str, conf: dict[str, str]) -> SparkSession:
     )
     for chave, valor in conf.items():
         builder = builder.config(chave, valor)
-    return configure_spark_with_delta_pip(builder).getOrCreate()
+    return configure_spark_with_delta_pip(builder, extra_packages=pacotes).getOrCreate()
