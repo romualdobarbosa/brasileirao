@@ -9,11 +9,11 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] `docs/tuning/README.md` com o antes e depois, inclusive o que não funcionou
 
 ## OT2: constraints e manutenção do Delta. Spec: otimizacao
-- [ ] Constraints idempotentes no pipeline, com teste de recusa
-- [ ] `make manutencao` (OPTIMIZE, VACUUM, Z-Order), com arquivos e tamanho antes e depois
-- [ ] `make historico` e função de comparação de versões
-- [ ] `docs/delta/README.md` com saídas reais
-- [ ] 🚧 Explicação ao Romualdo com as saídas reais
+- [x] Constraints idempotentes no pipeline, com teste de recusa
+- [x] `make manutencao` (OPTIMIZE, VACUUM, Z-Order), com arquivos e tamanho antes e depois
+- [x] `make historico` e função de comparação de versões
+- [x] `docs/delta/README.md` com saídas reais
+- [x] 🚧 Explicação ao Romualdo com as saídas reais
 
 ## EN1: sondagem e entrada do enriquecimento. Spec: enrichment
 - [ ] 🚧 Romualdo cria o projeto Google e autoriza o acesso local

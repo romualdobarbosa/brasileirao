@@ -38,6 +38,9 @@ def _spark_local(app_name: str, conf: dict[str, str], pacotes: list[str] | None)
         # com tabelas de milhares de linhas, viram centenas de tarefas vazias por temporada.
         .config("spark.sql.shuffle.partitions", "4")
         .config("spark.databricks.delta.snapshotPartitions", "2")
+        # O `VACUUM` lista a tabela com um job deste tamanho: o default de 10.000 tarefas custa
+        # uns 9 s por tabela, mesmo numa pasta com meia dúzia de arquivos.
+        .config("spark.sql.sources.parallelPartitionDiscovery.parallelism", "8")
     )
     for chave, valor in conf.items():
         builder = builder.config(chave, valor)

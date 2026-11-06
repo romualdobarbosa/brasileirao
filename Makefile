@@ -1,4 +1,4 @@
-.PHONY: setup download lakehouse gold exportar app explain serving-up serving-down carga carga-remota deploy \
+.PHONY: setup download lakehouse gold exportar app explain manutencao historico serving-up serving-down carga carga-remota deploy \
 	backup-metabase test lint fmt
 
 # Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
@@ -42,6 +42,15 @@ app:
 
 explain:
 	uv run python -m brasileirao.pipeline explain
+
+# OPTIMIZE, Z-Order e VACUUM com a retenção padrão de 7 dias e a trava ligada.
+manutencao:
+	uv run python -m brasileirao.pipeline manutencao
+
+# make historico TABELA=silver/partidas [COMPARAR="0 5"]
+historico:
+	@test -n "$(TABELA)" || { echo "use: make historico TABELA=camada/tabela [COMPARAR=\"A B\"]"; exit 1; }
+	uv run python -m brasileirao.pipeline historico $(TABELA) $(if $(COMPARAR),--comparar $(COMPARAR))
 
 # Precisa do Postgres de pé (local: `make serving-up`) e do .env.
 carga:

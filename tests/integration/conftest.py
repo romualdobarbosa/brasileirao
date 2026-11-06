@@ -12,6 +12,7 @@ from psycopg.conninfo import conninfo_to_dict
 
 from brasileirao import pipeline
 from brasileirao.aggregate import gold
+from brasileirao.lake import constraints
 
 FIXTURES_RAW_GOLD = Path(__file__).parent.parent / "fixtures" / "raw_gold"
 
@@ -59,6 +60,17 @@ def silver(lake_compartilhado):
     with pytest.MonkeyPatch.context() as mp:
         _ambiente_do_lake(mp, raiz)
         yield raiz
+
+
+@pytest.fixture(scope="module")
+def lake_do_modulo(spark, tmp_path_factory):
+    """Silver e gold das mesmas fixtures, num lake só do módulo, para quem muda a tabela."""
+    lake = LakeCompartilhado(spark, tmp_path_factory.mktemp("lake_do_modulo"))
+    assert lake.linhas_gold
+    with pytest.MonkeyPatch.context() as mp:
+        _ambiente_do_lake(mp, lake.raiz)
+        constraints.aplicar_camada(spark, "gold")
+        yield lake
 
 
 INITDB = Path(__file__).parent.parent.parent / "serving" / "initdb"

@@ -1,5 +1,6 @@
 """CLI: `python -m brasileirao.pipeline lakehouse --temporada N | --todas`, `... gold`,
-`... explain [--destino DIR]`, `... carga` e `... exportar [--destino DIR]`."""
+`... explain [--destino DIR]`, `... carga`, `... exportar [--destino DIR]`, `... manutencao` e
+`... historico camada/tabela [--comparar A B]`."""
 
 import argparse
 import logging
@@ -12,6 +13,7 @@ from brasileirao.aggregate import explain, exportar, gold
 from brasileirao.aggregate import qualidade as qualidade_gold
 from brasileirao.config import VariavelAusenteError
 from brasileirao.ingestion import bronze
+from brasileirao.lake import TabelaInvalidaError, constraints, historico, manutencao
 from brasileirao.serving import carga, postgres
 from brasileirao.serving.tabelas import DRIVER_JDBC
 from brasileirao.transform import qualidade, silver
@@ -95,7 +97,27 @@ def lakehouse(spark: SparkSession, temporada: int | None) -> list[int]:
     avisar_orfas(spark)
     for t in temporadas:
         processar_temporada(spark, t)
+    constraints.aplicar_camada(spark, "silver")
     return temporadas
+
+
+def executar_gold(spark: SparkSession) -> dict[str, int]:
+    """Silver → gold e as constraints do gold.
+
+    As constraints entram depois da gravação porque na primeira execução a tabela ainda não
+    existe. Nas seguintes elas já estão na tabela e valem durante a própria gravação.
+    """
+    linhas = gold.processar_gold(spark)
+    constraints.aplicar_camada(spark, "gold")
+    return linhas
+
+
+def consultar_historico(
+    spark: SparkSession, tabela: str, comparar: list[int] | None = None
+) -> None:
+    historico.imprimir_historico(spark, tabela)
+    if comparar:
+        print(historico.comparar_versoes(spark, tabela, *comparar).resumo())
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -119,18 +141,28 @@ def main(argv: list[str] | None = None) -> None:
         default=exportar.DESTINO_PADRAO,
         help=f"diretório dos .parquet (padrão: {exportar.DESTINO_PADRAO})",
     )
+    comandos.add_parser("manutencao", help="OPTIMIZE, Z-Order e VACUUM com retenção padrão")
+    cmd = comandos.add_parser("historico", help="versões de uma tabela Delta")
+    cmd.add_argument("tabela", help="camada/tabela, como silver/partidas")
+    cmd.add_argument(
+        "--comparar", nargs=2, type=int, metavar=("A", "B"), help="compara duas versões"
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
         if args.comando == "gold":
-            gold.processar_gold(get_spark())
+            executar_gold(get_spark())
         elif args.comando == "carga":
             carga.carregar(get_spark(pacotes=[DRIVER_JDBC]))
         elif args.comando == "exportar":
             exportar.exportar(get_spark(), args.destino)
         elif args.comando == "explain":
             explain.gerar_planos(get_spark(), args.destino)
+        elif args.comando == "manutencao":
+            manutencao.manutencao(get_spark())
+        elif args.comando == "historico":
+            consultar_historico(get_spark(), args.tabela, args.comparar)
         else:
             lakehouse(get_spark(), None if args.todas else args.temporada)
     except (
@@ -143,6 +175,9 @@ def main(argv: list[str] | None = None) -> None:
         carga.CargaError,
         postgres.PostgresIndisponivelError,
         VariavelAusenteError,
+        constraints.ConstraintRecusadaError,
+        TabelaInvalidaError,
+        historico.VersaoIndisponivelError,
     ) as erro:
         raise SystemExit(f"Erro: {erro}") from erro
 

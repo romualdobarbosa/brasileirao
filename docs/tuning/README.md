@@ -79,6 +79,8 @@ Estado final, com as mudanças 1, 5 e 6 e sem as outras:
 
 A meta do projeto é o job do CI ficar pelo menos 25% mais rápido, o que dá 435 s ou menos. A execução depois das mudanças ficou em 352 s, com 344 testes passando e o passo do `make test` em 308 s, então a meta foi batida. É um run só, e o ruído do runner chega a uns 100 s, mas nem somando isso o tempo volta à mediana de antes. Os números locais não servem de comparação aqui, porque o runner tem outro hardware, usa Java 21 em vez de 25 e varia bastante entre execuções.
 
+O ticket seguinte acrescentou 111 testes e as constraints do Delta, e o `make test` local foi de 198,4 s para 346 s, numa execução. Esse custo está explicado em [docs/delta](../delta/README.md). Os números desta página são de antes disso.
+
 ## O que ficou
 
 ### 1. Lake compartilhado
