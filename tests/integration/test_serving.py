@@ -1,12 +1,9 @@
-import shutil
-
 import psycopg
 import pytest
 from psycopg import errors, sql
 from psycopg.conninfo import conninfo_to_dict
 
 from brasileirao import pipeline
-from brasileirao.aggregate import gold
 from brasileirao.serving import carga, postgres
 from brasileirao.serving.tabelas import TABELAS
 
@@ -14,14 +11,10 @@ TIPOS_POSTGRES = {"int": "integer", "double": "double precision", "string": "tex
 
 
 @pytest.fixture(scope="module")
-def lake_gold(postgres_teste, spark, silver):
-    """O gold das fixtures `raw_gold`. Pede o Postgres primeiro: sem ele, pula antes de
+def lake_gold(postgres_teste, lake_compartilhado):
+    """O gold compartilhado das fixtures. Pede o Postgres primeiro: sem ele, pula antes de
     montar o lake."""
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("BRASILEIRAO_DATA_ROOT", str(silver))
-        shutil.rmtree(silver / "gold", ignore_errors=True)
-        linhas = gold.processar_gold(spark)
-    return silver, linhas
+    return lake_compartilhado.silver, lake_compartilhado.linhas_gold
 
 
 @pytest.fixture

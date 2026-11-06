@@ -3,9 +3,9 @@
 Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticket, na ordem. 🚧 = portão com o Romualdo.
 
 ## OT1: tuning medido. Spec: otimizacao
-- [ ] Linha de base local e do CI registrada
-- [ ] Mudanças testadas uma a uma, sem ganho = revertida e registrada
-- [ ] Gold idêntico nas 18 tabelas; `make test` verde
+- [x] Linha de base local e do CI registrada
+- [x] Mudanças testadas uma a uma, sem ganho = revertida e registrada
+- [x] Gold idêntico nas 18 tabelas; `make test` verde
 - [ ] `docs/tuning/README.md` com o antes e depois, inclusive o que não funcionou
 
 ## OT2: constraints e manutenção do Delta. Spec: otimizacao

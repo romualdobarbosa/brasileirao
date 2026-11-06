@@ -2,6 +2,7 @@ import os
 import shutil
 import uuid
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 import psycopg
@@ -10,21 +11,53 @@ from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict
 
 from brasileirao import pipeline
+from brasileirao.aggregate import gold
 
 FIXTURES_RAW_GOLD = Path(__file__).parent.parent / "fixtures" / "raw_gold"
 
 
+def _ambiente_do_lake(mp: pytest.MonkeyPatch, raiz: Path) -> None:
+    mp.setenv("BRASILEIRAO_DATA_ROOT", str(raiz))
+    # Com 4 times, a regra real de 2019 rebaixaria todo mundo, inclusive o campeão.
+    for modulo in ("campanhas", "resumo"):
+        mp.setattr(f"brasileirao.aggregate.{modulo}.rebaixados_por_temporada", lambda _: 1)
+
+
+class LakeCompartilhado:
+    """Silver e gold das fixtures `raw_gold` (o minicampeonato em 2019), montados uma vez por
+    sessão e só quando alguém pede. Quem usa não muda o conteúdo: no máximo regrava o gold com
+    as mesmas linhas, como faz o teste de idempotência."""
+
+    def __init__(self, spark, raiz: Path) -> None:
+        self.spark = spark
+        self.raiz = raiz
+
+    @cached_property
+    def silver(self) -> Path:
+        shutil.copytree(FIXTURES_RAW_GOLD, self.raiz / "raw")
+        with pytest.MonkeyPatch.context() as mp:
+            _ambiente_do_lake(mp, self.raiz)
+            assert pipeline.lakehouse(self.spark, None) == [2019]
+        return self.raiz
+
+    @cached_property
+    def linhas_gold(self) -> dict[str, int]:
+        with pytest.MonkeyPatch.context() as mp:
+            _ambiente_do_lake(mp, self.silver)
+            return gold.processar_gold(self.spark)
+
+
+@pytest.fixture(scope="session")
+def lake_compartilhado(spark, tmp_path_factory):
+    return LakeCompartilhado(spark, tmp_path_factory.mktemp("lake"))
+
+
 @pytest.fixture(scope="module")
-def silver(spark, tmp_path_factory):
-    """Silver das fixtures `raw_gold` (o minicampeonato em 2019), montada uma vez por módulo."""
-    raiz = tmp_path_factory.mktemp("lake")
-    shutil.copytree(FIXTURES_RAW_GOLD, raiz / "raw")
+def silver(lake_compartilhado):
+    """Raiz do lake compartilhado, com o ambiente dele valendo durante o módulo."""
+    raiz = lake_compartilhado.silver
     with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("BRASILEIRAO_DATA_ROOT", str(raiz))
-        # Com 4 times, a regra real de 2019 rebaixaria todo mundo, inclusive o campeão.
-        for modulo in ("campanhas", "resumo"):
-            mp.setattr(f"brasileirao.aggregate.{modulo}.rebaixados_por_temporada", lambda _: 1)
-        assert pipeline.lakehouse(spark, None) == [2019]
+        _ambiente_do_lake(mp, raiz)
         yield raiz
 
 

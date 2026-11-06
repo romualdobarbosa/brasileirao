@@ -81,7 +81,7 @@ serving-down:
 	$(COMPOSE) down
 
 test:
-	uv run --group app pytest --cov=brasileirao --cov-report=term-missing
+	uv run --group app pytest --cov=brasileirao --cov-report=term-missing -n 2 --dist loadfile
 
 lint:
 	uv run ruff check . && uv run ruff format --check .

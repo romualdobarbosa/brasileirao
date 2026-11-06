@@ -1,3 +1,4 @@
+import fcntl
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -9,18 +10,22 @@ from brasileirao.utils.spark import get_spark
 
 
 @pytest.fixture(scope="session")
-def spark():
+def spark(tmp_path_factory):
     # O driver JDBC entra já na criação: a sessão é uma só e não aceita pacote depois.
-    sessao = get_spark(
-        app_name="brasileirao-testes",
-        conf={
-            "spark.master": "local[2]",
-            "spark.sql.shuffle.partitions": "2",
-            "spark.ui.enabled": "false",
-            "spark.databricks.delta.snapshotPartitions": "2",
-        },
-        pacotes=[DRIVER_JDBC],
-    )
+    # Cada worker do xdist abre a sua, um de cada vez: com o cache do Ivy vazio, dois
+    # downloads ao mesmo tempo falham com `unresolved dependency`.
+    with (tmp_path_factory.getbasetemp().parent / "spark.lock").open("w") as trava:
+        fcntl.flock(trava, fcntl.LOCK_EX)
+        sessao = get_spark(
+            app_name="brasileirao-testes",
+            conf={
+                "spark.master": "local[2]",
+                "spark.sql.shuffle.partitions": "2",
+                "spark.ui.enabled": "false",
+                "spark.databricks.delta.snapshotPartitions": "2",
+            },
+            pacotes=[DRIVER_JDBC],
+        )
     yield sessao
     sessao.stop()
 

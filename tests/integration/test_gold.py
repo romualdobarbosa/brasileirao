@@ -1,5 +1,4 @@
 import dataclasses
-import shutil
 
 import pytest
 from chispa import assert_df_equality
@@ -10,15 +9,12 @@ from brasileirao.serving.tabelas import TABELAS as TABELAS_SERVING
 
 
 @pytest.fixture(scope="module")
-def gold_uma_vez(spark, silver):
-    """O gold das fixtures gravado uma vez: as linhas que `processar_gold` devolveu e as
-    tabelas relidas do disco, materializadas. Os testes só de leitura usam este gold; a
-    idempotência roda a segunda vez por cima dele."""
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("BRASILEIRAO_DATA_ROOT", str(silver))
-        shutil.rmtree(silver / "gold", ignore_errors=True)
-        linhas = gold.processar_gold(spark)
-        tabelas = {nome: df.localCheckpoint() for nome, df in _ler_gold(spark).items()}
+def gold_uma_vez(spark, silver, lake_compartilhado):
+    """O gold compartilhado das fixtures: as linhas que `processar_gold` devolveu e as tabelas
+    relidas do disco, materializadas. Os testes só de leitura usam este gold; a idempotência
+    roda a segunda vez por cima dele."""
+    linhas = lake_compartilhado.linhas_gold
+    tabelas = {nome: df.localCheckpoint() for nome, df in _ler_gold(spark).items()}
     return linhas, tabelas
 
 

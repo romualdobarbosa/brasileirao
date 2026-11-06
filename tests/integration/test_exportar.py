@@ -7,12 +7,10 @@ from brasileirao.aggregate import exportar, gold
 
 
 @pytest.fixture(scope="module")
-def lake(spark, silver):
-    """O gold das fixtures gravado uma vez, com a raiz do lake no ambiente."""
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("BRASILEIRAO_DATA_ROOT", str(silver))
-        gold.processar_gold(spark)
-        yield silver
+def lake(silver, lake_compartilhado):
+    """O gold compartilhado das fixtures, com a raiz do lake no ambiente."""
+    assert lake_compartilhado.linhas_gold
+    return silver
 
 
 def test_um_parquet_por_tabela_com_o_conteudo_do_gold(spark, lake, tmp_path):
