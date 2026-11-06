@@ -75,9 +75,9 @@ Estado final, com as mudanças 1, 5 e 6 e sem as outras:
 | `make test` local | 197,8 / 198,8 / 198,4 | 368,2 s | 198,4 s | -46,1% |
 | `make test` local, limitado a 4 CPUs lógicas | 243,7 / 241,1 / 242,2 | 371,0 s | 242,2 s | -34,7% |
 | `pytest --durations=30` local, sem xdist | 281,5 / 280,4 / 280,0 | 344,1 s | 280,4 s | -18,5% |
-| Job `test` do CI | PENDENTE-CI | 580 s | PENDENTE-CI | PENDENTE-CI |
+| Job `test` do CI (run 42283123207) | 352, uma execução | 580 s | 352 s | -39,3% |
 
-A meta do projeto é o job do CI ficar pelo menos 25% mais rápido, o que dá 435 s ou menos. Os números locais não respondem a isso, porque o runner tem outro hardware, usa Java 21 em vez de 25 e varia bastante entre execuções.
+A meta do projeto é o job do CI ficar pelo menos 25% mais rápido, o que dá 435 s ou menos. A execução depois das mudanças ficou em 352 s, com 344 testes passando e o passo do `make test` em 308 s, então a meta foi batida. É um run só, e o ruído do runner chega a uns 100 s, mas nem somando isso o tempo volta à mediana de antes. Os números locais não servem de comparação aqui, porque o runner tem outro hardware, usa Java 21 em vez de 25 e varia bastante entre execuções.
 
 ## O que ficou
 
