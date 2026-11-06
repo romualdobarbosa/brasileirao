@@ -2,6 +2,8 @@
 
 Spec: [SPEC-serving.md](../SPEC-serving.md). Tarefas detalhadas em [todo-serving.md](todo-serving.md). O plano do módulo anterior está em [plan-gold.md](plan-gold.md).
 
+> **Canceladas as Fases 3 a 5** em 05/11/2026: o cadastro da Oracle no Brasil pede CNPJ. Ver [SPEC-vitrine.md](../SPEC-vitrine.md) e [todo-vitrine.md](todo-vitrine.md). O `docs/serving/oracle.md` foi removido.
+
 ## Visão geral
 
 Primeiro uma fatia vertical **toda local**: Postgres + Metabase em Docker Compose na máquina do Romualdo, o pacote `brasileirao.serving` carregando o gold real e o Metabase lendo como `leitor`. Depois entram o Postgres no CI, o SQL dos cards do dashboard (validado no Postgres local) e as peças de deploy (Caddy, túnel, `make deploy`, passo a passo da Oracle). Só então vem a parte na nuvem, que é manual e feita junto com o Romualdo: conta, VM, DNS, deploy e carga remota. Por último, ele monta o dashboard na tela do Metabase e o README ganha o link.
@@ -54,7 +56,7 @@ T1 compose local + initdb + .env.example + make serving-up/down
 - [ ] CI verde com os testes `postgres` rodando (e conferir o critério 3 da SPEC-ci: segunda execução usa os caches)
 - [ ] `docker compose --profile publico config` válido; Makefile revisado
 
-### Fase 3: Nuvem (Romualdo + sessão principal, sem agente)
+### Fase 3: Nuvem (Romualdo + sessão principal, sem agente), cancelada
 - [ ] T7: Conta Oracle, Pay As You Go e orçamento, VM A1, rede, DuckDNS, deploy, carga remota e configuração inicial do Metabase
 
 ### Checkpoint: Infra no ar
@@ -62,10 +64,10 @@ T1 compose local + initdb + .env.example + make serving-up/down
 - [ ] `make carga-remota` abaixo de 3 minutos e fecha o túnel em falha
 - [ ] `sudo reboot` na VM e tudo volta em até 5 minutos
 
-### Fase 4: Dashboard (Romualdo, com apoio da principal)
+### Fase 4: Dashboard (Romualdo, com apoio da principal), cancelada
 - [ ] T8: Montar o dashboard pelo `dashboard.md`, ligar o Public Sharing e fazer o primeiro `make backup-metabase`
 
-### Fase 5: Fechamento (agente + `voz-romualdo`)
+### Fase 5: Fechamento (agente + `voz-romualdo`), cancelada
 - [ ] T9: `docs/serving/README.md`, seção do serving e link no README, conferência dos 11 critérios da spec
 
 ### Checkpoint: Completo

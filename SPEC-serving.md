@@ -1,6 +1,6 @@
 # Spec: serving
 
-> Módulo `serving` do [mapa de capacidades](CAPABILITY_MAP.md). Status: **aprovada** em 28/10/2026. Depende do contrato do gold em [SPEC-gold.md](SPEC-gold.md).
+> Módulo `serving` do [mapa de capacidades](CAPABILITY_MAP.md). Status: **Fases 1 e 2 entregues, Fases 3 a 5 canceladas** em 05/11/2026 (o cadastro da Oracle no Brasil pede CNPJ). O que substitui a nuvem está em [SPEC-vitrine.md](SPEC-vitrine.md), e o que foi construído, em [docs/serving/README.md](docs/serving/README.md). O texto abaixo é o plano aprovado em 28/10/2026, inclusive as menções ao `oracle.md`, removido. Depende do contrato do gold em [SPEC-gold.md](SPEC-gold.md).
 
 ## Objetivo
 

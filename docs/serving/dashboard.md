@@ -225,8 +225,6 @@ Cada partida conta duas vezes em `jogos` (um por clube), daí a divisão por 2. 
 
 ## Cartão de notas
 
-> **Rascunho.** Passa pela `voz-romualdo` na Fase 5 antes de ir pro dashboard.
-
 Cartão de texto, nas duas abas:
 
 > Os dados vêm de uma base pública que tem buracos. Artilharia, gols por minuto e cartões só existem a partir de 2014. Em 2016, a partida Chapecoense × Atlético-MG da última rodada não foi disputada (W.O. depois do acidente da Chapecoense), então a temporada tem 379 jogos. Barueri (2009) e Grêmio Prudente (2010) são o mesmo clube, mas aparecem separados, como na fonte.
@@ -240,6 +238,8 @@ Cartão de texto, nas duas abas:
 5. Criar as 12 perguntas acima (**New → SQL query**, banco `brasileirao`). Nas variáveis: `temporada` como Number, obrigatória, padrão `2025`; `rodada` como Number, opcional; `clube` como Text, opcional.
 6. Criar o dashboard "Brasileirão 2003–2025" com as abas "Temporada" (cards 1 a 7) e "Histórico" (cards 8 a 12), mais o cartão de notas.
 7. Na aba "Temporada", adicionar os filtros Temporada (padrão `2025`), Rodada e Clube e ligar cada um às variáveis dos cards, conforme a tabela de filtros.
+Os passos 8 a 10 eram para a publicação na nuvem, que não aconteceu (ver o [README](README.md#até-onde-foi)). Ficam aqui como registro.
+
 8. **Admin → Settings → Public Sharing:** ligar. No dashboard, **Sharing → Create a public link** e copiar o link. Não compartilhar nenhuma outra pergunta ou dashboard.
 9. Abrir o link numa janela anônima e trocar a temporada e a rodada pra conferir.
-10. Rodar `make backup-metabase` (ver [oracle.md](oracle.md)).
+10. Rodar `make backup-metabase`.

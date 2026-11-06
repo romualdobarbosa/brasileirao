@@ -1,6 +1,6 @@
 # Spec: vitrine
 
-> Substitui as Fases 3 a 5 de [SPEC-serving.md](SPEC-serving.md). Status: **em execução**, pedida pelo Romualdo em 05/11/2026. Depende do contrato do gold em [SPEC-gold.md](SPEC-gold.md).
+> Substitui as Fases 3 a 5 de [SPEC-serving.md](SPEC-serving.md). Status: **entregue** em 05/11/2026, publicada em <https://brasileirao-serie-a.streamlit.app/>. Pedida pelo Romualdo em 05/11/2026. Depende do contrato do gold em [SPEC-gold.md](SPEC-gold.md).
 
 ## Objetivo
 

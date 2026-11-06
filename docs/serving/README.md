@@ -1,6 +1,6 @@
 # Postgres e Metabase
 
-Queria que o gold saísse do Delta e chegasse num banco de verdade, com um dashboard em cima, do jeito que costuma ser numa empresa. Então montei essa camada com Postgres e Metabase em Docker Compose. Ela roda na minha máquina, e o caminho até a nuvem ficou no meio, como conto em [Até onde foi](#até-onde-foi). O app público do projeto é outro, um Streamlit que não depende de nada daqui.
+Queria que o gold saísse do Delta e chegasse num banco de verdade, com um dashboard em cima, do jeito que costuma ser numa empresa. Então montei essa camada com Postgres e Metabase em Docker Compose. Ela roda na minha máquina, e o caminho até a nuvem ficou no meio, como conto em [Até onde foi](#até-onde-foi). O app público do projeto é outro, [um Streamlit](https://brasileirao-serie-a.streamlit.app/) que não depende de nada daqui.
 
 ## Como funciona
 
@@ -87,7 +87,7 @@ A segunda aba olha o período inteiro, de 2003 a 2025.
 
 ![Aba Histórico do dashboard](img/04-dashboard-historico.png)
 
-Conferi a tabela final de 2025 do card contra o `gold`, linha a linha, e bateu.
+Conferi a tabela final de 2025 do card contra o `gold`, linha a linha, e bateu. Só `aproveitamento` e `ultimos_5` ficaram fora dessa conferência.
 
 Duas coisas ficaram diferentes do que o `dashboard.md` pede. No gráfico de posição, o líder aparece embaixo, porque não achei como inverter o eixo no Metabase. E os rebaixados viraram uma tabelinha, porque os nomes não cabem num cartão de número. Também só traduzi os nomes das tabelas e os títulos dentro dos cards, o modelo de dados ficou com os nomes de coluna originais.
 

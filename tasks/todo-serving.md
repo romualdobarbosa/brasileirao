@@ -2,6 +2,8 @@
 
 Plano: [plan-serving.md](plan-serving.md). Spec: [SPEC-serving.md](../SPEC-serving.md).
 
+> **Canceladas as Fases 3 a 5** em 05/11/2026: o cadastro da Oracle no Brasil pede CNPJ. Ver [SPEC-vitrine.md](../SPEC-vitrine.md) e [todo-vitrine.md](todo-vitrine.md). O `docs/serving/oracle.md` foi removido.
+
 Toda tarefa de código só conta como feita com `make lint` e `make test` passando.
 
 ---
@@ -165,7 +167,7 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 
 ---
 
-## Fase 3: Nuvem (Romualdo + sessão principal)
+## Fase 3: Nuvem (Romualdo + sessão principal), cancelada
 
 ### T7: Conta, VM, DNS, deploy e carga remota
 
@@ -182,7 +184,7 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 
 **Dependências:** T6
 
-## Fase 4: Dashboard (Romualdo)
+## Fase 4: Dashboard (Romualdo), cancelada
 
 ### T8: Montagem e Public Sharing
 
@@ -196,7 +198,7 @@ PKs: `classificacao_por_rodada (temporada, rodada, clube)`, `desempenho_mandante
 
 **Dependências:** T5, T7
 
-## Fase 5: Fechamento
+## Fase 5: Fechamento, cancelada
 
 ### T9: Documentação e conferência final
 

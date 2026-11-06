@@ -79,8 +79,8 @@ T8 (91: docs Metabase), em paralelo ──────────────�
 
 ## T7: publicação (Romualdo, com a principal)
 
-- [ ] Login no Streamlit Community Cloud com o GitHub; app apontando para `app/streamlit_app.py`, Python 3.12
-- [ ] Link abre em janela anônima, sem login; as 8 páginas funcionam
+- [x] Login no Streamlit Community Cloud com o GitHub; app apontando para `app/streamlit_app.py`, Python 3.12
+- [x] Link abre em janela anônima, sem login; as 8 páginas funcionam
 
 ## T8: registro do Metabase (`brasileirao-91`)
 
@@ -90,6 +90,6 @@ T8 (91: docs Metabase), em paralelo ──────────────�
 
 ## T9: fechamento (principal)
 
-- [ ] `oracle.md` removido; `SPEC-serving.md`, `todo-serving.md` e `CAPABILITY_MAP.md` atualizados
-- [ ] README com link do app, seção da vitrine e seção do serving local, revisado pela `voz-romualdo`
+- [x] `oracle.md` removido; `SPEC-serving.md`, `todo-serving.md` e `CAPABILITY_MAP.md` atualizados
+- [x] README com link do app, seção da vitrine e seção do serving local, revisado pela `voz-romualdo`
 - [ ] Os 9 critérios da spec conferidos; CI verde
