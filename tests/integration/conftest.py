@@ -63,14 +63,20 @@ def silver(lake_compartilhado):
 
 
 @pytest.fixture(scope="module")
-def lake_do_modulo(spark, tmp_path_factory):
-    """Silver e gold das mesmas fixtures, num lake só do módulo, para quem muda a tabela."""
-    lake = LakeCompartilhado(spark, tmp_path_factory.mktemp("lake_do_modulo"))
-    assert lake.linhas_gold
+def lake_do_modulo(spark, lake_compartilhado, tmp_path_factory):
+    """Silver e gold das mesmas fixtures, num lake só do módulo, para quem muda a tabela.
+
+    É uma cópia do lake compartilhado, com histórico e tudo: o Delta guarda os arquivos com
+    caminho relativo, então a cópia é uma tabela inteira, e montar outro lake custaria o
+    pipeline de novo. A silver já vem com as constraints do `pipeline.lakehouse`; o gold ganha
+    as dele aqui, como no `executar_gold`."""
+    assert lake_compartilhado.linhas_gold
+    raiz = tmp_path_factory.mktemp("lake_do_modulo")
+    shutil.copytree(lake_compartilhado.raiz, raiz, dirs_exist_ok=True)
     with pytest.MonkeyPatch.context() as mp:
-        _ambiente_do_lake(mp, lake.raiz)
+        _ambiente_do_lake(mp, raiz)
         constraints.aplicar_camada(spark, "gold")
-        yield lake
+        yield raiz
 
 
 INITDB = Path(__file__).parent.parent.parent / "serving" / "initdb"

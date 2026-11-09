@@ -15,6 +15,12 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] `docs/delta/README.md` com saídas reais
 - [x] 🚧 Explicação ao Romualdo com as saídas reais
 
+## OT3: custo das constraints na suíte. Decidido com o Romualdo em 09/11/2026
+- [x] Medição local por arquivo e por fixture, antes e depois
+- [x] Redução sem remover nem enfraquecer teste; recusa das constraints segue testada
+- [ ] `make test` e `make lint` verdes; job `test` do CI abaixo de 680 s
+- [x] `docs/tuning/README.md` ganha a seção com o antes e depois
+
 ## EN1: sondagem e entrada do enriquecimento. Spec: enrichment
 - [ ] 🚧 Romualdo cria o projeto Google e autoriza o acesso local
 - [ ] Sondagem registrada: colunas, temporadas, nulos e licença. Se reprovar, 🚧 decisão

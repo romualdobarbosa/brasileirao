@@ -123,6 +123,34 @@ A primeira versão da mudança 6 passou em todas as execuções com o cache chei
 - Pular os testes `postgres` ou reduzir fixtures, pelo mesmo motivo.
 - Mudar o pipeline. Nas três execuções, o `make lakehouse` levou de 5,4 s a 9,4 s por temporada depois da primeira, que levou de 14,6 s a 16,0 s, e nenhuma destoa. No `make gold`, uma execução com cProfile mostrou 12,7 s de 36,9 s em gravações Delta, cerca de 0,7 s por tabela, e o resto espalhado entre as 18 tabelas e as checagens. Sem um ponto que concentre o tempo, não havia o que atacar, e o código de produção não foi alterado.
 
+## Constraints na suíte (OT3)
+
+As 93 constraints do Delta levaram o `make test` local de 198,4 s para cerca de 345 s, e o job do CI chegou a 680 s, com timeout de 900. Medi de novo com `--durations=0`, somando por arquivo, na mesma máquina e com os mesmos cuidados de cima (Postgres de pé, Metabase parado). Foi uma execução por estado, então uns 20 s de diferença podem ser ruído.
+
+O custo está no `ALTER TABLE ... ADD CONSTRAINT`. Numa tabela de 20 linhas, cada um levou de 0,5 s a 1,25 s, contra uns 0,1 s de uma leitura com o mesmo filtro. Cada constraint grava uma versão, e o Delta não aceita mais de uma por comando. Testei as duas sintaxes de lote e deu `ParseException`, e pelo `SET TBLPROPERTIES` deu `DELTA_ADD_CONSTRAINTS`. As 70 do gold custam perto de um minuto, e as 23 da silver entram em todo `pipeline.lakehouse` que roda num lake novo.
+
+| # | Mudança | `make test` antes (s) | Depois (s) | Soma das durações antes (s) | Depois (s) | Resultado |
+|---|---|---:|---:|---:|---:|---|
+| 7 | `test_cli_gold` sem aplicar as constraints no lake compartilhado | 368,1 | 359,5 | 650,7 | 633,2 | Ficou |
+| 8 | Lake de `test_constraints` copiado do compartilhado | 359,5 | 341,4 | 633,2 | 605,1 | Ficou |
+
+Os tempos do `make test` na tabela são com `--durations` ligado. O `make test` puro, no estado final, deu 341,4 s. A soma das durações junta os dois workers e mostra o trabalho total, enquanto o `make test` mostra o worker que termina por último.
+
+### 7. `test_cli_gold`
+
+O teste só confere o despacho da CLI e já trocava o `processar_gold` por um dublê. Depois das constraints, o `executar_gold` passou a chamar `aplicar_camada` de verdade, e o teste aplicava as 70 constraints no gold do lake compartilhado, que é de outros módulos. Isso levava 30,1 s. Agora `aplicar_camada` também é dublê, e o teste confere que ela é chamada com `"gold"` depois do `processar_gold`. O `test_gold.py` foi de 100,3 s para 73,4 s.
+
+### 8. Cópia do lake compartilhado
+
+O `test_constraints` montava um lake só dele, rodando silver e gold de novo. Agora ele copia a pasta do lake compartilhado, com `_delta_log` e tudo, e aplica as constraints do gold na cópia, como o `executar_gold` faz. O Delta grava os caminhos dos arquivos relativos à tabela, então a cópia é uma tabela completa, com o histórico junto. Todos os testes do módulo passaram sem mudança, inclusive o que lê a versão 0 de `gold/disciplina` e o que conta os `ADD CONSTRAINT` do histórico. O setup do módulo foi de 98,3 s para 114,4 s, porque nessa execução ele montou também o lake compartilhado. Em troca, o setup do `test_serving.py`, que caiu no mesmo worker, foi de 41,6 s para 0.
+
+### O que não mudei
+
+- O código das constraints. Ele já lê as constraints da tabela uma vez e só adiciona as que faltam, e essa leitura leva uns 0,02 s por tabela depois da primeira vez. Sem comando em lote no Delta, não sobrou nada para cortar ali sem mudar o que a produção faz.
+- O `test_pipeline.py` (74 s) e o `test_pipeline_duas_vezes_nao_falha_nem_duplica` (36 s). Eles rodam o pipeline inteiro de propósito, com as constraints, e cortar isso seria enfraquecer o teste.
+
+O ganho foi pequeno, uns 7% no tempo de parede local (e o resto do custo é o preço de testar as regras de verdade).
+
 ## Conferência
 
 - O gold foi comparado nas 18 tabelas, linha a linha e ordenado por todas as colunas, com uma foto tirada antes de tudo. Deu 18 idênticas no estado final, logo depois de um `make gold`, e em cada estado intermediário. Nas mudanças 1 e 3, essa comparação foi feita depois, recompondo o estado do código.

@@ -5,6 +5,7 @@ from chispa import assert_df_equality
 
 from brasileirao import config, pipeline
 from brasileirao.aggregate import gold, qualidade
+from brasileirao.lake import constraints
 from brasileirao.serving.tabelas import TABELAS as TABELAS_SERVING
 
 
@@ -158,12 +159,17 @@ def test_cli_gold_sem_silver(spark, data_root):
 
 
 def test_cli_gold(spark, monkeypatch):
+    # Só o despacho: as constraints de verdade são testadas em `test_constraints`. Sem o
+    # dublê, elas seriam aplicadas no gold do lake compartilhado, que é de outros módulos.
     chamadas = []
     monkeypatch.setattr(gold, "processar_gold", lambda sessao: chamadas.append(sessao))
+    monkeypatch.setattr(
+        constraints, "aplicar_camada", lambda sessao, camada: chamadas.append((sessao, camada))
+    )
 
     pipeline.main(["gold"])
 
-    assert chamadas == [spark]
+    assert chamadas == [spark, (spark, "gold")]
 
 
 def test_entrada_desconhecida(spark):
