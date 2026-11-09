@@ -18,7 +18,7 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 ## OT3: custo das constraints na suíte. Decidido com o Romualdo em 09/11/2026
 - [x] Medição local por arquivo e por fixture, antes e depois
 - [x] Redução sem remover nem enfraquecer teste; recusa das constraints segue testada
-- [ ] `make test` e `make lint` verdes; job `test` do CI abaixo de 680 s
+- [x] `make test` e `make lint` verdes; job `test` do CI abaixo de 680 s (476 s, run 42683903508)
 - [x] `docs/tuning/README.md` ganha a seção com o antes e depois
 
 ## EN1: sondagem e entrada do enriquecimento. Spec: enrichment

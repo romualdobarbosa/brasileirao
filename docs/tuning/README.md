@@ -151,6 +151,8 @@ O `test_constraints` montava um lake só dele, rodando silver e gold de novo. Ag
 
 O ganho foi pequeno, uns 7% no tempo de parede local (e o resto do custo é o preço de testar as regras de verdade).
 
+No CI, o job `test` foi de 680 s (run 42312886296) para 476 s (run 42683903508). É uma execução de cada lado, e o CI varia mais que a máquina local, então parte dessa queda pode ser ruído.
+
 ## Conferência
 
 - O gold foi comparado nas 18 tabelas, linha a linha e ordenado por todas as colunas, com uma foto tirada antes de tudo. Deu 18 idênticas no estado final, logo depois de um `make gold`, e em cada estado intermediário. Nas mudanças 1 e 3, essa comparação foi feita depois, recompondo o estado do código.
