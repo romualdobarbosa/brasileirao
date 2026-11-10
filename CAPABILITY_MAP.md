@@ -10,12 +10,12 @@
 | `vitrine` | 10 tabelas gold novas, exportação para Parquet e app Streamlit público no Community Cloud | gold | [SPEC-vitrine.md](SPEC-vitrine.md) |
 | `ci` | GitHub Actions: ruff + pytest com Spark local em PR; checks de Terraform quando `cloud-aws` existir | lakehouse | [SPEC-ci.md](SPEC-ci.md) |
 | `otimizacao` | Tuning medido, constraints e manutenção do Delta (OPTIMIZE, VACUUM, Z-Order, time travel) | gold | [SPEC-otimizacao.md](SPEC-otimizacao.md) |
-| `enrichment` | Base dos Dados via BigQuery, juntando com o silver, condicionado à sondagem | lakehouse | [SPEC-enrichment.md](SPEC-enrichment.md) |
+| `enrichment` | ~~Base dos Dados via BigQuery, juntando com o silver~~ Cancelado em 10/11/2026: licença do dado desconhecida ([sondagem](docs/enriquecimento/sondagem.md)) | lakehouse | [SPEC-enrichment.md](SPEC-enrichment.md) |
 | `databricks` | O mesmo pipeline rodando no Databricks Free Edition | gold | [SPEC-databricks.md](SPEC-databricks.md) |
 | `cloud-aws` | Terraform (S3, IAM, EMR Serverless, Glue, Athena, Budgets, state remoto, OIDC) rodando o mesmo job no EMR | gold | [SPEC-cloud-aws.md](SPEC-cloud-aws.md) |
 | `orchestration` | Dado que muda (simulação), Airflow local e observabilidade | gold | [SPEC-orchestration.md](SPEC-orchestration.md) |
 
-**Ordem de construção:** `lakehouse` (+ `ci` em paralelo) → `gold` → `serving` (local) → `vitrine` → `otimizacao` → `enrichment` → `databricks` → `cloud-aws` → `orchestration`. Plano e tickets em [tasks/plan-fechamento.md](tasks/plan-fechamento.md).
+**Ordem de construção:** `lakehouse` (+ `ci` em paralelo) → `gold` → `serving` (local) → `vitrine` → `otimizacao` → ~~`enrichment`~~ → `databricks` → `cloud-aws` → `orchestration`. Plano e tickets em [tasks/plan-fechamento.md](tasks/plan-fechamento.md).
 
 **Fora do projeto:** cluster/escala e Structured Streaming (o dado não justifica) e serving em produção (Streamlit Community Cloud e Metabase local já cobrem).
 

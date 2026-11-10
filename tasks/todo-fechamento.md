@@ -21,18 +21,18 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] `make test` e `make lint` verdes; job `test` do CI abaixo de 680 s (476 s, run 42683903508)
 - [x] `docs/tuning/README.md` ganha a seção com o antes e depois
 
-## EN1: sondagem e entrada do enriquecimento. Spec: enrichment
-- [ ] 🚧 Romualdo cria o projeto Google e autoriza o acesso local
-- [ ] Sondagem registrada: colunas, temporadas, nulos e licença. Se reprovar, 🚧 decisão
-- [ ] `make download-enriquecimento` congela o arquivo em `raw/`
-- [ ] Limpeza e silver, com mapa de times e fixture de teste
-- [ ] Taxa de casamento ≥ 95%, com avisos do que não casa
+## EN1: sondagem e entrada do enriquecimento. Spec: enrichment. **Cancelado em 10/11/2026: licença desconhecida**
+- [x] 🚧 Romualdo cria o projeto Google e autoriza o acesso local (projeto `brasileirao-numeros`, Sandbox; credencial do pydata-google-auth em ~/.config/pydata/)
+- [x] Sondagem registrada: colunas, temporadas, nulos e licença. Se reprovar, 🚧 decisão
+- [-] ~~`make download-enriquecimento` congela o arquivo em `raw/`~~
+- [-] ~~Limpeza e silver, com mapa de times e fixture de teste~~
+- [-] ~~Taxa de casamento ≥ 95%, com avisos do que não casa~~
 
-## EN2: gold e app do enriquecimento. Spec: enrichment
-- [ ] Tabelas gold novas, com checagens e testes
-- [ ] 18 tabelas anteriores inalteradas
-- [ ] `make exportar` e página nova no app
-- [ ] Texto da página marcado para a `voz-romualdo`; README cita fonte e cobertura
+## EN2: gold e app do enriquecimento. Spec: enrichment. **Cancelado junto com o EN1**
+- [-] ~~Tabelas gold novas, com checagens e testes~~
+- [-] ~~18 tabelas anteriores inalteradas~~
+- [-] ~~`make exportar` e página nova no app~~
+- [-] ~~Texto da página marcado para a `voz-romualdo`; README cita fonte e cobertura~~
 
 ## DB1: código pronto para o Databricks. Spec: databricks
 - [ ] `get_spark` com ambiente `databricks`, usando a sessão existente

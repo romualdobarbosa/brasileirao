@@ -1,6 +1,6 @@
 # Spec: enrichment
 
-> Status: **aprovada para execução, condicionada à sondagem do EN1**. Tickets EN1 e EN2 em [tasks/todo-fechamento.md](tasks/todo-fechamento.md).
+> Status: **cancelada em 2026-11-10, na sondagem do EN1.** A tabela da Base dos Dados existe e atende na parte técnica (valor do time titular com menos de 20% de nulos em 2008–2023), mas a licença está registrada como "desconhecida" e o dado vem de raspagem do Transfermarkt. Sem licença confirmada para publicar, o Romualdo decidiu cancelar o módulo e seguir para o Databricks. Detalhes em [docs/enriquecimento/sondagem.md](docs/enriquecimento/sondagem.md).
 
 ## Objetivo
 

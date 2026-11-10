@@ -93,4 +93,4 @@ A fonte tem buracos, e é melhor saber onde estão antes de tirar conclusão de 
 
 ## Próximos passos
 
-O mapa completo está em [CAPABILITY_MAP.md](CAPABILITY_MAP.md), e cada módulo tem a sua spec na raiz do repositório. Os próximos são o enriquecimento com a Base dos Dados e o mesmo pipeline rodando no EMR Serverless da AWS (com Terraform) e no Databricks, sem reescrever o código.
+O mapa completo está em [CAPABILITY_MAP.md](CAPABILITY_MAP.md), e cada módulo tem a sua spec na raiz do repositório. Os próximos são o mesmo pipeline rodando no Databricks e no EMR Serverless da AWS (com Terraform), sem reescrever o código. O enriquecimento com a Base dos Dados ficou de fora, porque a licença do dado está registrada como desconhecida ([sondagem](docs/enriquecimento/sondagem.md)).
