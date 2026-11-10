@@ -4,6 +4,7 @@ import os
 
 DATA_ROOT_PADRAO = "./data"
 SPARK_ENV_PADRAO = "local"
+MATERIALIZACAO_PADRAO = "local_checkpoint"
 CAMADAS = ("raw", "bronze", "silver", "gold")
 
 
@@ -14,6 +15,11 @@ def data_root() -> str:
 
 def spark_env() -> str:
     return os.environ.get("BRASILEIRAO_SPARK_ENV", SPARK_ENV_PADRAO)
+
+
+def materializacao_databricks() -> str:
+    """Como `materializar` calcula um DataFrame no Databricks. No local é sempre o mesmo."""
+    return os.environ.get("BRASILEIRAO_MATERIALIZAR", MATERIALIZACAO_PADRAO)
 
 
 def caminho_camada(camada: str) -> str:

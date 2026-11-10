@@ -9,13 +9,11 @@ import time
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-from brasileirao.aggregate import explain, exportar, gold
+from brasileirao.aggregate import explain, gold
 from brasileirao.aggregate import qualidade as qualidade_gold
 from brasileirao.config import VariavelAusenteError
 from brasileirao.ingestion import bronze
 from brasileirao.lake import TabelaInvalidaError, constraints, historico, manutencao
-from brasileirao.serving import carga, postgres
-from brasileirao.serving.tabelas import DRIVER_JDBC
 from brasileirao.transform import qualidade, silver
 from brasileirao.utils.spark import get_spark
 from brasileirao.utils.temporada import partidas_esperadas
@@ -120,6 +118,27 @@ def consultar_historico(
         print(historico.comparar_versoes(spark, tabela, *comparar).resumo())
 
 
+def _carga() -> None:
+    # `serving` puxa o psycopg, e o `exportar`, o py4j da JVM local: importados só no próprio
+    # subcomando, para o pipeline rodar onde eles não existem (Databricks).
+    from brasileirao.serving import carga, postgres
+    from brasileirao.serving.tabelas import DRIVER_JDBC
+
+    try:
+        carga.carregar(get_spark(pacotes=[DRIVER_JDBC]))
+    except (carga.GoldAusenteError, carga.CargaError, postgres.PostgresIndisponivelError) as erro:
+        raise SystemExit(f"Erro: {erro}") from erro
+
+
+def _exportar(destino: str | None) -> None:
+    from brasileirao.aggregate import exportar
+
+    try:
+        exportar.exportar(get_spark(), destino or exportar.DESTINO_PADRAO)
+    except exportar.GoldIncompletoError as erro:
+        raise SystemExit(f"Erro: {erro}") from erro
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m brasileirao.pipeline")
     comandos = parser.add_subparsers(dest="comando", required=True)
@@ -136,11 +155,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     comandos.add_parser("carga", help="gold → Postgres do .env (gold_carga e troca)")
     cmd = comandos.add_parser("exportar", help="gold → um Parquet por tabela, para o app")
-    cmd.add_argument(
-        "--destino",
-        default=exportar.DESTINO_PADRAO,
-        help=f"diretório dos .parquet (padrão: {exportar.DESTINO_PADRAO})",
-    )
+    cmd.add_argument("--destino", help="diretório dos .parquet (padrão: o que o app lê, app/dados)")
     comandos.add_parser("manutencao", help="OPTIMIZE, Z-Order e VACUUM com retenção padrão")
     cmd = comandos.add_parser("historico", help="versões de uma tabela Delta")
     cmd.add_argument("tabela", help="camada/tabela, como silver/partidas")
@@ -154,9 +169,9 @@ def main(argv: list[str] | None = None) -> None:
         if args.comando == "gold":
             executar_gold(get_spark())
         elif args.comando == "carga":
-            carga.carregar(get_spark(pacotes=[DRIVER_JDBC]))
+            _carga()
         elif args.comando == "exportar":
-            exportar.exportar(get_spark(), args.destino)
+            _exportar(args.destino)
         elif args.comando == "explain":
             explain.gerar_planos(get_spark(), args.destino)
         elif args.comando == "manutencao":
@@ -170,10 +185,6 @@ def main(argv: list[str] | None = None) -> None:
         qualidade.QualidadeError,
         qualidade_gold.QualidadeGoldError,
         gold.SilverAusenteError,
-        carga.GoldAusenteError,
-        exportar.GoldIncompletoError,
-        carga.CargaError,
-        postgres.PostgresIndisponivelError,
         VariavelAusenteError,
         constraints.ConstraintRecusadaError,
         TabelaInvalidaError,

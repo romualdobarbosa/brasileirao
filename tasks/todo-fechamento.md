@@ -35,11 +35,11 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [-] ~~Texto da página marcado para a `voz-romualdo`; README cita fonte e cobertura~~
 
 ## DB1: código pronto para o Databricks. Spec: databricks
-- [ ] `get_spark` com ambiente `databricks`, usando a sessão existente
-- [ ] Imports de `serving` e `exportar` dentro dos subcomandos
-- [ ] `materializar(df)` por ambiente, se a sondagem do DB2 pedir; deixar a troca preparada
-- [ ] Wheel puro sem `pyspark`/`delta-spark` como dependência, e `make wheel`
-- [ ] Testes unitários do ambiente; local inalterado
+- [x] `get_spark` com ambiente `databricks`, usando a sessão existente
+- [x] Imports de `serving` e `exportar` dentro dos subcomandos
+- [x] `materializar(df)` por ambiente, se a sondagem do DB2 pedir; deixar a troca preparada
+- [x] Wheel puro sem `pyspark`/`delta-spark` como dependência, e `make wheel`
+- [x] Testes unitários do ambiente; local inalterado
 
 ## DB2: pipeline rodando no Databricks. Spec: databricks
 - [ ] 🚧 Romualdo cria a conta e envia CSVs e wheel a um Volume

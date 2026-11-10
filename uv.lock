@@ -53,10 +53,8 @@ name = "brasileirao"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "delta-spark" },
     { name = "kagglehub" },
     { name = "psycopg", extra = ["binary"] },
-    { name = "pyspark" },
 ]
 
 [package.dev-dependencies]
@@ -74,13 +72,15 @@ dev = [
     { name = "pytest-xdist" },
     { name = "ruff" },
 ]
+spark = [
+    { name = "delta-spark" },
+    { name = "pyspark" },
+]
 
 [package.metadata]
 requires-dist = [
-    { name = "delta-spark", specifier = "==4.4.1" },
     { name = "kagglehub", specifier = ">=1.0.3" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
-    { name = "pyspark", specifier = "==4.2.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -97,6 +97,10 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.17.1" },
+]
+spark = [
+    { name = "delta-spark", specifier = "==4.4.1" },
+    { name = "pyspark", specifier = "==4.2.0" },
 ]
 
 [[package]]

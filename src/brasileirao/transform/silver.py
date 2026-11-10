@@ -12,6 +12,7 @@ from pyspark.sql import functions as F
 
 from brasileirao import config
 from brasileirao.transform import limpeza, qualidade
+from brasileirao.utils.spark import materializar
 
 log = logging.getLogger(__name__)
 
@@ -64,11 +65,13 @@ def ler_bronze(spark: SparkSession, entidade: str, temporada: int) -> DataFrame:
 def preparar_partidas(spark: SparkSession, temporada: int, mapa: DataFrame) -> CargaSilver:
     # Uma temporada cabe folgada em memória; materializar evita recalcular a partir da
     # bronze em cada checagem.
-    limpo = limpeza.deduplicar_partidas(
-        limpeza.limpar_partidas(ler_bronze(spark, "partidas", temporada))
-    ).localCheckpoint()
+    limpo = materializar(
+        limpeza.deduplicar_partidas(
+            limpeza.limpar_partidas(ler_bronze(spark, "partidas", temporada))
+        )
+    )
     qualidade.checar_falhas_partidas(limpo, mapa, limpeza.COLUNAS_TIME_PARTIDAS, temporada)
-    df = limpeza.para_silver_partidas(limpo, mapa).localCheckpoint()
+    df = materializar(limpeza.para_silver_partidas(limpo, mapa))
     return CargaSilver("partidas", df, qualidade.avisos_partidas(df, temporada))
 
 
@@ -79,10 +82,10 @@ def preparar_filha(
     limpo = limpar(ler_bronze(spark, tabela, temporada))
     if tabela == "estatisticas":
         limpo = limpeza.descartar_estatisticas_sem_dado(limpo)
-    limpo = limpo.localCheckpoint()
+    limpo = materializar(limpo)
     qualidade.checar_falhas_filha(limpo, mapa, tabela, temporada)
     atletas = mapa_atletas if tabela in FILHAS_COM_ATLETA else None
-    df = limpeza.para_silver_filha(limpo, mapa, colunas, atletas).localCheckpoint()
+    df = materializar(limpeza.para_silver_filha(limpo, mapa, colunas, atletas))
     if tabela == "estatisticas":
         qualidade.checar_unicidade_estatisticas(df, temporada)
     return CargaSilver(tabela, df, qualidade.avisos_filha(df, tabela, temporada))
@@ -120,7 +123,7 @@ def gravar_merge(
     atual = alvo.toDF()
     igual = [F.col(f"n.{c}").eqNullSafe(F.col(f"s.{c}")) for c in df.columns]
     # Materializado antes do MERGE porque depende da própria tabela de destino.
-    alterados = df.alias("n").join(atual.alias("s"), on=igual, how="left_anti").localCheckpoint()
+    alterados = materializar(df.alias("n").join(atual.alias("s"), on=igual, how="left_anti"))
     da_temporada = F.col("temporada") == temporada
     sobrando = [
         linha[chave]

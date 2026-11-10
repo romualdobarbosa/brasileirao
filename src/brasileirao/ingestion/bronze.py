@@ -6,6 +6,7 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
 from brasileirao import config
+from brasileirao.utils.spark import materializar
 from brasileirao.utils.temporada import derivar_temporada
 
 log = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ def escrever_bronze(spark: SparkSession, entidade: str, temporada: int) -> int:
         df = ler_filha_raw(spark, entidade, temporada)
     else:
         raise ValueError(f"Entidade desconhecida: {entidade!r}. Use uma de: {', '.join(ARQUIVOS)}")
-    df = df.localCheckpoint()
+    df = materializar(df)
     (
         df.write.format("delta")
         .mode("overwrite")

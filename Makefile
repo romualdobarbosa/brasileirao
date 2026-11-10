@@ -1,5 +1,5 @@
 .PHONY: setup download lakehouse gold exportar app explain manutencao historico serving-up serving-down carga carga-remota deploy \
-	backup-metabase test lint fmt
+	backup-metabase test lint fmt wheel
 
 # Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
 ifneq (,$(wildcard .env))
@@ -91,6 +91,11 @@ serving-down:
 
 test:
 	uv run --group app pytest --cov=brasileirao --cov-report=term-missing -n 2 --dist loadfile
+
+# Wheel do pacote em dist/, sem pyspark nem delta-spark nas dependências (para o Databricks).
+wheel:
+	rm -rf dist
+	uv build --wheel
 
 lint:
 	uv run ruff check . && uv run ruff format --check .

@@ -1,10 +1,12 @@
-from delta import configure_spark_with_delta_pip
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 
 from brasileirao import config
 
-AMBIENTES_FUTUROS = ("emr", "databricks")
+AMBIENTES_FUTUROS = ("emr",)
 DELTA_CATALOG = "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+# No serverless do Databricks quase nenhuma propriedade da sessão pode ser mudada; esta pode.
+CONF_DATABRICKS = frozenset({"spark.sql.shuffle.partitions"})
+MATERIALIZACOES_DATABRICKS = ("local_checkpoint", "cache")
 
 
 def get_spark(
@@ -20,15 +22,21 @@ def get_spark(
     ambiente = config.spark_env()
     if ambiente == "local":
         return _spark_local(app_name, conf or {}, pacotes)
+    if ambiente == "databricks":
+        return _spark_databricks(conf or {}, pacotes)
     if ambiente in AMBIENTES_FUTUROS:
         raise NotImplementedError(f"Ambiente Spark {ambiente!r} ainda não foi implementado")
     raise ValueError(
         f"BRASILEIRAO_SPARK_ENV desconhecido: {ambiente!r}. "
-        f"Use um de: local, {', '.join(AMBIENTES_FUTUROS)}"
+        f"Use um de: local, databricks, {', '.join(AMBIENTES_FUTUROS)}"
     )
 
 
 def _spark_local(app_name: str, conf: dict[str, str], pacotes: list[str] | None) -> SparkSession:
+    # Importado aqui: o `configure_spark_with_delta_pip` é do delta-spark do PyPI, que o
+    # Databricks não tem.
+    from delta import configure_spark_with_delta_pip
+
     builder = (
         SparkSession.builder.appName(app_name)
         .master("local[*]")
@@ -45,3 +53,45 @@ def _spark_local(app_name: str, conf: dict[str, str], pacotes: list[str] | None)
     for chave, valor in conf.items():
         builder = builder.config(chave, valor)
     return configure_spark_with_delta_pip(builder, extra_packages=pacotes).getOrCreate()
+
+
+def _spark_databricks(conf: dict[str, str], pacotes: list[str] | None) -> SparkSession:
+    """A sessão que o Databricks já abriu, com Delta pronto.
+
+    Nada de extensão, catálogo, Maven ou nome de app: no serverless isso é do Databricks.
+    """
+    if pacotes:
+        raise ValueError(f"Ambiente databricks não baixa pacote Maven: {', '.join(pacotes)}")
+    recusadas = sorted(set(conf) - CONF_DATABRICKS)
+    if recusadas:
+        raise ValueError(
+            f"Ambiente databricks só aceita {', '.join(sorted(CONF_DATABRICKS))}; "
+            f"recusadas: {', '.join(recusadas)}"
+        )
+    sessao = SparkSession.getActiveSession() or SparkSession.builder.getOrCreate()
+    for chave, valor in conf.items():
+        sessao.conf.set(chave, valor)
+    return sessao
+
+
+def materializar(df: DataFrame) -> DataFrame:
+    """Calcula o DataFrame agora e devolve uma versão que não recalcula a partir da fonte.
+
+    No local é o `localCheckpoint()` de sempre. No Databricks, `localCheckpoint` não está
+    documentado no serverless; `BRASILEIRAO_MATERIALIZAR=cache` troca por `cache()` + `count()`
+    se a sondagem mostrar que ele falha. O `cache` não corta a linhagem: se o cache cair, o
+    Spark recalcula a partir da fonte, inclusive de uma tabela que já foi regravada.
+    """
+    if config.spark_env() != "databricks":
+        return df.localCheckpoint()
+    modo = config.materializacao_databricks()
+    if modo == "local_checkpoint":
+        return df.localCheckpoint()
+    if modo == "cache":
+        df = df.cache()
+        df.count()
+        return df
+    raise ValueError(
+        f"BRASILEIRAO_MATERIALIZAR desconhecido: {modo!r}. "
+        f"Use um de: {', '.join(MATERIALIZACOES_DATABRICKS)}"
+    )

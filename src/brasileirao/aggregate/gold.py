@@ -37,6 +37,7 @@ from brasileirao.aggregate.tecnicos import (
 )
 from brasileirao.aggregate.viradas import calcular_viradas, checar_viradas
 from brasileirao.transform.silver import carregar_mapa_times
+from brasileirao.utils.spark import materializar
 
 log = logging.getLogger(__name__)
 
@@ -192,7 +193,7 @@ def processar_gold(spark: SparkSession) -> dict[str, int]:
     calculadas = {}
     for nome, tabela in TABELAS.items():
         # Materializada: as checagens, a gravação e as tabelas seguintes leem de novo.
-        df = tabela.calcular(*[fontes[e] for e in tabela.entradas]).localCheckpoint()
+        df = materializar(tabela.calcular(*[fontes[e] for e in tabela.entradas]))
         calculadas[nome] = fontes[nome] = df
     problemas = [
         problema
