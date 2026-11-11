@@ -84,16 +84,14 @@ backup-metabase:
 	echo "backup em $$arquivo"
 
 # Ambiente aws: o mesmo pipeline, com o Spark local e o lake no bucket do infra/main (que precisa
-# estar de pé). A credencial da sessão do `aws login` vai só pelo ambiente do comando. Ela dura
-# no máximo 15 min e o Spark não a renova, então cada processo recebe uma credencial com pelo
-# menos AWS_MINUTOS de validade (infra/credencial.sh) e o lakehouse roda uma temporada por vez.
-AWS_MINUTOS ?= 6
-AWS_ENV = credencial=$$(infra/credencial.sh $(AWS_MINUTOS)) && eval "$$credencial" && \
+# estar de pé). A credencial vem do perfil AWS_PROFILE, cujo `credential_process` pede à CLI a da
+# sessão do `aws login`, e o SDK do Spark roda o comando de novo quando ela vence. Credencial
+# exportada no ambiente sai antes, para não passar na frente do perfil.
+AWS_PROFILE ?= brasileirao
+AWS_ENV = unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_CREDENTIAL_EXPIRATION && \
+	export AWS_PROFILE=$(AWS_PROFILE) AWS_REGION=us-east-1 BRASILEIRAO_SPARK_ENV=aws && \
 	conta=$$(aws sts get-caller-identity --query Account --output text) && \
-	export AWS_REGION=us-east-1 BRASILEIRAO_SPARK_ENV=aws \
-		BRASILEIRAO_DATA_ROOT=s3a://brasileirao-lake-$$conta &&
-# As temporadas encerradas da fonte, as mesmas do `lakehouse --todas` no local.
-TEMPORADAS_AWS ?= $(shell seq 2003 2025)
+	export BRASILEIRAO_DATA_ROOT=s3a://brasileirao-lake-$$conta &&
 
 # Os CSVs de data/raw/ para s3://<lake>/raw/.
 raw-aws:
@@ -104,13 +102,9 @@ lakehouse-aws:
 ifdef TEMPORADA
 	$(AWS_ENV) uv run python -m brasileirao.pipeline lakehouse --temporada $(TEMPORADA)
 else
-	for t in $(TEMPORADAS_AWS); do \
-		$(AWS_ENV) uv run python -m brasileirao.pipeline lakehouse --temporada $$t || exit 1; \
-	done
+	$(AWS_ENV) uv run python -m brasileirao.pipeline lakehouse --todas
 endif
 
-# O gold é um processo só e leva mais que uma temporada: espera a credencial quase nova.
-gold-aws: AWS_MINUTOS = 14
 gold-aws:
 	$(AWS_ENV) uv run python -m brasileirao.pipeline gold
 

@@ -1,0 +1,23 @@
+{
+  "silver": ["partidas", "gols", "cartoes", "estatisticas"],
+  "gold": [
+    "artilharia",
+    "campanhas",
+    "cartoes_jogadores",
+    "classificacao_por_rodada",
+    "confrontos",
+    "desempenho_mandante_visitante",
+    "disciplina",
+    "esquemas_taticos",
+    "faltas_clubes",
+    "goleadas",
+    "gols_decisivos",
+    "gols_por_minuto",
+    "linha_corte",
+    "passagens_tecnicos",
+    "ranking_historico",
+    "resumo_temporada",
+    "sequencias",
+    "viradas"
+  ]
+}

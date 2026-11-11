@@ -162,3 +162,22 @@ Bucket do state:            main/terraform.tfstate (181 bytes)
 ### O que fica para o AW3
 
 Nas tabelas locais, gravadas pelo mesmo código, o `_delta_log` tem `minReaderVersion 1`, sem deletion vectors nem table features de leitura, e o `minWriterVersion` vai de 2 a 3 quando as constraints entram. Isso deve bastar para o Athena ler, mas não conferi o log do S3 antes do `destroy`, então o AW3 começa subindo o lake de novo.
+
+## Credencial que renova (AW3)
+
+No AW2 a credencial ia pelo ambiente e durava 15 min, e como o JVM não renova, o lakehouse tinha de rodar uma temporada por processo. Troquei por um perfil (`brasileirao`) com `credential_process = aws configure export-credentials --profile default --format process`. O arquivo de config guarda só o comando, e a sessão continua sendo a do `aws login`, sem chave de acesso.
+
+No `get_spark`, o provider do s3a virou o `ProfileCredentialsProvider` do SDK v2 (2.35.4), que lê o perfil de `AWS_PROFILE`. Quando o perfil tem `credential_process`, ele passa o trabalho ao `ProcessCredentialsProvider`, que guarda a credencial até a expiração e roda o comando de novo 15 s antes de ela vencer. O `DefaultCredentialsProvider` chegaria no mesmo lugar, mas ele olha as variáveis de ambiente antes do perfil, e foi uma credencial velha no ambiente que travou duas retomadas no AW2. Por isso fiquei com o do perfil. O Makefile exporta `AWS_PROFILE=brasileirao` (dá para trocar) e tira do ambiente qualquer `AWS_ACCESS_KEY_ID` que esteja lá. O `infra/credencial.sh` saiu, e o `make lakehouse-aws` voltou a ser um processo só, com `--todas`, igual ao local.
+
+Rodei em 11/11/2026 com o lake vazio:
+
+| Etapa | Tempo |
+|---|---:|
+| `make raw-aws` | 4,4 s |
+| `make lakehouse-aws`, 23 temporadas num processo só | 2170,8 s (36 min), sem erro |
+| `make gold-aws`, 18 tabelas | 915,1 s (15 min), sem erro |
+| `make foto-aws` | 72,0 s |
+
+As duas execuções longas passaram dos 15 min da primeira credencial sem nenhuma falha. Um monitor de processos contou 69 execuções do `aws configure export-credentials` no lakehouse e 41 no gold, todas disparadas pelo JVM do Spark. É bem mais do que uma por vencimento, porque o s3a cria várias instâncias do provider ao longo do processo e cada instância nova roda o comando. Cada execução leva menos de 1 s e não custa nada na AWS, então deixei assim.
+
+A foto do S3 bateu com a do local nas 22 tabelas (linhas e sha256) e saiu idêntica, byte a byte, à [`foto_aws.json`](foto_aws.json) do AW2. O lake terminou com 688 objetos e 10,3 MB, menos que os 928 do AW2, que tinha temporadas reprocessadas por cima. No S3, o `_delta_log` de `gold/classificacao_por_rodada` e de `silver/partidas` tem `minReaderVersion 1` e `minWriterVersion` 2 e depois 3, como no local.

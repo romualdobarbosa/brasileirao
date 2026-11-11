@@ -7,7 +7,7 @@
 **Objetivo:** o mesmo pipeline roda com o Spark local, mas lê e grava o lake (bronze, silver e gold em Delta) num bucket S3. Toda a infraestrutura sai do Terraform com `apply` e `destroy` reais: S3, IAM, Glue Data Catalog, workgroup do Athena e Budgets. O gold é consultado de verdade no Athena. Nada de EMR nem Glue Jobs, e nada de upgrade.
 
 **Decisões:**
-- **Ambiente `aws` no `get_spark`:** Spark local com `hadoop-aws` na versão do Hadoop que vem no PySpark 4.2.0, fixada. `BRASILEIRAO_DATA_ROOT=s3a://<bucket>/...`. A credencial vem só do ambiente (`aws configure export-credentials --format env`, da sessão do `aws login`), nunca de arquivo.
+- **Ambiente `aws` no `get_spark`:** Spark local com `hadoop-aws` na versão do Hadoop que vem no PySpark 4.2.0, fixada. `BRASILEIRAO_DATA_ROOT=s3a://<bucket>/...`. A credencial vem só da sessão do `aws login`, sem chave de acesso: um perfil com `credential_process = aws configure export-credentials --format process` (o arquivo de config guarda o comando, não o segredo), que o SDK renova sozinho. Decisão de 11/11, depois do AW2: a credencial exportada pelo ambiente dura 15 min e o JVM não renova, o que obrigava a rodar uma temporada por processo.
 - **Prova pequena antes do completo:** uma temporada no S3, depois o lake inteiro.
 - **Athena lê o Delta pelo Glue Catalog.** Se a leitura falhar, ver se a causa é um recurso da tabela (deletion vectors, checkpoint v2, versão do protocolo) antes de mudar qualquer coisa.
 - **Custo:** só S3 (requisições e alguns MB) e Athena (MB lidos), pagos com crédito, sem cartão. O teto de US$ 15 continua, e a regra 5 (`destroy` ao fim de cada sessão) também.

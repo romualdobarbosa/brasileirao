@@ -87,7 +87,7 @@ def test_aws_e_o_local_mais_s3a(monkeypatch, builder_gravado):
     assert not any("s3a" in chave for chave in local)
 
 
-def test_aws_fixa_versoes_credencial_do_ambiente_e_regiao(monkeypatch, builder_gravado):
+def test_aws_fixa_versoes_credencial_do_perfil_e_regiao(monkeypatch, builder_gravado):
     aws, pacotes = _confs(monkeypatch, builder_gravado, "aws")
 
     assert pacotes == [
@@ -95,7 +95,7 @@ def test_aws_fixa_versoes_credencial_do_ambiente_e_regiao(monkeypatch, builder_g
         "software.amazon.awssdk:bundle:2.35.4",
     ]
     assert aws["spark.hadoop.fs.s3a.aws.credentials.provider"] == (
-        "software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider"
+        "software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider"
     )
     assert aws["spark.hadoop.fs.s3a.endpoint.region"] == "us-east-1"
     assert aws["spark.sql.extensions"] == "io.delta.sql.DeltaSparkSessionExtension"

@@ -22,3 +22,8 @@ output "politica_lake_arn" {
   description = "Política gerenciada com o acesso mínimo do projeto."
   value       = aws_iam_policy.lake.arn
 }
+
+output "tabelas_glue" {
+  description = "Tabelas Delta registradas no Glue Catalog, com o caminho no lake."
+  value       = local.tabelas_delta
+}

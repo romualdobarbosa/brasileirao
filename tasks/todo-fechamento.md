@@ -61,6 +61,7 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] Pipeline completo no S3; foto de silver e gold igual à do local; gasto registrado; `destroy`
 
 ## AW3: catálogo, CI e documentação da AWS. Spec: cloud-aws
+- [x] Credencial por perfil com `credential_process` (renova sozinha); pipeline completo num processo só no S3, foto igual à do local
 - [ ] Glue e Athena em Terraform; consulta real de uma classificação conhecida
 - [ ] CI: `fmt` e `validate`; `plan` por `workflow_dispatch` com OIDC
 - [ ] `docs/aws/README.md`: diagrama, passo a passo, gasto real e screenshots

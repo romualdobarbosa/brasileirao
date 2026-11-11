@@ -16,10 +16,12 @@ AWS_SDK_BUNDLE = "software.amazon.awssdk:bundle:2.35.4"
 PACOTES_AWS = (HADOOP_AWS, AWS_SDK_BUNDLE)
 REGIAO_AWS = "us-east-1"
 CONF_AWS = {
-    # Credencial só do ambiente (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN),
-    # vinda de `aws configure export-credentials --format env`; nada de arquivo nem perfil.
+    # Credencial do perfil em AWS_PROFILE, cujo `credential_process` pede à CLI a da sessão do
+    # `aws login` (o arquivo guarda o comando, não o segredo). O SDK guarda a credencial e roda o
+    # comando de novo 15 s antes de ela vencer, então um processo longo não cai. Só o perfil, sem
+    # a cadeia padrão: uma credencial velha exportada no ambiente teria precedência.
     "spark.hadoop.fs.s3a.aws.credentials.provider": (
-        "software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider"
+        "software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider"
     ),
     "spark.hadoop.fs.s3a.endpoint.region": REGIAO_AWS,
 }
