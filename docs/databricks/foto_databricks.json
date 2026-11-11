@@ -1,0 +1,90 @@
+{
+ "gold/artilharia": {
+  "linhas": 3614,
+  "sha256": "34847fcdad13ee61aa584bfb91e3ef94952d3e4f0e24c8d4b8120f7558a446a7"
+ },
+ "gold/campanhas": {
+  "linhas": 470,
+  "sha256": "7fe5114767a53f7a4a7632d169bfdc063c69c7e356a324000895e37571c11ead"
+ },
+ "gold/cartoes_jogadores": {
+  "linhas": 5891,
+  "sha256": "14e651664787034cc430a38dc795a0139eefe81fa932bfc6549205dad63eceac"
+ },
+ "gold/classificacao_por_rodada": {
+  "linhas": 18332,
+  "sha256": "73fca41befc3289a4ad3a36902cd1d9fff0a6d2e3f2d1d812cceaebc6ed9c4bc"
+ },
+ "gold/confrontos": {
+  "linhas": 1546,
+  "sha256": "1acc8c974b54d09282602c0c01bf6f77fa3f188b2ea2d7cc07d58ab0b2428824"
+ },
+ "gold/desempenho_mandante_visitante": {
+  "linhas": 940,
+  "sha256": "2f6690bdc61d9265ea00bb7ea96f275bb2b5602674677329ce42d1ce8828b03c"
+ },
+ "gold/disciplina": {
+  "linhas": 240,
+  "sha256": "23e8ae51090a060800a030a65212336b23ce4a84888718a312f3ca0847b7c501"
+ },
+ "gold/esquemas_taticos": {
+  "linhas": 202,
+  "sha256": "0c25206850b132e14bc349783dccbc3791c305cdb7f67197e3537629839588a8"
+ },
+ "gold/faltas_clubes": {
+  "linhas": 200,
+  "sha256": "fffc7fa44ba49c64208f7f7ba5adaa86fe1169aec9b508bcb5df4feb4e51fe61"
+ },
+ "gold/goleadas": {
+  "linhas": 382,
+  "sha256": "d4de2cb6cc6c24928c837050bccd8f3aace7196155de47dda28c10e77e94a85f"
+ },
+ "gold/gols_decisivos": {
+  "linhas": 240,
+  "sha256": "d088320c749ad86bcf7e1d8ff827310372625df0623cdffcb95e5ed72be122d2"
+ },
+ "gold/gols_por_minuto": {
+  "linhas": 144,
+  "sha256": "683f37aaa68b7a6e969d49e509baa0e18719577a95635c2f1f97b9950ebed397"
+ },
+ "gold/linha_corte": {
+  "linhas": 23,
+  "sha256": "c1407f1546e6cff1a89286935a8a8c4e8fd506b62536bacc90d2153aad849213"
+ },
+ "gold/passagens_tecnicos": {
+  "linhas": 859,
+  "sha256": "978b1ff6069c64ecdbf13a994c03b5fe0d62d15f312b2d327b653579a84da91c"
+ },
+ "gold/ranking_historico": {
+  "linhas": 46,
+  "sha256": "56b3cabf984d688ee689126307c95b3b215d95b3d4ee99d54e03783510b4c00f"
+ },
+ "gold/resumo_temporada": {
+  "linhas": 23,
+  "sha256": "2d42f02860a141a3a956cb7cf896e4318f000d56ec02b116ccbf5fe63453ea89"
+ },
+ "gold/sequencias": {
+  "linhas": 1880,
+  "sha256": "59fb50592e96a1e0d220a537f0a1cd0708e9056dbb9cca7a42dfb0cee4b6d5ac"
+ },
+ "gold/viradas": {
+  "linhas": 447,
+  "sha256": "19b0eea0810951d219b2fb094cf25809cbbbb420db344837796b46c0ef21426d"
+ },
+ "silver/cartoes": {
+  "linhas": 20953,
+  "sha256": "ff68bcb383fd7dc7d2cd89cca2c2b486c8707a6316e637643afe9a115266bd8a"
+ },
+ "silver/estatisticas": {
+  "linhas": 7580,
+  "sha256": "cffbf7e63e055985d01957c621c18553c4d084c524cde286224554ee57cbbf7e"
+ },
+ "silver/gols": {
+  "linhas": 10820,
+  "sha256": "934734952bf82ebd377aae0ed0ff8ea429e8bfdace98f3ec71378b88c51208f6"
+ },
+ "silver/partidas": {
+  "linhas": 9165,
+  "sha256": "941f4521d60dccc8478a867d38671e47bf3953d1ddec237664e50fed930c719f"
+ }
+}

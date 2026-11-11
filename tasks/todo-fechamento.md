@@ -42,10 +42,10 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] Testes unitários do ambiente; local inalterado
 
 ## DB2: pipeline rodando no Databricks. Spec: databricks
-- [ ] 🚧 Romualdo cria a conta e envia CSVs e wheel a um Volume
-- [ ] Sondar `localCheckpoint`, DeltaTable e `_metadata` num notebook
-- [ ] Job bronze → silver → gold termina com sucesso
-- [ ] Contagens batem com o local, e diferenças são explicadas
+- [x] 🚧 Romualdo cria a conta e envia CSVs e wheel a um Volume (`/Volumes/workspace/default/brasileirao/{raw,wheels}`; acesso local por token em ~/.databrickscfg)
+- [x] Sondar `localCheckpoint`, DeltaTable e `_metadata` num notebook
+- [x] Job bronze → silver → gold termina com sucesso
+- [x] Contagens batem com o local, e diferenças são explicadas
 - [ ] `docs/databricks/README.md` com screenshots e limites encontrados
 
 ## AW1: sondagem e base em Terraform. Spec: cloud-aws

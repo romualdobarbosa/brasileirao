@@ -1,0 +1,196 @@
+{
+ "versoes": {
+  "ok": true,
+  "detalhe": {
+   "brasileirao": "0.1.0",
+   "pyspark": "4.0.0+databricks.connect.17.3.15",
+   "databricks-connect": "17.3.15",
+   "delta-spark": "3.4.0+databricks.connect.17.3.15",
+   "kagglehub": "1.0.3",
+   "psycopg": "3.3.8",
+   "psycopg-binary": "3.3.8",
+   "protobuf": "5.29.4",
+   "certifi": "2026.10.19",
+   "pyarrow": "19.0.1",
+   "pandas": "2.2.3",
+   "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]"
+  }
+ },
+ "import_kagglehub": {
+  "ok": true,
+  "detalhe": "importa"
+ },
+ "import_psycopg": {
+  "ok": false,
+  "detalhe": "RuntimeError: código -6: crypto/fips/fips.c:154: OpenSSL internal error: FATAL FIPS SELFTEST FAILURE\n"
+ },
+ "import_brasileirao_pipeline": {
+  "ok": true,
+  "detalhe": {
+   "psycopg_carregado": false,
+   "kagglehub_carregado": false
+  }
+ },
+ "sessao": {
+  "ok": true,
+  "detalhe": {
+   "classe": "pyspark.sql.connect.session.SparkSession",
+   "versao": "4.2.0",
+   "timezone": "Etc/UTC"
+  }
+ },
+ "conf_shuffle_partitions": {
+  "ok": true,
+  "detalhe": "8"
+ },
+ "conf_snapshot_partitions": {
+  "ok": true,
+  "detalhe": "2"
+ },
+ "get_spark_databricks": {
+  "ok": true,
+  "detalhe": "SparkSession"
+ },
+ "local_checkpoint": {
+  "ok": true,
+  "detalhe": {
+   "count": 1000,
+   "soma": 999000
+  }
+ },
+ "cache": {
+  "ok": false,
+  "detalhe": "AnalysisException: [CACHE_REQUIRES_NEWER_CLIENT_ON_SERVERLESS_GC] df.cache(), df.persist(), and df.unpersist() require a newer client version on this compute. Upgrade your client to the minimum supported version for your environment and retry:\nDatabricks client environment: version 5 (v5) or above.\nDatabricks Connect for Python: 18.1.8 or above.\nDatabricks Connect for Scala: 18.1.5 or above. SQLSTATE: 0A000"
+ },
+ "metadata_file_path": {
+  "ok": true,
+  "detalhe": "dbfs:/Volumes/workspace/default/brasileirao/raw/campeonato-brasileiro-gols.csv"
+ },
+ "delta_tables_import": {
+  "ok": true,
+  "detalhe": "delta.tables"
+ },
+ "delta_forpath_merge": {
+  "ok": true,
+  "detalhe": {
+   "isDeltaTable": "True",
+   "isDeltaTable_raw": "False",
+   "linhas": [
+    [
+     2,
+     "B",
+     2020
+    ],
+    [
+     3,
+     "c",
+     2021
+    ],
+    [
+     4,
+     "d",
+     2020
+    ]
+   ],
+   "versoes": 4,
+   "detail_properties": {
+    "delta.enableDeletionVectors": "true"
+   }
+  }
+ },
+ "merge_silver_local_checkpoint": {
+  "ok": true,
+  "detalhe": {
+   "alterados_antes": [
+    [
+     2,
+     "B",
+     2020
+    ],
+    [
+     4,
+     "d",
+     2020
+    ]
+   ],
+   "alterados_depois_do_merge": [
+    [
+     2,
+     "B",
+     2020
+    ],
+    [
+     4,
+     "d",
+     2020
+    ]
+   ],
+   "estavel": true,
+   "alvo": [
+    [
+     1,
+     "a",
+     2020
+    ],
+    [
+     2,
+     "B",
+     2020
+    ],
+    [
+     3,
+     "c",
+     2021
+    ],
+    [
+     4,
+     "d",
+     2020
+    ]
+   ]
+  }
+ },
+ "merge_silver_cache": {
+  "ok": false,
+  "detalhe": "AnalysisException: [CACHE_REQUIRES_NEWER_CLIENT_ON_SERVERLESS_GC] df.cache(), df.persist(), and df.unpersist() require a newer client version on this compute. Upgrade your client to the minimum supported version for your environment and retry:\nDatabricks client environment: version 5 (v5) or above.\nDatabricks Connect for Python: 18.1.8 or above.\nDatabricks Connect for Scala: 18.1.5 or above. SQLSTATE: 0A000"
+ },
+ "replace_where": {
+  "ok": true,
+  "detalhe": [
+   [
+    3,
+    "c",
+    2021
+   ],
+   [
+    9,
+    "z",
+    2020
+   ]
+  ]
+ },
+ "add_constraint_por_caminho": {
+  "ok": true,
+  "detalhe": {
+   "delta.constraints.k_positivo": "k > 0"
+  }
+ },
+ "add_constraint_violada": {
+  "ok": true,
+  "detalhe": {
+   "classe": "pyspark.errors.exceptions.connect.AnalysisException",
+   "condition": "DELTA_NEW_CHECK_CONSTRAINT_VIOLATION"
+  }
+ },
+ "constraint_barra_escrita": {
+  "ok": true,
+  "detalhe": {
+   "classe": "UnknownException",
+   "mensagem": "(com.databricks.sql.transaction.tahoe.schema.DeltaInvariantViolationException) [DELTA_VIOLATE_CONSTRAINT_WITH_VALUES] CHECK constraint k_positivo (k > 0) violated by row with values:\n - k : -1.\n\nJVM stacktrace:\ncom.databricks.sql.transaction.tahoe.schema.DeltaInvariantViolationException\n\tat com.data"
+  }
+ },
+ "escrita_temporaria": {
+  "ok": true,
+  "detalhe": 10
+ }
+}
