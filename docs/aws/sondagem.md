@@ -51,3 +51,43 @@ A conta já tem dois budgets criados antes deste ticket. O preço do AWS Budgets
 ## O que ficou de fora
 
 O `infra/` em Terraform (bootstrap do state, storage, IAM, `cost_guard`) e o `apply`/`destroy` de teste não foram feitos: a sondagem caiu no portão antes. O Terraform 1.17.2 está instalado localmente (binário oficial, SHA256 e assinatura GPG da HashiCorp conferidos) e o `.gitignore` já cobre state e `.terraform/`.
+
+## Base em Terraform (AW1)
+
+Data: 11/11/2026. Terraform 1.17.2, provider `hashicorp/aws` 6.72.0 (o mais recente estável no registry nesse dia), região `us-east-1`, credencial da sessão do `aws login` via `aws configure export-credentials --format env`. Código em [`infra/`](../../infra/README.md). Cada `apply` partiu de um `plan` salvo e conferido.
+
+**Bootstrap:** 7 recursos criados, o bucket `brasileirao-tfstate-548850331677` (versionamento, SSE-S3, bloqueio público, só HTTPS, versões antigas expiram em 30 dias). Fica de pé até o fechamento do módulo.
+
+**Stack principal:** `apply` com 16 recursos criados:
+
+```
+bucket_lake       = "brasileirao-lake-548850331677"
+bucket_athena     = "brasileirao-athena-548850331677"
+glue_database     = "brasileirao"
+athena_workgroup  = "brasileirao"
+politica_lake_arn = "arn:aws:iam::548850331677:policy/brasileirao-lake"
+```
+
+Conferências com a stack de pé:
+- `plan` logo depois do `apply`: nenhuma diferença.
+- `main/terraform.tfstate` no bucket do state, com lock nativo do S3.
+- `SELECT 1 AS um` no workgroup `brasileirao`: `SUCCEEDED`, 0 bytes lidos, resultado gravado em `s3://brasileirao-athena-548850331677/resultados/`.
+- `iam simulate-custom-policy` com a política `brasileirao-lake`: `s3:PutObject` permitido no lake e em `resultados/` do bucket do Athena, negado no bucket de outro projeto; `glue:GetTable` negado num database de fora.
+- Budget `brasileirao-cost-guard`: US$ 15 por mês, alertas em 5, 10 e 15, `IncludeCredit = False`. Sem tirar o crédito, o custo líquido no Free plan fica em zero e o alarme nunca dispara. Vale para a conta inteira, porque filtrar pela tag pediria ativar a tag de alocação de custo. É o terceiro budget da conta; pela [página de preços](https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/), budget sem ações é gratuito ("You can monitor and receive notifications on your budgets free of charge"); só budgets com ações passam a cobrar depois dos dois primeiros.
+
+**Destroy:** `Apply complete! Resources: 0 added, 0 changed, 16 destroyed.`
+
+Listagem em `us-east-1` depois do `destroy`:
+
+```
+S3:                         brasileirao-tfstate-548850331677, sentinela-coins-548850331677-us-east-2-an (de outro projeto)
+Glue databases:             (nenhum)
+Athena workgroups:          primary
+IAM roles brasileirao*:     (nenhuma)
+IAM policies brasileirao*:  (nenhuma)
+Budgets:                    "Alerta de 5 dolares", "My Monthly Cost Budget" (já existiam)
+Tag projeto=brasileirao:    arn:aws:s3:::brasileirao-tfstate-548850331677
+Bucket do state:            main/terraform.tfstate (181 bytes, state vazio)
+```
+
+Créditos: US$ 119,95 antes e depois (o saldo pode atualizar com atraso). O gasto possível é uma consulta do Athena com 0 bytes lidos e algumas dezenas de requisições S3.

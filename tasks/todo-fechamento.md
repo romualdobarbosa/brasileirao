@@ -52,8 +52,8 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] Instalar Terraform com versão fixada; `.gitignore` de state e `.terraform`
 - [x] 🚧 `aws login` do Romualdo; conferir plano e saldo (usuário IAM romualdobarbosa, AdministratorAccess; plano FREE ativo, US$ 119,95, vence 2027-03-23)
 - [x] Sondar EMR Serverless, Glue e Athena no Free plan e destruir. Se bloquear, 🚧 decisão (EMR e Glue Jobs bloqueados; Romualdo escolheu Spark local com lake no S3 em 11/11/2026)
-- [ ] `infra/`: bootstrap do state, storage, IAM e `cost_guard`
-- [ ] `apply` e `destroy` testados, listagem sem sobras
+- [x] `infra/`: bootstrap do state, storage, IAM e `cost_guard`
+- [x] `apply` e `destroy` testados, listagem sem sobras (só o bucket do state fica)
 
 ## AW2: pipeline com o lake no S3. Spec: cloud-aws (revisão de 11/11)
 - [ ] Ambiente `aws` no `get_spark` (Spark local, `hadoop-aws` fixado, credencial só do ambiente), com testes

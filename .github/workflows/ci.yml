@@ -26,6 +26,24 @@ jobs:
       - run: uv sync --all-groups --locked
       - run: make lint
 
+  terraform:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # Só checagem estática, sem credencial: init sem backend, fmt e validate.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: "1.17.2"
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive infra
+      - name: validate (bootstrap e main)
+        run: |
+          for d in infra/bootstrap infra/main; do
+            terraform -chdir="$d" init -backend=false -input=false
+            terraform -chdir="$d" validate
+          done
+
   test:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

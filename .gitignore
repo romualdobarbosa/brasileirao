@@ -26,6 +26,7 @@ backups/
 *.tfstate
 *.tfstate.*
 *.tfvars
+*.tfplan
 !*.tfvars.example
 crash.log
 crash.*.log
