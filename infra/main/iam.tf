@@ -1,6 +1,7 @@
 # O pipeline roda com o Spark local e a sessão do Romualdo, então não há role de serviço.
-# Esta política gerenciada é o acesso mínimo do projeto: fica pronta para a role do OIDC do CI
-# (AW3) ou para uma role assumível no AW2. Nenhum recurso de dados com "*".
+# Esta política gerenciada é o acesso mínimo para rodar o pipeline e consultar o Athena, pronta
+# para uma role assumível. A role do plan no CI é outra, só de leitura (infra/bootstrap). Nenhum
+# recurso de dados com "*".
 locals {
   arn_glue = "arn:aws:glue:${var.regiao}:${local.conta}"
 }

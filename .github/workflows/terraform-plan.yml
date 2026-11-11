@@ -1,0 +1,47 @@
+name: terraform plan
+
+# Só manual, e só a partir da main: a role da AWS (infra/bootstrap/github_oidc.tf) confia apenas
+# em `repo:romualdobarbosa/brasileirao:ref:refs/heads/main`. Plan, nunca apply.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write # token OIDC para assumir a role
+  contents: read
+
+concurrency:
+  group: terraform-plan
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      # O e-mail dos alertas do budget vem de um secret: com outro valor o plan mostraria uma
+      # troca falsa no budget. É `sensitive` no Terraform e mascarado no log do Actions.
+      TF_VAR_email_alerta: ${{ secrets.TF_VAR_EMAIL_ALERTA }}
+    steps:
+      - name: Confere o secret do e-mail
+        run: |
+          if [ -z "$TF_VAR_email_alerta" ]; then
+            echo "::error::crie o secret TF_VAR_EMAIL_ALERTA (o mesmo e-mail do budget)"
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          role-session-name: terraform-plan-${{ github.run_id }}
+          aws-region: us-east-1
+      - uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: "1.17.2"
+          terraform_wrapper: false
+      - name: init (backend no bucket do state)
+        run: |
+          conta=$(aws sts get-caller-identity --query Account --output text)
+          terraform -chdir=infra/main init -input=false \
+            -backend-config="bucket=brasileirao-tfstate-$conta"
+      - name: plan
+        run: terraform -chdir=infra/main plan -input=false -lock-timeout=2m -no-color
