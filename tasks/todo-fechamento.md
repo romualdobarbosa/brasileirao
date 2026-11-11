@@ -46,7 +46,7 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] Sondar `localCheckpoint`, DeltaTable e `_metadata` num notebook
 - [x] Job bronze → silver → gold termina com sucesso
 - [x] Contagens batem com o local, e diferenças são explicadas
-- [ ] `docs/databricks/README.md` com screenshots e limites encontrados
+- [x] `docs/databricks/README.md` com screenshots e limites encontrados
 
 ## AW1: sondagem e base em Terraform. Spec: cloud-aws
 - [ ] Instalar Terraform com versão fixada; `.gitignore` de state e `.terraform`

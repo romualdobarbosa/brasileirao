@@ -9,7 +9,6 @@ Tudo o que está aqui rodou em 11/11/2026. Os scripts usados estão em [`databri
 Precisa de uma conta no Free Edition, de um token no perfil `DEFAULT` de `~/.databrickscfg` (o SDK lê de lá, e nenhum script toca na credencial) e de um Volume `workspace.default.brasileirao`.
 
 1. Enviar os 4 CSVs de `data/raw/` para `/Volumes/workspace/default/brasileirao/raw/`. Eu fiz isso pela interface, e os arquivos são idênticos aos do local.
-   <!-- screenshot: Catalog Explorer mostrando o Volume brasileirao com as pastas raw/ e wheels/ -->
 2. Gerar o wheel e subir para o Volume (sobrescreve o que estiver lá):
 
    ```bash
@@ -41,8 +40,22 @@ O run do pipeline tem três tasks em sequência:
 
 O `executar.py` só fixa `BRASILEIRAO_SPARK_ENV=databricks` e `BRASILEIRAO_DATA_ROOT=/Volumes/workspace/default/brasileirao` e chama a mesma CLI do local, `brasileirao.pipeline.main`. Bronze, silver e gold são criados dentro do Volume.
 
-<!-- screenshot: página do run 483886820637000 com as três tasks verdes (lakehouse, gold, foto) e as durações -->
-<!-- screenshot: saída da task lakehouse com as linhas "temporada N processada" e as constraints -->
+![Run 483886820637000 no Databricks, com as tasks lakehouse, gold e foto em sequência e todas com sucesso](img/run-timeline.png)
+
+O fim do log da task `lakehouse` no mesmo run, com a última das 23 temporadas:
+
+```text
+INFO brasileirao.ingestion.bronze: bronze/partidas temporada 2025: 380 linhas
+INFO brasileirao.ingestion.bronze: bronze/gols temporada 2025: 959 linhas
+INFO brasileirao.ingestion.bronze: bronze/cartoes temporada 2025: 0 linhas
+INFO brasileirao.ingestion.bronze: bronze/estatisticas temporada 2025: 760 linhas
+INFO brasileirao.transform.silver: silver/partidas temporada 2025: 380 linhas
+INFO brasileirao.transform.silver: silver/gols temporada 2025: 959 linhas
+INFO brasileirao.transform.silver: silver/cartoes temporada 2025: 0 linhas
+INFO brasileirao.transform.silver: silver/estatisticas temporada 2025: 760 linhas
+WARNING brasileirao.transform.silver: silver/estatisticas temporada 2025: nulos em colunas opcionais: posse_de_bola=12, precisao_passes=8
+INFO brasileirao.pipeline: temporada 2025 processada em 29.2s
+```
 
 ## Runs
 
