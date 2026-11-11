@@ -2,10 +2,13 @@
 # Só leitura: a role lê os recursos do projeto e o state, e mexe apenas no arquivo de lock.
 # Fica no bootstrap porque precisa existir com a stack principal destruída, e sai com ele no FIM.
 
+# O repositório usa o `sub` imutável do GitHub, que leva o id do dono e do repositório junto do
+# nome (`dono@id/repo@id`). Assim um repositório recriado com o mesmo nome não herda a role.
+# Conferir com `gh api repos/<dono>/<repo>/actions/oidc/customization/sub`.
 variable "github_repo" {
-  description = "Repositório (dono/nome) cujo workflow pode assumir a role de plan."
+  description = "Repositório no formato do sub imutável (dono@id/nome@id) que pode assumir a role."
   type        = string
-  default     = "romualdobarbosa/brasileirao"
+  default     = "romualdobarbosa@110114577/brasileirao@1422565812"
 }
 
 variable "github_ref" {

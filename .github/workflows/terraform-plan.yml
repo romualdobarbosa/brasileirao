@@ -1,7 +1,8 @@
 name: terraform plan
 
 # Só manual, e só a partir da main: a role da AWS (infra/bootstrap/github_oidc.tf) confia apenas
-# em `repo:romualdobarbosa/brasileirao:ref:refs/heads/main`. Plan, nunca apply.
+# em `repo:romualdobarbosa@110114577/brasileirao@1422565812:ref:refs/heads/main` (sub imutável).
+# Plan, nunca apply.
 on:
   workflow_dispatch:
 

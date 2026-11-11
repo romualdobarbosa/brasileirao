@@ -103,9 +103,15 @@ As tabelas do Glue só dizem onde está cada tabela Delta e que o provider é `d
 
 Terminou `SUCCEEDED` no engine 3 em 1,8 s, com 115.203 bytes lidos, e bate linha a linha com o gold local. Um `count(*)` em `silver_partidas` devolveu 9.165, o mesmo número da foto.
 
-<!-- print: a consulta acima no editor do Athena, com o resultado e os bytes lidos -->
+No console ficou assim. Nessa execução, que é outra, o Athena levou 974 ms e leu 112,5 KB.
 
-<!-- print: o bucket brasileirao-lake no console do S3, com as pastas raw, bronze, silver e gold -->
+![Consulta no editor do Athena](img/athena-consulta.png)
+
+![Resultado da consulta, com o tempo e os dados lidos](img/athena-resultado.png)
+
+![Estatísticas da consulta](img/athena-estatisticas.png)
+
+![Bucket do lake no S3, com as pastas raw, bronze, silver e gold](img/s3-lake.png)
 
 ## Plan pelo GitHub
 
@@ -120,6 +126,8 @@ O workflow precisa de duas coisas no repositório:
 
 Os créditos estavam em US$ 119,95 antes do AW3. O gasto é só de requisições ao S3, de alguns MB guardados por poucas horas e dos MB lidos pelo Athena. O budget `brasileirao-cost-guard` avisa por e-mail em US$ 5, 10 e 15, sem o crédito no cálculo.
 
-<!-- conferir: saldo de créditos depois do AW3 -->
+Depois do AW3, com o pipeline completo rodado duas vezes no S3, as consultas no Athena e o `destroy`, o saldo continuou em **US$ 119,95**. O saldo pode demorar para atualizar, mas até agora o gasto não apareceu.
 
-<!-- print: o budget brasileirao-cost-guard no console, com os três alertas -->
+No `destroy` final do AW3 saíram os 38 recursos do `infra/main`. Na conta ficaram só o bucket do state, o provider OIDC e a role `brasileirao-github-plan`, que são do bootstrap e não custam nada. O plan pelo GitHub rodou com a stack de pé e deu `No changes`.
+
+![Os três alertas do budget brasileirao-cost-guard](img/budget-alertas.png)
