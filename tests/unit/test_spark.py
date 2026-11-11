@@ -8,7 +8,7 @@ import delta
 import pytest
 from pyspark.sql import SparkSession
 
-from brasileirao.utils.spark import get_spark, materializar
+from brasileirao.utils.spark import CONF_AWS, HADOOP_AWS, PACOTES_AWS, get_spark, materializar
 
 
 def test_ambiente_desconhecido(monkeypatch):
@@ -17,29 +17,120 @@ def test_ambiente_desconhecido(monkeypatch):
         get_spark()
 
 
-@pytest.mark.parametrize("ambiente", ["emr"])
-def test_ambiente_futuro_nao_implementado(monkeypatch, ambiente):
-    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", ambiente)
-    with pytest.raises(NotImplementedError, match=ambiente):
+def test_emr_saiu_da_lista(monkeypatch):
+    """O alvo emr da spec original virou aws (revisão de 11/11): emr agora é desconhecido."""
+    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", "emr")
+    with pytest.raises(ValueError, match="local, databricks, aws"):
         get_spark()
 
 
-def test_pacotes_extras_vao_para_o_delta_pip(monkeypatch):
+class BuilderGravado:
+    """Builder de mentira: guarda as configs e não abre sessão (nem baixa jar)."""
+
+    def __init__(self):
+        self.confs = {}
+
+    def appName(self, nome):
+        self.confs["spark.app.name"] = nome
+        return self
+
+    def master(self, master):
+        self.confs["spark.master"] = master
+        return self
+
+    def config(self, chave, valor):
+        self.confs[chave] = valor
+        return self
+
+    def getOrCreate(self):
+        return self
+
+
+@pytest.fixture
+def builder_gravado(monkeypatch):
+    """Troca o builder do Spark e o delta pip; devolve o builder e os pacotes recebidos."""
+    builder = BuilderGravado()
     recebidos = {}
 
-    class BuilderFalso:
-        def getOrCreate(self):
-            return "sessao"
-
-    def configurar(builder, extra_packages=None):
+    def configurar(b, extra_packages=None):
         recebidos["pacotes"] = extra_packages
-        return BuilderFalso()
+        return b
 
-    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", "local")
+    monkeypatch.setattr(SparkSession, "builder", builder)
     monkeypatch.setattr(delta, "configure_spark_with_delta_pip", configurar)
+    return builder, recebidos
 
-    assert get_spark(pacotes=["org.postgresql:postgresql:42.7.14"]) == "sessao"
+
+def test_pacotes_extras_vao_para_o_delta_pip(monkeypatch, builder_gravado):
+    builder, recebidos = builder_gravado
+    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", "local")
+
+    assert get_spark(pacotes=["org.postgresql:postgresql:42.7.14"]) is builder
     assert recebidos["pacotes"] == ["org.postgresql:postgresql:42.7.14"]
+
+
+def _confs(monkeypatch, builder_gravado, ambiente, **kwargs):
+    builder, recebidos = builder_gravado
+    builder.confs.clear()
+    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", ambiente)
+    get_spark(**kwargs)
+    return dict(builder.confs), recebidos["pacotes"]
+
+
+def test_aws_e_o_local_mais_s3a(monkeypatch, builder_gravado):
+    local, pacotes_local = _confs(monkeypatch, builder_gravado, "local")
+    aws, pacotes_aws = _confs(monkeypatch, builder_gravado, "aws")
+
+    assert pacotes_local is None
+    assert pacotes_aws == list(PACOTES_AWS)
+    assert {k: v for k, v in aws.items() if k not in CONF_AWS} == local
+    assert not any("s3a" in chave for chave in local)
+
+
+def test_aws_fixa_versoes_credencial_do_ambiente_e_regiao(monkeypatch, builder_gravado):
+    aws, pacotes = _confs(monkeypatch, builder_gravado, "aws")
+
+    assert pacotes == [
+        "org.apache.hadoop:hadoop-aws:3.5.0",
+        "software.amazon.awssdk:bundle:2.35.4",
+    ]
+    assert aws["spark.hadoop.fs.s3a.aws.credentials.provider"] == (
+        "software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider"
+    )
+    assert aws["spark.hadoop.fs.s3a.endpoint.region"] == "us-east-1"
+    assert aws["spark.sql.extensions"] == "io.delta.sql.DeltaSparkSessionExtension"
+
+
+def test_aws_soma_pacotes_e_conf_extras(monkeypatch, builder_gravado):
+    aws, pacotes = _confs(
+        monkeypatch,
+        builder_gravado,
+        "aws",
+        conf={"spark.ui.enabled": "false"},
+        pacotes=["org.postgresql:postgresql:42.7.14"],
+    )
+
+    assert pacotes == [*PACOTES_AWS, "org.postgresql:postgresql:42.7.14"]
+    assert aws["spark.ui.enabled"] == "false"
+
+
+def test_hadoop_aws_e_a_versao_do_hadoop_do_pyspark():
+    """Versão diferente da do `hadoop-client-api` embutido quebra o s3a em tempo de execução."""
+    import pyspark
+
+    jars = Path(pyspark.__file__).parent / "jars"
+    versoes = {
+        j.name.removeprefix("hadoop-client-api-")[:-4] for j in jars.glob("hadoop-client-api-*.jar")
+    }
+
+    assert versoes == {HADOOP_AWS.rsplit(":", 1)[1]}
+
+
+def test_materializar_no_aws_e_local_checkpoint(monkeypatch):
+    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", "aws")
+    df = DataFrameFalso()
+
+    assert materializar(df) == "checkpoint"
 
 
 class ConfFalsa(dict):

@@ -9,7 +9,7 @@ CAMADAS = ("raw", "bronze", "silver", "gold")
 
 
 def data_root() -> str:
-    """Raiz das camadas. String, não Path, para aceitar `s3://` na fase AWS."""
+    """Raiz das camadas. String, não Path, para aceitar `s3a://` no ambiente aws."""
     return os.environ.get("BRASILEIRAO_DATA_ROOT", DATA_ROOT_PADRAO).rstrip("/")
 
 

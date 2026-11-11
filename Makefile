@@ -1,5 +1,5 @@
 .PHONY: setup download lakehouse gold exportar app explain manutencao historico serving-up serving-down carga carga-remota deploy \
-	backup-metabase test lint fmt wheel
+	backup-metabase test lint fmt wheel raw-aws lakehouse-aws gold-aws foto-aws
 
 # Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
 ifneq (,$(wildcard .env))
@@ -82,6 +82,41 @@ backup-metabase:
 		docker compose exec -T postgres pg_dump -U postgres -d metabase | gzip' > $$arquivo \
 		|| { rm -f $$arquivo; exit 1; }; \
 	echo "backup em $$arquivo"
+
+# Ambiente aws: o mesmo pipeline, com o Spark local e o lake no bucket do infra/main (que precisa
+# estar de pé). A credencial da sessão do `aws login` vai só pelo ambiente do comando. Ela dura
+# no máximo 15 min e o Spark não a renova, então cada processo recebe uma credencial com pelo
+# menos AWS_MINUTOS de validade (infra/credencial.sh) e o lakehouse roda uma temporada por vez.
+AWS_MINUTOS ?= 6
+AWS_ENV = credencial=$$(infra/credencial.sh $(AWS_MINUTOS)) && eval "$$credencial" && \
+	conta=$$(aws sts get-caller-identity --query Account --output text) && \
+	export AWS_REGION=us-east-1 BRASILEIRAO_SPARK_ENV=aws \
+		BRASILEIRAO_DATA_ROOT=s3a://brasileirao-lake-$$conta &&
+# As temporadas encerradas da fonte, as mesmas do `lakehouse --todas` no local.
+TEMPORADAS_AWS ?= $(shell seq 2003 2025)
+
+# Os CSVs de data/raw/ para s3://<lake>/raw/.
+raw-aws:
+	$(AWS_ENV) aws s3 cp --recursive --exclude "*" --include "*.csv" data/raw/ \
+		"s3://brasileirao-lake-$$conta/raw/" --only-show-errors
+
+lakehouse-aws:
+ifdef TEMPORADA
+	$(AWS_ENV) uv run python -m brasileirao.pipeline lakehouse --temporada $(TEMPORADA)
+else
+	for t in $(TEMPORADAS_AWS); do \
+		$(AWS_ENV) uv run python -m brasileirao.pipeline lakehouse --temporada $$t || exit 1; \
+	done
+endif
+
+# O gold é um processo só e leva mais que uma temporada: espera a credencial quase nova.
+gold-aws: AWS_MINUTOS = 14
+gold-aws:
+	$(AWS_ENV) uv run python -m brasileirao.pipeline gold
+
+# make foto-aws SAIDA=foto_aws.json: linhas e sha256 de silver e gold no S3.
+foto-aws:
+	$(AWS_ENV) uv run python databricks/foto.py "$$BRASILEIRAO_DATA_ROOT" $(or $(SAIDA),foto_aws.json)
 
 serving-up:
 	$(COMPOSE) up -d --wait

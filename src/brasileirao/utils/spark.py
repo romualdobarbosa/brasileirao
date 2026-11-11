@@ -2,11 +2,27 @@ from pyspark.sql import DataFrame, SparkSession
 
 from brasileirao import config
 
-AMBIENTES_FUTUROS = ("emr",)
+AMBIENTES = ("local", "databricks", "aws")
 DELTA_CATALOG = "org.apache.spark.sql.delta.catalog.DeltaCatalog"
 # No serverless do Databricks quase nenhuma propriedade da sessão pode ser mudada; esta pode.
 CONF_DATABRICKS = frozenset({"spark.sql.shuffle.partitions"})
 MATERIALIZACOES_DATABRICKS = ("local_checkpoint", "cache")
+
+# Ambiente aws: o Spark local lendo e gravando o lake no S3 por `s3a://`. O `hadoop-aws` tem de
+# ser da versão exata do Hadoop embutido no PySpark 4.2.0 (`hadoop-client-api-3.5.0.jar`); o
+# bundle do AWS SDK v2 é o que o `hadoop-aws` 3.5.0 declara, fixado aqui para não variar.
+HADOOP_AWS = "org.apache.hadoop:hadoop-aws:3.5.0"
+AWS_SDK_BUNDLE = "software.amazon.awssdk:bundle:2.35.4"
+PACOTES_AWS = (HADOOP_AWS, AWS_SDK_BUNDLE)
+REGIAO_AWS = "us-east-1"
+CONF_AWS = {
+    # Credencial só do ambiente (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN),
+    # vinda de `aws configure export-credentials --format env`; nada de arquivo nem perfil.
+    "spark.hadoop.fs.s3a.aws.credentials.provider": (
+        "software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider"
+    ),
+    "spark.hadoop.fs.s3a.endpoint.region": REGIAO_AWS,
+}
 
 
 def get_spark(
@@ -16,6 +32,8 @@ def get_spark(
 ) -> SparkSession:
     """Sessão Spark com Delta, escolhida por `BRASILEIRAO_SPARK_ENV`.
 
+    `aws` é o `local` com o `hadoop-aws`, para `BRASILEIRAO_DATA_ROOT=s3a://<bucket>`.
+
     `pacotes` são coordenadas Maven extras (ex.: o driver JDBC), baixadas pelo Ivy junto com
     os jars do Delta. Só valem na criação da sessão: uma sessão já aberta não ganha pacote.
     """
@@ -24,11 +42,12 @@ def get_spark(
         return _spark_local(app_name, conf or {}, pacotes)
     if ambiente == "databricks":
         return _spark_databricks(conf or {}, pacotes)
-    if ambiente in AMBIENTES_FUTUROS:
-        raise NotImplementedError(f"Ambiente Spark {ambiente!r} ainda não foi implementado")
+    if ambiente == "aws":
+        return _spark_local(
+            app_name, {**CONF_AWS, **(conf or {})}, [*PACOTES_AWS, *(pacotes or [])]
+        )
     raise ValueError(
-        f"BRASILEIRAO_SPARK_ENV desconhecido: {ambiente!r}. "
-        f"Use um de: local, databricks, {', '.join(AMBIENTES_FUTUROS)}"
+        f"BRASILEIRAO_SPARK_ENV desconhecido: {ambiente!r}. Use um de: {', '.join(AMBIENTES)}"
     )
 
 

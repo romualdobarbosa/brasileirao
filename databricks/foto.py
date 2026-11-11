@@ -1,8 +1,9 @@
 """Foto das camadas: linhas e sha256 das linhas ordenadas, por tabela.
 
 `foto.py <data_root> <saida.json> [camada ...]`. O mesmo script roda no local
-(`uv run python databricks/foto.py ./data foto.json`) e como task do job no Databricks,
-para comparar as duas execuções tabela a tabela.
+(`uv run python databricks/foto.py ./data foto.json`), como task do job no Databricks e
+sobre o lake no S3 (`BRASILEIRAO_SPARK_ENV=aws`, raiz `s3a://...`), para comparar as
+execuções tabela a tabela.
 """
 
 import hashlib
@@ -23,18 +24,24 @@ def sessao(raiz: str) -> SparkSession:
     return SparkSession.builder.getOrCreate()
 
 
-def tabelas(raiz: str) -> list[str]:
+def tabelas(spark: SparkSession, raiz: str) -> list[str]:
     if raiz.startswith("/Volumes/"):
         from databricks.sdk.runtime import dbutils
 
         return sorted(i.name.rstrip("/") for i in dbutils.fs.ls(raiz))
+    if "://" in raiz:
+        # s3a:// e afins: lista pelo FileSystem do Hadoop da própria sessão.
+        jvm = spark.sparkContext._jvm
+        caminho = jvm.org.apache.hadoop.fs.Path(raiz)
+        fs = caminho.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
+        return sorted(s.getPath().getName() for s in fs.listStatus(caminho) if s.isDirectory())
     return sorted(os.listdir(raiz))
 
 
 def foto(spark: SparkSession, raiz: str, camadas: list[str]) -> dict:
     resultado = {}
     for camada in camadas:
-        for tabela in tabelas(f"{raiz}/{camada}"):
+        for tabela in tabelas(spark, f"{raiz}/{camada}"):
             caminho = f"{raiz}/{camada}/{tabela}"
             df = spark.read.format("delta").load(caminho)
             linhas = sorted(

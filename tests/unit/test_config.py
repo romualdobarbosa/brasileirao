@@ -28,8 +28,8 @@ def test_camada_desconhecida():
 def test_spark_env(monkeypatch):
     monkeypatch.delenv("BRASILEIRAO_SPARK_ENV", raising=False)
     assert config.spark_env() == "local"
-    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", "emr")
-    assert config.spark_env() == "emr"
+    monkeypatch.setenv("BRASILEIRAO_SPARK_ENV", "aws")
+    assert config.spark_env() == "aws"
 
 
 def _limpar_pg(monkeypatch):

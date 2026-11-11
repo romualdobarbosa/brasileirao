@@ -56,9 +56,9 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] `apply` e `destroy` testados, listagem sem sobras (só o bucket do state fica)
 
 ## AW2: pipeline com o lake no S3. Spec: cloud-aws (revisão de 11/11)
-- [ ] Ambiente `aws` no `get_spark` (Spark local, `hadoop-aws` fixado, credencial só do ambiente), com testes
-- [ ] Prova com uma temporada no S3
-- [ ] Pipeline completo no S3; foto de silver e gold igual à do local; gasto registrado; `destroy`
+- [x] Ambiente `aws` no `get_spark` (Spark local, `hadoop-aws` fixado, credencial só do ambiente), com testes
+- [x] Prova com uma temporada no S3
+- [x] Pipeline completo no S3; foto de silver e gold igual à do local; gasto registrado; `destroy`
 
 ## AW3: catálogo, CI e documentação da AWS. Spec: cloud-aws
 - [ ] Glue e Athena em Terraform; consulta real de uma classificação conhecida

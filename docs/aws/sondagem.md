@@ -91,3 +91,74 @@ Bucket do state:            main/terraform.tfstate (181 bytes, state vazio)
 ```
 
 Créditos: US$ 119,95 antes e depois (o saldo pode atualizar com atraso). O gasto possível é uma consulta do Athena com 0 bytes lidos e algumas dezenas de requisições S3.
+
+## Pipeline com o lake no S3 (AW2)
+
+Rodei em 11/11/2026 o mesmo código do local, só trocando o ambiente (`BRASILEIRAO_SPARK_ENV=aws`) e a raiz (`BRASILEIRAO_DATA_ROOT=s3a://brasileirao-lake-548850331677`). A stack principal subiu com `plan -out` e `apply` do plano salvo (16 recursos, 67 s) e foi destruída no fim.
+
+### Ambiente `aws` no `get_spark`
+
+É o `local`, com as mesmas configs e o mesmo Delta 4.4.1, mais dois pacotes Maven fixados. O `org.apache.hadoop:hadoop-aws:3.5.0` tem de ser da versão do `hadoop-client-api-3.5.0.jar` que vem no PySpark 4.2.0, e o `software.amazon.awssdk:bundle:2.35.4` é o que o `hadoop-aws` 3.5.0 declara. O Ivy trouxe junto `analyticsaccelerator-s3` 1.3.1 e `wildfly-openssl` 2.2.5.Final. A credencial vem do `EnvironmentVariableCredentialsProvider` do SDK v2, que lê `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` e `AWS_SESSION_TOKEN`, e a região fica fixa em `us-east-1`. Para `s3a://` o Delta usa o `S3SingleDriverLogStore`, que só é seguro com um escritor por vez na mesma tabela, e o pipeline grava uma tabela de cada vez.
+
+Não precisei mudar nada no pipeline. Nenhum trecho monta caminho com `os.path` sobre o lake, e `_metadata.file_path`, `DeltaTable.forPath`, `replaceWhere`, `MERGE` e as constraints funcionaram no S3 como estavam. Só o `foto.py` mudou, para listar as tabelas pelo `FileSystem` do Hadoop quando a raiz é uma URL.
+
+### A credencial dura 15 minutos
+
+Foi o que mais deu trabalho. A credencial que o `aws configure export-credentials` entrega a partir do `aws login` vale 15 min, a CLI só troca por outra quando faltam 5, e o JVM lê a credencial uma vez e não renova. A primeira tentativa do pipeline completo, num processo só, caiu na sexta temporada com `AWSBadRequestException ... Status Code: 400` num `getFileStatus`, que é a resposta do S3 a um token vencido.
+
+Passei a rodar uma temporada por processo. Antes de cada uma, o `infra/credencial.sh` espera a credencial ter pelo menos 6 min de validade (14 no gold) e só então entrega. O script também limpa do ambiente qualquer credencial já exportada, porque com ela lá a CLI devolve a mesma credencial vencida em vez de renovar a sessão (isso travou duas retomadas antes de eu entender).
+
+Comandos, com a stack de pé:
+
+```bash
+make raw-aws                      # CSVs de data/raw/ para s3://<lake>/raw/ (3 s)
+make lakehouse-aws TEMPORADA=2023 # uma temporada
+make lakehouse-aws                # 2003 a 2025, um processo por temporada
+make gold-aws
+make foto-aws SAIDA=docs/aws/foto_aws.json
+```
+
+### Tempos
+
+| Etapa | Tempo |
+|---|---:|
+| Uma temporada (2023), lake vazio | 390 s no total, contando o download dos jars, 128,1 s da temporada, a checagem de órfãs e as 23 constraints da silver aplicadas pela primeira vez |
+| Temporada, de 2003 a 2013 | 63 a 80 s cada |
+| Temporada, de 2014 a 2025 | 117 a 134 s cada |
+| Soma das 23 temporadas | 2308 s |
+| Último trecho (2014 a 2025, 12 processos sem espera de credencial) | 2085 s, uns 174 s por processo |
+| Gold, 18 tabelas | 236,9 s de processamento, 731 s contando a espera pela credencial de 14 min e as constraints |
+| Foto do lake no S3 | 70 s |
+
+O pipeline completo não rodou de uma vez. Foram quatro trechos (2003 a 2004, 2005 a 2009, 2010 a 2013 e 2014 a 2025) por causa da credencial, e as temporadas de 2003 a 2007 e a de 2023 foram reprocessadas por cima do que já estava no S3, sem duplicar nada, porque a carga usa `MERGE` e `replaceWhere`. O gold rodou três vezes antes da final, duas delas com a silver ainda incompleta. Vale a última, feita sobre a silver inteira.
+
+No local o lakehouse leva de 5 a 9 s por temporada, e aqui leva de 63 a 134. A diferença é a latência do S3 em cada leitura e em cada commit do Delta.
+
+### Comparação com o local
+
+Rodei o mesmo `databricks/foto.py` sobre `./data` e sobre o lake no S3, e as duas fotos estão em [`foto_local.json`](foto_local.json) e [`foto_aws.json`](foto_aws.json). As 22 tabelas (4 da silver e 18 do gold) têm as mesmas linhas e o mesmo sha256. A foto local também é idêntica à do DB2 ([`../databricks/foto_local.json`](../databricks/foto_local.json)), então o local não mudou. A bronze fica fora da foto e tem a diferença que já apareceu no DB2. O `_source_file` traz `s3a://brasileirao-lake-548850331677/raw/...` em vez de `file:/.../data/raw/...`, e o `_ingested_at` muda a cada execução.
+
+### Uso, custo e `destroy`
+
+Antes do `destroy`, o bucket tinha 928 objetos e 11,0 MB (raw com 4 objetos e 4,6 MB, bronze com 283 e 2,7 MB, silver com 239 e 1,8 MB, gold com 402 e 1,8 MB).
+
+Os créditos ficaram em **US$ 119,95** antes e depois. O saldo pode atualizar com atraso, mas o gasto aqui é só de requisições ao S3 e de alguns MB guardados por poucas horas.
+
+O `destroy` usou um plano de destroy salvo e terminou em 12 s com `Resources: 0 added, 0 changed, 16 destroyed.`. Recriar tudo leva uns 70 s (67 s de `apply` e 3 s do raw), mais o pipeline.
+
+Listagem em `us-east-1` depois do `destroy`:
+
+```
+S3:                         brasileirao-tfstate-548850331677, sentinela-coins-548850331677-us-east-2-an (de outro projeto)
+Glue databases:             (nenhum)
+Athena workgroups:          primary
+IAM roles brasileirao*:     (nenhuma)
+IAM policies brasileirao*:  (nenhuma)
+Budgets:                    "Alerta de 5 dolares", "My Monthly Cost Budget" (já existiam)
+Tag projeto=brasileirao:    arn:aws:s3:::brasileirao-tfstate-548850331677
+Bucket do state:            main/terraform.tfstate (181 bytes)
+```
+
+### O que fica para o AW3
+
+Nas tabelas locais, gravadas pelo mesmo código, o `_delta_log` tem `minReaderVersion 1`, sem deletion vectors nem table features de leitura, e o `minWriterVersion` vai de 2 a 3 quando as constraints entram. Isso deve bastar para o Athena ler, mas não conferi o log do S3 antes do `destroy`, então o AW3 começa subindo o lake de novo.
