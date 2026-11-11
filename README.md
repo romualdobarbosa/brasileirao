@@ -93,4 +93,4 @@ A fonte tem buracos, e é melhor saber onde estão antes de tirar conclusão de 
 
 ## Próximos passos
 
-O mapa completo está em [CAPABILITY_MAP.md](CAPABILITY_MAP.md), e cada módulo tem a sua spec na raiz do repositório. Os próximos são o mesmo pipeline rodando no Databricks e no EMR Serverless da AWS (com Terraform), sem reescrever o código. O enriquecimento com a Base dos Dados ficou de fora, porque a licença do dado está registrada como desconhecida ([sondagem](docs/enriquecimento/sondagem.md)).
+O mapa completo está em [CAPABILITY_MAP.md](CAPABILITY_MAP.md), e cada módulo tem a sua spec na raiz do repositório. O mesmo pipeline já rodou no Databricks ([docs/databricks](docs/databricks/README.md)), sem reescrever o código. O próximo é a AWS, com a infraestrutura em Terraform, o lake no S3 e a consulta pelo Athena. O EMR ficou de fora porque o plano gratuito da AWS bloqueia esse serviço. O enriquecimento com a Base dos Dados ficou de fora, porque a licença do dado está registrada como desconhecida ([sondagem](docs/enriquecimento/sondagem.md)).

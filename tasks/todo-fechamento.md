@@ -49,18 +49,16 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] `docs/databricks/README.md` com screenshots e limites encontrados
 
 ## AW1: sondagem e base em Terraform. Spec: cloud-aws
-- [ ] Instalar Terraform com versão fixada; `.gitignore` de state e `.terraform`
-- [ ] 🚧 `aws login` do Romualdo; conferir plano e saldo
-- [ ] Sondar EMR Serverless, Glue e Athena no Free plan e destruir. Se bloquear, 🚧 decisão
+- [x] Instalar Terraform com versão fixada; `.gitignore` de state e `.terraform`
+- [x] 🚧 `aws login` do Romualdo; conferir plano e saldo (usuário IAM romualdobarbosa, AdministratorAccess; plano FREE ativo, US$ 119,95, vence 2027-03-23)
+- [x] Sondar EMR Serverless, Glue e Athena no Free plan e destruir. Se bloquear, 🚧 decisão (EMR e Glue Jobs bloqueados; Romualdo escolheu Spark local com lake no S3 em 11/11/2026)
 - [ ] `infra/`: bootstrap do state, storage, IAM e `cost_guard`
 - [ ] `apply` e `destroy` testados, listagem sem sobras
 
-## AW2: pipeline no EMR Serverless. Spec: cloud-aws
-- [ ] Conferir release mais recente e testar o código nessa versão, localmente
-- [ ] Módulo `compute` e empacotamento do job
-- [ ] Ambiente `emr` no `get_spark`, com testes
-- [ ] 🚧 Ok para a primeira execução real
-- [ ] Pipeline completo; contagens batem; gasto registrado; `destroy`
+## AW2: pipeline com o lake no S3. Spec: cloud-aws (revisão de 11/11)
+- [ ] Ambiente `aws` no `get_spark` (Spark local, `hadoop-aws` fixado, credencial só do ambiente), com testes
+- [ ] Prova com uma temporada no S3
+- [ ] Pipeline completo no S3; foto de silver e gold igual à do local; gasto registrado; `destroy`
 
 ## AW3: catálogo, CI e documentação da AWS. Spec: cloud-aws
 - [ ] Glue e Athena em Terraform; consulta real de uma classificação conhecida
@@ -79,7 +77,7 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [ ] Compose e imagem em `orchestration/`, com versão fixada
 - [ ] DAG `brasileirao_rodada` com testes
 - [ ] 3 rodadas reais seguidas no alvo `local`; falha interrompe as seguintes
-- [ ] 🚧 Execução no alvo `emr`, se AW2 passou, seguida de `destroy`
+- [ ] 🚧 Execução no alvo `aws`, se AW2 passou, seguida de `destroy`
 
 ## OR3: observabilidade. Spec: orchestration
 - [ ] `ops/execucoes` gravada em sucesso e falha, sem derrubar o pipeline

@@ -25,11 +25,11 @@ A versão 18 é a mais recente do Kaggle (conferido em 06/11/2026) e termina em 
 ## OR2: Airflow
 
 - **Airflow em Docker local**, versão fixada, com `LocalExecutor` e banco próprio em `orchestration/docker-compose.yml`, separado do serving. A imagem traz Java e o projeto.
-- **DAG `brasileirao_rodada`**: gera o retrato → bronze/silver → gold → checagens → registra execução. Parâmetros: `rodada` e `alvo` (`local` ou `emr`).
-- **Alvo padrão `local`**, sem custo. `emr` só roda por disparo manual, com a infraestrutura de pé e o portão de gasto do AWS.
+- **DAG `brasileirao_rodada`**: gera o retrato → bronze/silver → gold → checagens → registra execução. Parâmetros: `rodada` e `alvo` (`local` ou `aws`; o `aws` é o Spark local com o lake no S3, ver a revisão da SPEC-cloud-aws).
+- **Alvo padrão `local`**, sem custo. `aws` só roda por disparo manual, com a infraestrutura de pé e o portão de gasto do AWS.
 - Limite conhecido: o agendamento só dispara com a máquina ligada, e a documentação diz isso.
 
-**Aceite:** DAG validada por teste (importa, sem ciclos, parâmetros conhecidos); execução real de pelo menos 3 rodadas seguidas no alvo `local`; falha em uma tarefa impede as seguintes; uma execução real no alvo `emr` se AW2 tiver passado, seguida de `destroy`.
+**Aceite:** DAG validada por teste (importa, sem ciclos, parâmetros conhecidos); execução real de pelo menos 3 rodadas seguidas no alvo `local`; falha em uma tarefa impede as seguintes; uma execução real no alvo `aws` se AW2 tiver passado, seguida de `destroy`.
 
 ## OR3: observabilidade
 

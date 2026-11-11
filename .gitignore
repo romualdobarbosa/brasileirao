@@ -20,3 +20,12 @@ data/
 # Serving: credenciais e dumps do Metabase
 .env
 backups/
+
+# Terraform: state, plugins e variáveis locais (o .terraform.lock.hcl vai pro git)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log

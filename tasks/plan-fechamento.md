@@ -39,8 +39,8 @@ Cada ticket foi dimensionado para 150–200 mil tokens. É estimativa de planeja
 | EN1 | Criar o projeto no Google Cloud e autorizar; decidir se a sondagem falhar |
 | DB2 | Criar a conta no Databricks e enviar os arquivos, com a orquestradora guiando |
 | AW1 | `aws login`; decidir se o Free plan bloquear o EMR |
-| AW2 | Ok para a primeira execução real; qualquer novo gasto acima do teto |
-| OR2 | Ok para a execução no alvo `emr` |
+| AW2 | Qualquer gasto acima do teto (o Free plan bloqueou o EMR; o lake vai pro S3 com Spark local) |
+| OR2 | Ok para a execução no alvo `aws` |
 | OR3 | Escolher o destino do alerta |
 | FIM | Revisar os textos públicos e decidir o que entra no currículo |
 
