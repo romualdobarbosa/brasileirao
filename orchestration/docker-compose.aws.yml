@@ -1,7 +1,11 @@
 # Só para o alvo aws (`make airflow-up-aws`): a pasta ~/.aws da máquina dentro do scheduler,
 # que é onde as tarefas rodam. O perfil do `aws login` guarda o comando que pede a credencial,
 # e a CLI renova a sessão no cache de ~/.aws/login, por isso a montagem não é só leitura.
+# Sem `:z`: o relabel do SELinux mudaria o rótulo da ~/.aws da máquina. Em vez disso, o
+# scheduler roda sem separação de rótulo (no-op fora de host com SELinux).
 services:
   airflow-scheduler:
+    security_opt:
+      - label=disable
     volumes:
-      - ${HOME}/.aws:/home/airflow/.aws:z
+      - ${HOME}/.aws:/home/airflow/.aws

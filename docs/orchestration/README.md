@@ -86,7 +86,17 @@ Mesmo com agendamento, existe um limite. O Airflow roda em Docker na minha máqu
 
 O alvo `aws` é o mesmo do `make lakehouse-aws`, com o Spark local e o lake no bucket do `infra/main`. A tarefa tira do ambiente qualquer credencial exportada, usa o perfil `AWS_PROFILE` (`brasileirao` por padrão), descobre a conta com `aws sts get-caller-identity` e grava em `s3a://brasileirao-lake-<conta>/data_sim`. A simulação recusa qualquer destino remoto que não termine em `data_sim`, para nunca escrever por cima do lake normal que mora na raiz do bucket. O retrato é montado numa pasta temporária e copiado para `raw/` pelo sistema de arquivos do Hadoop da própria sessão Spark, com a mesma credencial.
 
-Ainda não rodei. Esse passo sobe recurso na AWS, então só roda com a infraestrutura de pé e o gasto liberado por mim.
+Rodei a rodada 1 em 12/11/2026, com a infraestrutura de pé só durante o teste. Passou inteira, mas levou 1213 s, contra 191 s no alvo local. O Spark continua na minha máquina e cada leitura e escrita do Delta vai até o S3 pela internet, e acho que é daí que vem a maior parte da diferença (não medi separado). O gold, com as 18 tabelas, ficou com mais da metade do tempo.
+
+| Execução | Total | retrato | bronze_silver | gold | checagens |
+|---|---:|---:|---:|---:|---:|
+| rodada 1, alvo `aws` | 1213 s | 51,4 s | 316,8 s | 800,3 s | 41,8 s |
+
+```
+{"evento": "execucao_brasileirao", "dag_id": "brasileirao_rodada", "run_id": "manual__2026-11-12T03:12:19.389785+00:00", "temporada": 2025, "rodada": 1, "alvo": "aws", "status": "sucesso", "inicio": "2026-11-12T03:12:19.884555+00:00", "fim": "2026-11-12T03:32:32.911298+00:00", "segundos": 1213.0, "tarefas": ["retrato", "bronze_silver", "gold", "checagens"]}
+```
+
+Os passos, na ordem.
 
 ```
 terraform -chdir=infra/main apply        # o lake no S3
@@ -97,7 +107,7 @@ make airflow-rodada RODADA=1 ALVO=aws
 terraform -chdir=infra/main destroy
 ```
 
-O `docker-compose.aws.yml` monta o `~/.aws` da máquina no scheduler, onde as tarefas rodam. Sem leitura apenas, porque a CLI renova a sessão do `aws login` no cache de `~/.aws/login`.
+O `docker-compose.aws.yml` monta o `~/.aws` da máquina no scheduler, onde as tarefas rodam. Sem leitura apenas, porque a CLI renova a sessão do `aws login` no cache de `~/.aws/login`. A montagem não usa `:z`, que trocaria o rótulo do SELinux da pasta na máquina. O scheduler roda com `label=disable`.
 
 ## Prova no alvo local
 
@@ -150,7 +160,7 @@ O `registra_execucao` da rodada 1 deixou no log esta linha.
 {"evento": "execucao_brasileirao", "dag_id": "brasileirao_rodada", "run_id": "rodada-01", "temporada": 2025, "rodada": 1, "alvo": "local", "status": "sucesso", "inicio": "2026-11-12T02:22:04.437631+00:00", "fim": "2026-11-12T02:25:14.614464+00:00", "segundos": 190.2, "tarefas": ["retrato", "bronze_silver", "gold", "checagens"]}
 ```
 
-<!-- print: grid da DAG brasileirao_rodada com as execuções rodada-01, rodada-02 e rodada-03 verdes -->
+![Grid da DAG brasileirao_rodada no Airflow: rodada-01 a rodada-03 verdes, a rodada-04-falha com o gold vermelho e a rodada 4 de novo, verde](img/grid.png)
 
 ### Uma falha no meio
 
@@ -177,7 +187,7 @@ brasileirao_rodada |              | checagens         | upstream_failed | 2026-1
 brasileirao_rodada |              | registra_execucao | upstream_failed | 2026-11-12T02:31:19.606143+00:00 | 2026-11-12T02:31:19.606143+00:00
 ```
 
-<!-- print: a execução rodada-04-falha com o gold vermelho e checagens e registra_execucao em upstream_failed -->
+![Execução rodada-04-falha no Airflow: retrato e bronze_silver com sucesso, gold com falha, checagens e registra_execucao com falha no upstream](img/rodada-04-falha.png)
 
 Depois devolvi a partida, lida da versão anterior ao `DELETE` pelo time travel do Delta, e disparei a rodada 4 de novo. Passou inteira, e as checagens mostraram a correção do placar de Juventude x Ceará que a simulação guarda para essa rodada.
 
