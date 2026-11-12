@@ -30,3 +30,4 @@ backups/
 !*.tfvars.example
 crash.log
 crash.*.log
+data_sim/

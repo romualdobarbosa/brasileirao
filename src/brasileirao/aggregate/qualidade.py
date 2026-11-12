@@ -49,8 +49,13 @@ def posicoes_invalidas(classificacao: DataFrame) -> list[str]:
     return [f"({r['temporada']}, {r['rodada']})" for r in linhas]
 
 
-def jogos_finais_invalidos(classificacao: DataFrame) -> list[str]:
-    """Clubes que não terminam a temporada com 2 × (times − 1) jogos, fora a exceção de 2016."""
+def jogos_finais_invalidos(classificacao: DataFrame, em_andamento: int | None = None) -> list[str]:
+    """Clubes que não terminam a temporada com 2 × (times − 1) jogos, fora a exceção de 2016.
+
+    A temporada `em_andamento` fica de fora: quem cuida dela é `jogos_parciais_invalidos`.
+    """
+    if em_andamento is not None:
+        classificacao = classificacao.where(F.col("temporada") != em_andamento)
     final = ultima_rodada(classificacao).withColumn(
         "_times", F.count(F.lit(1)).over(Window.partitionBy("temporada"))
     )
@@ -70,6 +75,44 @@ def jogos_finais_invalidos(classificacao: DataFrame) -> list[str]:
         f"{r['temporada']} {r['clube']}: {r['jogos']} jogos, esperado {r['_esperado']}"
         for r in linhas
     ]
+
+
+def jogos_parciais_invalidos(classificacao: DataFrame) -> list[str]:
+    """Clube com mais jogos que rodadas disputadas, ou mais que 2 × (times − 1) na temporada.
+
+    Vale para toda temporada, completa ou não: a classificação segue a rodada da partida, e
+    nenhum clube joga duas vezes na mesma rodada.
+    """
+    # count_distinct não roda em window; o tamanho do collect_set dá o mesmo.
+    times = F.size(F.collect_set("clube").over(Window.partitionBy("temporada")))
+    linhas = (
+        classificacao.withColumn("_maximo", (times - 1) * 2)
+        .where((F.col("jogos") > F.col("rodada")) | (F.col("jogos") > F.col("_maximo")))
+        .orderBy("temporada", "rodada", "clube")
+        .limit(LIMITE_EXEMPLOS)
+        .collect()
+    )
+    return [
+        f"{r['temporada']} rodada {r['rodada']} {r['clube']}: {r['jogos']} jogos" for r in linhas
+    ]
+
+
+def pontos_invalidos(classificacao: DataFrame) -> list[str]:
+    """Pontos fora de 3 × vitórias + empates + ajuste, ou pontos de campo que caem de uma rodada
+    para a seguinte. Vale para temporada completa e parcial."""
+    campo = F.col("vitorias") * 3 + F.col("empates")
+    anterior = F.lag(campo).over(Window.partitionBy("temporada", "clube").orderBy("rodada"))
+    linhas = (
+        classificacao.withColumn("_anterior", anterior)
+        .where(
+            (F.col("pontos") != campo + F.col("ajuste_pontos"))
+            | (campo < F.coalesce(F.col("_anterior"), F.lit(0)))
+        )
+        .orderBy("temporada", "rodada", "clube")
+        .limit(LIMITE_EXEMPLOS)
+        .collect()
+    )
+    return [f"{r['temporada']} rodada {r['rodada']} {r['clube']}" for r in linhas]
 
 
 def vitorias_derrotas_desiguais(classificacao: DataFrame) -> list[str]:
@@ -111,15 +154,24 @@ def ajustes_invalidos(ajustes: DataFrame, mapa: DataFrame, classificacao: DataFr
 
 
 def checar_classificacao(
-    classificacao: DataFrame, ajustes: DataFrame, mapa: DataFrame
+    classificacao: DataFrame,
+    ajustes: DataFrame,
+    mapa: DataFrame,
+    em_andamento: int | None = None,
 ) -> list[str]:
-    """Todas as checagens de falha de `classificacao_por_rodada`, já com o nome da tabela."""
+    """Todas as checagens de falha de `classificacao_por_rodada`, já com o nome da tabela.
+
+    A temporada `em_andamento` não precisa fechar os jogos na última rodada; as outras checagens
+    valem para ela como para as completas.
+    """
     checagens = [
         (
             "posição repetida ou fora de 1..N em (temporada, rodada)",
             posicoes_invalidas(classificacao),
         ),
-        ("jogos na última rodada", jogos_finais_invalidos(classificacao)),
+        ("jogos na última rodada", jogos_finais_invalidos(classificacao, em_andamento)),
+        ("jogos acima das rodadas disputadas", jogos_parciais_invalidos(classificacao)),
+        ("pontos fora de 3 × vitórias + empates + ajuste", pontos_invalidos(classificacao)),
         ("vitórias ≠ derrotas na última rodada", vitorias_derrotas_desiguais(classificacao)),
         ("ajustes_pontos.csv", ajustes_invalidos(ajustes, mapa, classificacao)),
     ]

@@ -68,11 +68,11 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] `destroy` final, listagem sem sobras
 
 ## OR1: dado que muda. Spec: orchestration
-- [ ] `brasileirao.simulacao`, com eventos e isolamento em `data_sim`, com teste
-- [ ] Opção explícita de temporada em andamento; execução normal continua recusando
-- [ ] Checagens do gold para temporada parcial
-- [ ] Change Data Feed em `silver/partidas` e relatório entre rodadas
-- [ ] Rodadas 1–38 reproduzem o gold de 2025, salvo correções explicadas
+- [x] `brasileirao.simulacao`, com eventos e isolamento em `data_sim`, com teste
+- [x] Opção explícita de temporada em andamento; execução normal continua recusando
+- [x] Checagens do gold para temporada parcial
+- [x] Change Data Feed em `silver/partidas` e relatório entre rodadas
+- [x] Rodadas 1–38 reproduzem o gold de 2025, salvo correções explicadas
 
 ## OR2: Airflow. Spec: orchestration
 - [ ] Compose e imagem em `orchestration/`, com versão fixada

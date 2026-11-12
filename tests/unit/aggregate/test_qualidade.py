@@ -114,3 +114,61 @@ def test_erro_lista_os_problemas():
 
     assert erro.problemas == ["a", "b"]
     assert str(erro) == "gold reprovado, nenhuma tabela gravada:\n- a\n- b"
+
+
+def _ate_a_rodada(rodada):
+    return [p for p in MINICAMPEONATO if p[1] <= rodada]
+
+
+def test_temporada_parcial_reprova_sem_em_andamento(silver_partidas, ajustes, mapa):
+    # Só até a rodada 3: cada clube tem 2 ou 3 jogos, e a execução normal recusa.
+    classificacao = calcular_classificacao(silver_partidas(_ate_a_rodada(3)), ajustes)
+
+    problemas = qualidade.checar_classificacao(classificacao, ajustes, mapa)
+
+    assert [p.split(": ")[1] for p in problemas] == ["jogos na última rodada"]
+
+
+def test_temporada_parcial_passa_com_em_andamento(silver_partidas, ajustes, mapa):
+    classificacao = calcular_classificacao(silver_partidas(_ate_a_rodada(3)), ajustes)
+
+    assert qualidade.checar_classificacao(classificacao, ajustes, mapa, em_andamento=2019) == []
+
+
+def test_em_andamento_nao_afrouxa_outra_temporada(silver_partidas, sem_ajustes):
+    # 2019 incompleta e declarada em andamento 2020: 2019 continua sendo cobrada.
+    partidas = silver_partidas([p for p in MINICAMPEONATO if p[0] != 7])
+    classificacao = calcular_classificacao(partidas, sem_ajustes)
+
+    assert qualidade.jogos_finais_invalidos(classificacao, em_andamento=2020) == [
+        "2019 Atlas: 5 jogos, esperado 6",
+        "2019 Bravo: 5 jogos, esperado 6",
+    ]
+    assert qualidade.jogos_finais_invalidos(classificacao, em_andamento=2019) == []
+
+
+def test_jogos_acima_das_rodadas(classificacao):
+    assert qualidade.jogos_parciais_invalidos(classificacao) == []
+    a_mais = classificacao.withColumn(
+        "jogos",
+        F.when((F.col("clube") == "Delta") & (F.col("rodada") == 2), 3).otherwise(F.col("jogos")),
+    )
+
+    assert qualidade.jogos_parciais_invalidos(a_mais) == ["2019 rodada 2 Delta: 3 jogos"]
+
+
+def test_pontos_inconsistentes(classificacao):
+    assert qualidade.pontos_invalidos(classificacao) == []
+    errado = classificacao.withColumn(
+        "pontos",
+        F.when((F.col("clube") == "Bravo") & (F.col("rodada") == 3), 99).otherwise(F.col("pontos")),
+    )
+    caindo = classificacao.withColumn(
+        "vitorias",
+        F.when((F.col("clube") == "Atlas") & (F.col("rodada") == 4), 0).otherwise(
+            F.col("vitorias")
+        ),
+    ).withColumn("pontos", F.col("vitorias") * 3 + F.col("empates") + F.col("ajuste_pontos"))
+
+    assert qualidade.pontos_invalidos(errado) == ["2019 rodada 3 Bravo"]
+    assert qualidade.pontos_invalidos(caindo) == ["2019 rodada 4 Atlas"]

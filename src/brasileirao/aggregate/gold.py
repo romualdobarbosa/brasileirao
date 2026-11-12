@@ -54,6 +54,8 @@ class TabelaGold:
     `silver/<tabela>`, uma referência (`ajustes`, `mapa_times`) ou uma tabela gold calculada
     antes no registro. `checar` recebe o DataFrame calculado e devolve os problemas, que
     reprovam o gold; `avisar` recebe só o DataFrame calculado e devolve avisos para o log.
+    Com `parcial`, `checar` recebe também `em_andamento`, a temporada incompleta que a execução
+    aceitou (ou `None`), para trocar as checagens de temporada completa pelas de parcial.
     """
 
     calcular: Callable[..., DataFrame]
@@ -61,6 +63,7 @@ class TabelaGold:
     checar: Callable[..., list[str]] | None = None
     entradas_checagem: tuple[str, ...] = ()
     avisar: Callable[[DataFrame], list[str]] | None = None
+    parcial: bool = False
 
 
 # Em ordem de dependência: tabela que usa outra vem depois dela.
@@ -70,6 +73,7 @@ TABELAS: dict[str, TabelaGold] = {
         ("silver/partidas", "ajustes"),
         qualidade.checar_classificacao,
         ("ajustes", "mapa_times"),
+        parcial=True,
     ),
     "desempenho_mandante_visitante": TabelaGold(calcular_desempenho, ("silver/partidas",)),
     "sequencias": TabelaGold(calcular_sequencias, ("silver/partidas",)),
@@ -183,10 +187,11 @@ def gravar(df: DataFrame, tabela: str) -> None:
     )
 
 
-def processar_gold(spark: SparkSession) -> dict[str, int]:
+def processar_gold(spark: SparkSession, em_andamento: int | None = None) -> dict[str, int]:
     """Calcula e checa todas as tabelas do registro antes de gravar qualquer uma.
 
-    Devolve as linhas gravadas por tabela.
+    `em_andamento` é a temporada incompleta aceita pela execução; sem ela, toda temporada da
+    silver precisa estar completa. Devolve as linhas gravadas por tabela.
     """
     inicio = time.monotonic()
     fontes = Fontes(spark)
@@ -200,7 +205,9 @@ def processar_gold(spark: SparkSession) -> dict[str, int]:
         for nome, tabela in TABELAS.items()
         if tabela.checar is not None
         for problema in tabela.checar(
-            calculadas[nome], *[fontes[e] for e in tabela.entradas_checagem]
+            calculadas[nome],
+            *[fontes[e] for e in tabela.entradas_checagem],
+            **({"em_andamento": em_andamento} if tabela.parcial else {}),
         )
     ]
     if problemas:

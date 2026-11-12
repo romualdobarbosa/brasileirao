@@ -134,7 +134,7 @@ def test_tabelas_de_eventos_das_fixtures(gold_uma_vez):
 
 def test_checagem_que_falha_nao_grava_nada(spark, lake, monkeypatch):
     reprovada = dataclasses.replace(
-        gold.TABELAS["classificacao_por_rodada"], checar=lambda *_: ["problema forçado"]
+        gold.TABELAS["classificacao_por_rodada"], checar=lambda *_, **__: ["problema forçado"]
     )
     # Só a tabela reprovada no registro: o resto não muda o teste e custaria tempo.
     monkeypatch.setattr(gold, "TABELAS", {"classificacao_por_rodada": reprovada})
@@ -162,7 +162,9 @@ def test_cli_gold(spark, monkeypatch):
     # Só o despacho: as constraints de verdade são testadas em `test_constraints`. Sem o
     # dublê, elas seriam aplicadas no gold do lake compartilhado, que é de outros módulos.
     chamadas = []
-    monkeypatch.setattr(gold, "processar_gold", lambda sessao: chamadas.append(sessao))
+    monkeypatch.setattr(
+        gold, "processar_gold", lambda sessao, em_andamento: chamadas.append(sessao)
+    )
     monkeypatch.setattr(
         constraints, "aplicar_camada", lambda sessao, camada: chamadas.append((sessao, camada))
     )

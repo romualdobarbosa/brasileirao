@@ -39,3 +39,13 @@ def test_validar_temporada_inexistente():
 
 def test_validar_temporada_encerrada():
     pipeline.validar_temporada(2019, FONTE_V18)
+
+
+def test_validar_aceita_em_andamento_so_com_a_opcao():
+    contagens = {2025: 380, 2026: 120}
+
+    pipeline.validar_temporada(2026, contagens, aceitar_em_andamento=True)
+    with pytest.raises(pipeline.TemporadaInvalidaError, match="use --em-andamento"):
+        pipeline.validar_temporada(2026, contagens)
+    with pytest.raises(pipeline.TemporadaInvalidaError, match="1999 não existe"):
+        pipeline.validar_temporada(1999, contagens, aceitar_em_andamento=True)

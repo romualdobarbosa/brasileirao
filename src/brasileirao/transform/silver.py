@@ -11,6 +11,7 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
 from brasileirao import config
+from brasileirao.lake import cdf
 from brasileirao.transform import limpeza, qualidade
 from brasileirao.utils.spark import materializar
 
@@ -117,7 +118,13 @@ def gravar_merge(
     """
     caminho = config.caminho_tabela("silver", tabela)
     if not DeltaTable.isDeltaTable(spark, caminho):
-        df.write.format("delta").partitionBy("temporada").save(caminho)
+        # O Change Data Feed nasce ligado, para a primeira carga também aparecer no feed.
+        (
+            df.write.format("delta")
+            .option(cdf.PROPRIEDADE, "true")
+            .partitionBy("temporada")
+            .save(caminho)
+        )
         return
     alvo = DeltaTable.forPath(spark, caminho)
     atual = alvo.toDF()

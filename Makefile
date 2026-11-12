@@ -1,5 +1,6 @@
 .PHONY: setup download lakehouse gold exportar app explain manutencao historico serving-up serving-down carga carga-remota deploy \
-	backup-metabase test lint fmt wheel raw-aws lakehouse-aws gold-aws foto-aws
+	backup-metabase test lint fmt wheel raw-aws lakehouse-aws gold-aws foto-aws \
+	simulacao-preparar simulacao relatorio-rodada
 
 # Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
 ifneq (,$(wildcard .env))
@@ -111,6 +112,19 @@ gold-aws:
 # make foto-aws SAIDA=foto_aws.json: linhas e sha256 de silver e gold no S3.
 foto-aws:
 	$(AWS_ENV) uv run python databricks/foto.py "$$BRASILEIRAO_DATA_ROOT" $(or $(SAIDA),foto_aws.json)
+
+# Simulação de temporada em andamento (2025 rodada a rodada) no lake isolado data_sim/.
+# make simulacao-preparar [HISTORICO=1], make simulacao RODADA=1 [ATE=38], make relatorio-rodada RODADA=4
+simulacao-preparar:
+	uv run python -m brasileirao.simulacao preparar $(if $(HISTORICO),--historico)
+
+simulacao:
+	@test -n "$(RODADA)" || { echo "use: make simulacao RODADA=N [ATE=M]"; exit 1; }
+	uv run python -m brasileirao.simulacao rodada $(RODADA) $(if $(ATE),--ate $(ATE))
+
+relatorio-rodada:
+	@test -n "$(RODADA)" || { echo "use: make relatorio-rodada RODADA=N"; exit 1; }
+	uv run python -m brasileirao.simulacao relatorio $(RODADA)
 
 serving-up:
 	$(COMPOSE) up -d --wait

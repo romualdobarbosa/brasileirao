@@ -62,11 +62,16 @@ def test_todas_em_ordem_e_sem_a_temporada_em_andamento(spark, raw, caplog):
 def test_cli_todas(spark, monkeypatch):
     # A carga de ponta a ponta de `--todas` é o teste acima; aqui só o despacho da CLI.
     chamadas = []
-    monkeypatch.setattr(pipeline, "lakehouse", lambda sessao, t: chamadas.append((sessao, t)))
+    monkeypatch.setattr(
+        pipeline,
+        "lakehouse",
+        lambda sessao, t, em_andamento: chamadas.append((sessao, t, em_andamento)),
+    )
 
     pipeline.main(["lakehouse", "--todas"])
+    pipeline.main(["lakehouse", "--temporada", "2025", "--em-andamento"])
 
-    assert chamadas == [(spark, None)]
+    assert chamadas == [(spark, None, False), (spark, 2025, True)]
 
 
 def test_cli_recusa_temporada_em_andamento(spark, raw):
