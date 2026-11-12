@@ -1,7 +1,8 @@
 """O que a DAG `brasileirao_rodada` (orchestration/dags/) roda, sem importar o Airflow.
 
 A DAG só monta as tarefas com o que está aqui. Assim a ordem, os comandos e o registro da
-execução têm teste na suíte normal, que não instala o Airflow.
+execução têm teste na suíte normal, que não instala o Airflow. O alerta de falha fica em
+`brasileirao.alerta`, pelo mesmo motivo.
 
 Cada tarefa do Spark é um processo `python -m brasileirao.simulacao <etapa> N` novo: a sessão
 abre e fecha na tarefa, e a falha é o código de saída. A rodada e o alvo chegam pelo ambiente
@@ -24,7 +25,8 @@ ETAPAS = (
     ("gold", "gold"),
     ("checagens", "checar"),
 )
-# Provisória: o OR3 troca pelo registro na tabela `ops/execucoes`.
+# Resumo da execução da DAG no log. O registro de cada etapa é a `ops/execucoes`, gravada pela
+# própria CLI, inclusive em falha.
 TAREFA_REGISTRO = "registra_execucao"
 AMBIENTE = {"RODADA": "{{ params.rodada }}", "ALVO": "{{ params.alvo }}"}
 

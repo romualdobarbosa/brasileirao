@@ -78,13 +78,13 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] Compose e imagem em `orchestration/`, com versão fixada
 - [x] DAG `brasileirao_rodada` com testes
 - [x] 3 rodadas reais seguidas no alvo `local`; falha interrompe as seguintes
-- [ ] 🚧 Execução no alvo `aws`, se AW2 passou, seguida de `destroy`
+- [x] 🚧 Execução no alvo `aws`, se AW2 passou, seguida de `destroy`
 
 ## OR3: observabilidade. Spec: orchestration
-- [ ] `ops/execucoes` gravada em sucesso e falha, sem derrubar o pipeline
-- [ ] `make status`
-- [ ] 🚧 Destino do alerta escolhido; falha real gera alerta recebido
-- [ ] `docs/orchestration/README.md` com saídas reais e screenshots
+- [x] `ops/execucoes` gravada em sucesso e falha, sem derrubar o pipeline
+- [x] `make status`
+- [x] 🚧 Destino do alerta escolhido; falha real gera alerta recebido
+- [x] `docs/orchestration/README.md` com saídas reais e screenshots
 
 ## FIM: fechamento. Executado pela orquestradora
 - [ ] README e `CAPABILITY_MAP.md` batem com o que rodou; toda afirmação tem evidência

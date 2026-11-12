@@ -59,11 +59,11 @@ retrato → bronze_silver → gold → checagens → registra_execucao
 | `bronze_silver` | `lakehouse --em-andamento` da temporada 2025 a partir do retrato |
 | `gold` | O gold com as checagens de temporada parcial. Se reprovar, a tarefa falha e nada é gravado |
 | `checagens` | Confere se `silver/partidas` tem as mesmas partidas de 2025 que o retrato e se o Change Data Feed da rodada bate com a comparação de versões. Imprime o relatório da rodada |
-| `registra_execucao` | Escreve no log uma linha JSON com a execução |
+| `registra_execucao` | Escreve no log uma linha JSON com o resumo da execução inteira. Só roda quando tudo passou |
 
 As quatro primeiras chamam a CLI da simulação (`python -m brasileirao.simulacao retrato|lakehouse|gold|checar N`), uma etapa por processo. Cada tarefa abre e fecha a própria sessão Spark, e a falha é o código de saída. As etapas são as mesmas funções que o `make simulacao` usa em sequência, então não tem lógica duplicada na DAG. O que a DAG monta (ordem, comandos, registro) está em `src/brasileirao/orquestracao.py`.
 
-O `registra_execucao` é provisório. O registro de verdade é a tabela `ops/execucoes` do OR3, que grava inclusive em falha. Quando ela existir, essa tarefa sai e o registro passa a acontecer dentro do próprio pipeline.
+O registro de cada etapa, inclusive da que falha, fica na tabela `ops/execucoes`, gravada pela própria CLI (ver [Observabilidade](#observabilidade)). O `registra_execucao` ficou como o resumo da DAG no log, porque só ele sabe o `run_id` e a duração da execução inteira.
 
 ### Parâmetros
 
@@ -214,11 +214,145 @@ brasileirao_rodada | rodada-02       | success | 2026-11-12T02:25:40.607506+00:0
 brasileirao_rodada | rodada-01       | success | 2026-11-12T02:22:04.081801+00:00 |              | 2026-11-12T02:22:04.437631+00:00 | 2026-11-12T02:25:15.596247+00:00
 ```
 
+## Observabilidade
+
+### A tabela `ops/execucoes`
+
+Toda execução de `python -m brasileirao.pipeline` e de `python -m brasileirao.simulacao` grava uma linha numa tabela Delta, `ops/execucoes`, dentro do lake do próprio processo. Na execução normal ela fica em `data/ops/execucoes`, na simulação em `data_sim/ops/execucoes` e no alvo `aws` em `s3a://<lake>/data_sim/ops/execucoes`. Como a DAG roda a CLI da simulação, cada tarefa do Spark deixa a sua linha.
+
+| Coluna | O que guarda |
+|---|---|
+| `id` | UUID da execução |
+| `comando` | A linha de comando, como `simulacao --destino data_sim --temporada 2025 gold 6` |
+| `alvo` | `local`, `aws` ou `databricks` (o `BRASILEIRAO_SPARK_ENV` do processo) |
+| `inicio`, `fim` | Quando começou e terminou |
+| `status` | `sucesso` ou `falha` |
+| `linhas` | Linhas gravadas por tabela, como `gold/campanhas` ou `silver/partidas` |
+| `avisos` | Os avisos que a execução logou e, na falha, o erro |
+
+A linha é gravada no fim, com a execução dando certo ou não. Se a gravação falhar, fica só um aviso no log e a execução termina como terminaria sem o registro, com o mesmo erro e o mesmo código de saída. Há teste para os dois casos.
+
+A tarefa `retrato` da DAG fica de fora. No alvo local ela só copia arquivo e não abre o Spark, para não pagar a subida da JVM, e sem Spark não tem como gravar no Delta. Se ela falhar, a falha aparece no Airflow e no alerta.
+
+`make status` mostra as últimas execuções, de `data/` por padrão. `make status DATA_ROOT=data_sim` mostra as da simulação e `LIMITE=20` muda quantas aparecem (o padrão é 10). As horas saem no fuso da máquina.
+
+### Alerta por e-mail
+
+Toda tarefa da DAG tem um `on_failure_callback` que manda um e-mail pelo SMTP do Gmail, com a DAG, o `run_id`, a tarefa que falhou, a rodada, o alvo, o erro e o link do log. A lógica fica em `src/brasileirao/alerta.py`, sem importar o Airflow, e o teste usa um SMTP falso no lugar do `smtplib`.
+
+A configuração vem do `orchestration/.env`, que fica fora do git, e o compose passa as variáveis para o container. O modelo com valores de exemplo está no `orchestration/.env.example`.
+
+| Variável | O que é |
+|---|---|
+| `ALERTA_SMTP_HOST` | `smtp.gmail.com` |
+| `ALERTA_SMTP_PORTA` | 587 com STARTTLS (padrão) ou 465 com SSL |
+| `ALERTA_SMTP_USUARIO` | A conta do Gmail que envia |
+| `ALERTA_SMTP_SENHA` | Uma senha de app do Gmail, não a senha da conta |
+| `ALERTA_EMAIL_PARA` | Quem recebe |
+| `ALERTA_EMAIL_DE` | Remetente, opcional (o padrão é o usuário) |
+
+Sem host, usuário, senha ou destinatário, o alerta fica desligado e o callback só escreve isso no log da tarefa. Um envio que falha (senha errada, servidor fora do ar) também vira só um aviso no log. Depois de mudar o `.env`, é preciso subir o Airflow de novo com `make airflow-up`.
+
+Com o Gmail configurado, repeti a falha na rodada 7, do mesmo jeito da rodada 6 descrita abaixo (`DELETE` da partida 8785, rodada disparada, partida devolvida pelo time travel e rodada de novo). O `gold` reprovou, e o log da tarefa terminou com esta linha.
+
+```
+alerta enviado para <meu e-mail>: falha de gold em manual__2026-11-12T16:43:02.189402+00:00
+```
+
+O e-mail chegou.
+
+![E-mail do alerta com a DAG, o run_id, a tarefa gold, a rodada 7, o alvo local, o erro e o link do log](img/alerta-email.png)
+
+O campo `erro` traz só o que o Airflow sabe, que o comando saiu com código 1. O motivo de verdade (o `QualidadeGoldError` com as checagens que reprovaram) está no log da tarefa, pelo link, e no `make status`.
+
+### Prova no alvo local
+
+Rodei em 12/11/2026, com o `data_sim` na rodada 4 e o alerta ainda sem configuração. Antes da primeira execução com o registro, a tabela não existia.
+
+```
+$ make status DATA_ROOT=data_sim
+nenhuma execução registrada em data_sim/ops/execucoes
+```
+
+A rodada 5 passou inteira, em 106 s, e deixou três linhas, uma por tarefa do Spark.
+
+```
+$ make status DATA_ROOT=data_sim
+últimas 3 execução(ões) em data_sim/ops/execucoes
+2026-11-12 01:02:37  sucesso    17s  local  f8d1d046  simulacao --destino data_sim --temporada 2025 checar 5
+2026-11-12 01:01:47  sucesso    48s  local  c0e7dbda  simulacao --destino data_sim --temporada 2025 gold 5
+    linhas: 34500 (gold/artilharia 3382, gold/campanhas 470, gold/cartoes_jogadores 5891, gold/classificacao_por_rodada 17672, gold/confrontos 1518, gold/desempenho_mandante_visitante 940, gold/disciplina 240, gold/esquemas_taticos 194, gold/faltas_clubes 200, gold/goleadas 364, gold/gols_decisivos 240, gold/gols_por_minuto 144, gold/linha_corte 23, gold/passagens_tecnicos 859, gold/ranking_historico 46, gold/resumo_temporada 23, gold/sequencias 1880, gold/viradas 414)
+2026-11-12 01:01:16  sucesso    30s  local  dfeb7ec4  simulacao --destino data_sim --temporada 2025 lakehouse 5
+    linhas: 534 (bronze/cartoes 0, bronze/estatisticas 100, bronze/gols 117, bronze/partidas 50, silver/cartoes 0, silver/estatisticas 100, silver/gols 117, silver/partidas 50)
+    aviso: brasileirao.transform.silver: silver/partidas temporada 2025: 50 partidas na temporada, esperado 380
+    aviso: brasileirao.transform.silver: silver/estatisticas temporada 2025: nulos em colunas opcionais: precisao_passes=4
+```
+
+Depois repeti a falha da seção anterior. Apaguei a partida 8785 de `data_sim/silver/partidas` com um `DELETE` do Delta (versão 34) e disparei a rodada 6. O `gold` reprovou e as tarefas seguintes ficaram em `upstream_failed`.
+
+```
+$ make airflow-estado RUN=manual__2026-11-12T04:03:41.610202+00:00
+dag_id             | logical_date | task_id           | state           | start_date                       | end_date
+===================+==============+===================+=================+==================================+=================================
+brasileirao_rodada |              | retrato           | success         | 2026-11-12T04:03:42.678609+00:00 | 2026-11-12T04:03:43.131963+00:00
+brasileirao_rodada |              | bronze_silver     | success         | 2026-11-12T04:03:43.578808+00:00 | 2026-11-12T04:04:12.858945+00:00
+brasileirao_rodada |              | gold              | failed          | 2026-11-12T04:04:13.046209+00:00 | 2026-11-12T04:04:46.763812+00:00
+brasileirao_rodada |              | checagens         | upstream_failed | 2026-11-12T04:04:47.355101+00:00 | 2026-11-12T04:04:47.355101+00:00
+brasileirao_rodada |              | registra_execucao | upstream_failed | 2026-11-12T04:04:47.644431+00:00 | 2026-11-12T04:04:47.644431+00:00
+```
+
+O log da tarefa `gold` mostra o registro gravado com a falha e, depois, o callback avisando que o alerta está desligado (trecho, só os campos `event`).
+
+```
+INFO brasileirao.execucoes: execução 682de55a-f811-4698-8936-8d047d325e46 registrada em ops/execucoes: falha
+brasileirao.aggregate.qualidade.QualidadeGoldError: gold reprovado, nenhuma tabela gravada:
+Task failed with exception
+alerta desligado: faltam ALERTA_SMTP_HOST, ALERTA_SMTP_USUARIO, ALERTA_SMTP_SENHA, ALERTA_EMAIL_PARA no ambiente
+alerta desligado: falha de gold em manual__2026-11-12T04:03:41.610202+00:00 não enviada
+```
+
+E a falha ficou na tabela, com o erro do gold.
+
+```
+$ make status DATA_ROOT=data_sim LIMITE=3
+últimas 3 execução(ões) em data_sim/ops/execucoes
+2026-11-12 01:04:13  falha      32s  local  682de55a  simulacao --destino data_sim --temporada 2025 gold 6
+    aviso: Erro: QualidadeGoldError: gold reprovado, nenhuma tabela gravada:
+           - classificacao_por_rodada: jogos na última rodada: 2024 Corinthians: 37 jogos, esperado 38, 2024 Grêmio: 37 jogos, esperado 38
+           - gols_por_minuto: total de gols ≠ silver/gols: 2024: 926 na tabela, 929 na silver
+           - viradas: placar reconstruído ≠ placar da partida: 8785
+           - gols_decisivos: totais ≠ silver: 2024: jogos 758 na tabela, 758 na silver, gols_85 126 na tabela, 128 na silver, gols_acrescimo 74 na tabela, 75 na silver
+2026-11-12 01:03:43  sucesso    28s  local  37791b91  simulacao --destino data_sim --temporada 2025 lakehouse 6
+    linhas: 640 (bronze/cartoes 0, bronze/estatisticas 120, bronze/gols 140, bronze/partidas 60, silver/cartoes 0, silver/estatisticas 120, silver/gols 140, silver/partidas 60)
+    aviso: brasileirao.transform.silver: silver/partidas temporada 2025: 60 partidas na temporada, esperado 380
+    aviso: brasileirao.transform.silver: silver/estatisticas temporada 2025: nulos em colunas opcionais: posse_de_bola=2, precisao_passes=4
+2026-11-12 01:02:37  sucesso    17s  local  f8d1d046  simulacao --destino data_sim --temporada 2025 checar 5
+```
+
+Devolvi a partida, lida da versão 33 pelo time travel, e disparei a rodada 6 de novo. Passou inteira, e a tabela ganhou as três linhas de sucesso por cima da falha.
+
+```
+$ make status DATA_ROOT=data_sim LIMITE=4
+últimas 4 execução(ões) em data_sim/ops/execucoes
+2026-11-12 01:06:43  sucesso    18s  local  c27929bd  simulacao --destino data_sim --temporada 2025 checar 6
+2026-11-12 01:05:52  sucesso    50s  local  75765682  simulacao --destino data_sim --temporada 2025 gold 6
+    linhas: 34538 (gold/artilharia 3394, gold/campanhas 470, ...)
+2026-11-12 01:05:23  sucesso    27s  local  e5d0e0bc  simulacao --destino data_sim --temporada 2025 lakehouse 6
+    ...
+2026-11-12 01:04:13  falha      32s  local  682de55a  simulacao --destino data_sim --temporada 2025 gold 6
+    ...
+```
+
+No grid do Airflow, da esquerda para a direita, aparecem as rodadas 2 e 3, a rodada 4 com falha e de novo, a rodada 1 no alvo `aws` (a barra alta, de 20 minutos), a rodada 5, a 6 com falha e de novo, e a 7 com falha e de novo.
+
+![Grid da DAG brasileirao_rodada com dez execuções, três delas com o gold vermelho e checagens e registra_execucao em upstream_failed, cada uma seguida da mesma rodada verde](img/grid-observabilidade.png)
+
 ## Testes
 
 A DAG tem dois níveis de teste, e o Airflow não entra no ambiente principal.
 
 - `tests/unit/test_orquestracao.py`, na suíte normal (`make test`), testa o que a DAG roda sem importar o Airflow. Executa o script de cada tarefa com um `python` e um `aws` falsos e confere o destino de cada alvo, que a credencial exportada sai antes do perfil, que sem credencial o Spark nem começa e que um alvo desconhecido falha. Também confere que as versões da imagem batem com o `pyproject.toml` e o Makefile.
-- `orchestration/tests/test_dag.py` (`make test-dag`) carrega a DAG no Airflow 3.4.0 de verdade. Confere que importa sem erro, não tem ciclo, segue a ordem das tarefas com a regra padrão de `upstream_failed`, conhece só os parâmetros `rodada` e `alvo` e recusa valores inválidos. Roda num venv à parte (`.venv-airflow`), instalado com as constraints oficiais do Airflow, e no CI é o job `dag`, em paralelo ao `test`.
+- `tests/unit/test_execucoes.py` e `tests/integration/test_registro_execucoes.py` conferem o registro em `ops/execucoes` com sucesso e com falha, no pipeline e na simulação, e que uma gravação que falha não derruba a execução nem muda o erro dela. `tests/unit/test_alerta.py` testa o alerta com um SMTP falso, com e sem configuração, na 587 e na 465, e que um envio que falha só vira aviso.
+- `orchestration/tests/test_dag.py` (`make test-dag`) carrega a DAG no Airflow 3.4.0 de verdade. Confere que importa sem erro, não tem ciclo, segue a ordem das tarefas com a regra padrão de `upstream_failed`, conhece só os parâmetros `rodada` e `alvo`, recusa valores inválidos e tem o callback do alerta em toda tarefa. Roda num venv à parte (`.venv-airflow`), instalado com as constraints oficiais do Airflow, e no CI é o job `dag`, em paralelo ao `test`.
 
-Separei porque acho que não vale pagar esse peso. O Airflow traz centenas de dependências com versões fixadas pelas constraints dele. No `uv.lock` elas disputariam versão com o PySpark e o Streamlit, e no job `test` somariam a instalação ao tempo que o [tuning](../tuning/README.md) cortou. Num venv próprio, a instalação leva segundos com o cache do uv, e os 10 testes da DAG, cerca de 1 s.
+Separei porque acho que não vale pagar esse peso. O Airflow traz centenas de dependências com versões fixadas pelas constraints dele. No `uv.lock` elas disputariam versão com o PySpark e o Streamlit, e no job `test` somariam a instalação ao tempo que o [tuning](../tuning/README.md) cortou. Num venv próprio, a instalação leva segundos com o cache do uv, e os 11 testes da DAG, cerca de 2 s.

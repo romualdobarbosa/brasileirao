@@ -1,7 +1,7 @@
 .PHONY: setup download lakehouse gold exportar app explain manutencao historico serving-up serving-down carga carga-remota deploy \
 	backup-metabase test lint fmt wheel raw-aws lakehouse-aws gold-aws foto-aws \
 	simulacao-preparar simulacao relatorio-rodada simulacao-preparar-aws \
-	airflow-up airflow-up-aws airflow-down airflow-rodada airflow-estado test-dag
+	airflow-up airflow-up-aws airflow-down airflow-rodada airflow-estado test-dag status
 
 # Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
 ifneq (,$(wildcard .env))
@@ -132,6 +132,12 @@ simulacao-preparar-aws:
 	$(AWS_ENV) uv run python -m brasileirao.simulacao --destino "$$BRASILEIRAO_DATA_ROOT/data_sim" \
 		preparar $(if $(HISTORICO),--historico)
 
+# Últimas execuções registradas em <lake>/ops/execucoes (o pipeline e a simulação gravam lá).
+# make status [DATA_ROOT=data_sim] [LIMITE=20]
+DATA_ROOT ?= data
+status:
+	BRASILEIRAO_DATA_ROOT=$(DATA_ROOT) uv run python -m brasileirao.execucoes $(if $(LIMITE),--limite $(LIMITE))
+
 # Airflow local (orchestration/), com a DAG brasileirao_rodada. O orchestration/.env (fora do
 # git) nasce na primeira vez com o seu UID e segredos aleatórios. `down` mantém os volumes
 # (banco, logs e cache do Ivy).
@@ -140,7 +146,7 @@ AIRFLOW = docker compose -f orchestration/docker-compose.yml
 AIRFLOW_AWS = $(AIRFLOW) -f orchestration/docker-compose.aws.yml
 
 orchestration/.env:
-	@python3 -c 'import base64, os, secrets; print(f"AIRFLOW_UID={os.getuid()}\nAIRFLOW_PORTA=8080\nAIRFLOW_PG_SENHA={secrets.token_urlsafe(24)}\nAIRFLOW_JWT_SECRET={secrets.token_urlsafe(32)}\nAIRFLOW_FERNET_KEY={base64.urlsafe_b64encode(os.urandom(32)).decode()}")' > $@
+	@python3 -c 'import base64, os, secrets; print(f"AIRFLOW_UID={os.getuid()}\nAIRFLOW_PORTA=8080\nAIRFLOW_PG_SENHA={secrets.token_urlsafe(24)}\nAIRFLOW_JWT_SECRET={secrets.token_urlsafe(32)}\nAIRFLOW_FERNET_KEY={base64.urlsafe_b64encode(os.urandom(32)).decode()}\n# Alerta de falha por e-mail: copie as ALERTA_* do orchestration/.env.example")' > $@
 	@chmod 600 $@
 	@echo "criado $@ (fora do git)"
 

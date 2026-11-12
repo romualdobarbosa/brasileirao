@@ -34,7 +34,7 @@ A versão 18 é a mais recente do Kaggle (conferido em 06/11/2026) e termina em 
 ## OR3: observabilidade
 
 - **Tabela `ops/execucoes`** (Delta): id, comando, alvo, início, fim, status, linhas por tabela e avisos. Toda execução do `pipeline.py` grava, inclusive em falha.
-- **Alerta:** callback de falha do Airflow envia a um webhook definido por variável de ambiente, sem segredo no repositório. Destino real escolhido com o Romualdo no ticket.
+- **Alerta:** callback de falha do Airflow envia um e-mail pelo SMTP do Gmail (decisão do Romualdo em 12/11/2026, no lugar do webhook). Servidor, remetente, destinatário e senha de app vêm de variáveis de ambiente do `orchestration/.env`, fora do git; nenhum segredo no repositório. Sem as variáveis, o callback só registra no log que o alerta está desligado.
 - `make status` mostra as últimas execuções.
 
 **Aceite:** teste cobre execução com sucesso e com falha; falha provocada de verdade gera registro e alerta recebido; demonstração em `docs/orchestration/README.md` com saídas reais e screenshots; falha ao gravar o registro não derruba o pipeline.

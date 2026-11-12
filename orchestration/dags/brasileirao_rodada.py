@@ -2,7 +2,8 @@
 
 Disparo manual, com `rodada` (1 a 38) e `alvo` (`local`, o lake em data_sim, ou `aws`, o Spark
 local com o lake em `s3a://brasileirao-lake-<conta>/data_sim`). Uma tarefa que falha deixa as
-seguintes em `upstream_failed`. Como usar em docs/orchestration/README.md.
+seguintes em `upstream_failed` e manda o alerta por e-mail (`brasileirao.alerta`), se ele
+estiver configurado no orchestration/.env. Como usar em docs/orchestration/README.md.
 """
 
 from datetime import UTC, datetime
@@ -10,7 +11,7 @@ from datetime import UTC, datetime
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.sdk import DAG, Param, chain, task
 
-from brasileirao import orquestracao
+from brasileirao import alerta, orquestracao
 
 with DAG(
     dag_id=orquestracao.DAG_ID,
@@ -38,6 +39,8 @@ with DAG(
         ),
     },
     tags=["brasileirao", "simulacao"],
+    # Por tarefa: o callback roda no processo da tarefa que falhou, e o log dele fica no dela.
+    default_args={"on_failure_callback": alerta.ao_falhar},
 ) as dag:
     etapas = [
         BashOperator(
@@ -52,7 +55,11 @@ with DAG(
 
     @task(task_id=orquestracao.TAREFA_REGISTRO)
     def registra_execucao(params=None, dag_run=None) -> None:
-        """Provisória: uma linha JSON no log. O OR3 troca pela tabela `ops/execucoes`."""
+        """Resumo da execução inteira da DAG, numa linha JSON no log.
+
+        O registro de cada etapa, inclusive das que falham, é a tabela `ops/execucoes`, que a
+        própria CLI grava. Esta tarefa só roda quando tudo passou.
+        """
         print(
             orquestracao.registro_execucao(
                 dag_run.run_id,

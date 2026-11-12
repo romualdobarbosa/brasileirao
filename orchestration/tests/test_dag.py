@@ -5,7 +5,7 @@ import pytest
 from airflow.dag_processing.dagbag import DagBag
 from airflow.sdk.definitions.param import ParamValidationError
 
-from brasileirao import orquestracao
+from brasileirao import alerta, orquestracao
 
 PASTA_DAGS = Path(__file__).parent.parent / "dags"
 
@@ -74,3 +74,11 @@ def test_tarefas_do_spark_usam_o_ambiente(dag):
         assert operador.bash_command == orquestracao.comando(etapa)
         assert operador.env == {"RODADA": "{{ params.rodada }}", "ALVO": "{{ params.alvo }}"}
         assert operador.cwd == orquestracao.PASTA_PROJETO
+
+
+def test_toda_tarefa_alerta_na_falha(dag):
+    # O callback por tarefa roda no processo da tarefa que falhou; sem configuração, só loga.
+    for tarefa in dag.tasks:
+        callbacks = tarefa.on_failure_callback
+        callbacks = callbacks if isinstance(callbacks, list) else [callbacks]
+        assert callbacks == [alerta.ao_falhar], tarefa.task_id

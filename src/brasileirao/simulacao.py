@@ -23,6 +23,7 @@ import io
 import logging
 import os
 import shutil
+import sys
 import tempfile
 import time
 from collections.abc import Iterator
@@ -35,7 +36,7 @@ from delta.tables import DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-from brasileirao import config, pipeline
+from brasileirao import config, execucoes, pipeline
 from brasileirao.ingestion import bronze
 from brasileirao.ingestion.bronze import ARQUIVOS
 from brasileirao.lake import cdf, historico
@@ -534,6 +535,7 @@ def main(argv: list[str] | None = None) -> None:
     cmd.add_argument("n", type=int)
     for etapa, ajuda in ETAPAS.items():
         comandos.add_parser(etapa, help=ajuda).add_argument("n", type=_rodada)
+    argv = sys.argv[1:] if argv is None else argv
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -544,9 +546,16 @@ def main(argv: list[str] | None = None) -> None:
     os.environ["BRASILEIRAO_DATA_ROOT"] = args.destino
     fonte = Path(args.fonte)
     if args.comando == "retrato" and not remoto(args.destino):
-        # Só arquivo: sem Spark, a tarefa não paga a subida da JVM.
+        # Só arquivo: sem Spark, a tarefa não paga a subida da JVM. Por isso também fica fora
+        # de `ops/execucoes`, que é Delta; a falha dela aparece no Airflow e no alerta.
         _imprimir_retrato(gravar_retrato(args.n, args.temporada, fonte), args.temporada)
         return
+    # O registro vai para `ops/execucoes` do lake da simulação, inclusive em falha.
+    with execucoes.registrar(execucoes.comando_de("simulacao", argv)):
+        _executar(args, fonte)
+
+
+def _executar(args: argparse.Namespace, fonte: Path) -> None:
     from brasileirao.utils.spark import get_spark
 
     spark = get_spark()

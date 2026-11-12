@@ -10,7 +10,7 @@ from delta.tables import DeltaTable
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
-from brasileirao import config
+from brasileirao import config, execucoes
 from brasileirao.lake import cdf
 from brasileirao.transform import limpeza, qualidade
 from brasileirao.utils.spark import materializar
@@ -168,7 +168,9 @@ def processar_silver(
             gravar_merge(spark, carga.df, "partidas", "partida_id", temporada)
         else:
             gravar_particao(carga.df, carga.tabela, temporada)
-        log.info("silver/%s temporada %d: %d linhas", carga.tabela, temporada, carga.df.count())
+        linhas = carga.df.count()
+        execucoes.contar(f"silver/{carga.tabela}", linhas)
+        log.info("silver/%s temporada %d: %d linhas", carga.tabela, temporada, linhas)
         for aviso in carga.avisos:
             log.warning("silver/%s temporada %d: %s", carga.tabela, temporada, aviso)
     return cargas

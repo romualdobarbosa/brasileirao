@@ -22,6 +22,13 @@ x-airflow: &airflow
     AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
     AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "30"
+    # Alerta de falha por e-mail (brasileirao.alerta). Vazias, o alerta fica desligado.
+    ALERTA_SMTP_HOST: ${ALERTA_SMTP_HOST:-}
+    ALERTA_SMTP_PORTA: ${ALERTA_SMTP_PORTA:-}
+    ALERTA_SMTP_USUARIO: ${ALERTA_SMTP_USUARIO:-}
+    ALERTA_SMTP_SENHA: ${ALERTA_SMTP_SENHA:-}
+    ALERTA_EMAIL_PARA: ${ALERTA_EMAIL_PARA:-}
+    ALERTA_EMAIL_DE: ${ALERTA_EMAIL_DE:-}
   volumes:
     # `z`: rótulo do SELinux (Fedora) para o container usar o bind mount; sem efeito no Ubuntu.
     - ./dags:/opt/airflow/dags:ro,z

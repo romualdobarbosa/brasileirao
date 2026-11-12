@@ -1,4 +1,5 @@
 import fcntl
+import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -28,6 +29,17 @@ def spark(tmp_path_factory):
         )
     yield sessao
     sessao.stop()
+
+
+@pytest.fixture(autouse=True)
+def _lake_padrao_fora_do_repo(tmp_path_factory, monkeypatch):
+    """Sem BRASILEIRAO_DATA_ROOT, o lake de um teste vai para uma pasta temporária.
+
+    Toda chamada da CLI grava em `<lake>/ops/execucoes`; sem isso, um teste que não aponta o
+    lake gravaria no `./data` do repositório.
+    """
+    if "BRASILEIRAO_DATA_ROOT" not in os.environ:
+        monkeypatch.setenv("BRASILEIRAO_DATA_ROOT", str(tmp_path_factory.mktemp("lake-padrao")))
 
 
 @pytest.fixture

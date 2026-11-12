@@ -5,12 +5,14 @@
 
 import argparse
 import logging
+import sys
 import time
 
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
+from brasileirao import execucoes
 from brasileirao.aggregate import explain, gold
 from brasileirao.aggregate import qualidade as qualidade_gold
 from brasileirao.config import VariavelAusenteError
@@ -89,7 +91,7 @@ def processar_temporada(spark: SparkSession, temporada: int) -> None:
     """Bronze → transformações → checagens → silver de uma temporada."""
     inicio = time.monotonic()
     for entidade in ENTIDADES_BRONZE:
-        bronze.escrever_bronze(spark, entidade, temporada)
+        execucoes.contar(f"bronze/{entidade}", bronze.escrever_bronze(spark, entidade, temporada))
     silver.processar_silver(spark, temporada)
     log.info("temporada %d processada em %.1fs", temporada, time.monotonic() - inicio)
 
@@ -144,6 +146,8 @@ def executar_gold(spark: SparkSession, aceitar_em_andamento: bool = False) -> di
         log.info("gold: temporada %d em andamento, com as checagens parciais", em_andamento)
     linhas = gold.processar_gold(spark, em_andamento)
     constraints.aplicar_camada(spark, "gold")
+    for tabela, total in (linhas or {}).items():
+        execucoes.contar(f"gold/{tabela}", total)
     return linhas
 
 
@@ -162,18 +166,22 @@ def _carga() -> None:
     from brasileirao.serving.tabelas import DRIVER_JDBC
 
     try:
-        carga.carregar(get_spark(pacotes=[DRIVER_JDBC]))
+        linhas = carga.carregar(get_spark(pacotes=[DRIVER_JDBC]))
     except (carga.GoldAusenteError, carga.CargaError, postgres.PostgresIndisponivelError) as erro:
         raise SystemExit(f"Erro: {erro}") from erro
+    for tabela, total in (linhas or {}).items():
+        execucoes.contar(f"postgres/{tabela}", total)
 
 
 def _exportar(destino: str | None) -> None:
     from brasileirao.aggregate import exportar
 
     try:
-        exportar.exportar(get_spark(), destino or exportar.DESTINO_PADRAO)
+        linhas = exportar.exportar(get_spark(), destino or exportar.DESTINO_PADRAO)
     except exportar.GoldIncompletoError as erro:
         raise SystemExit(f"Erro: {erro}") from erro
+    for tabela, total in (linhas or {}).items():
+        execucoes.contar(f"exportar/{tabela}", total)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -209,9 +217,16 @@ def main(argv: list[str] | None = None) -> None:
     cmd.add_argument(
         "--comparar", nargs=2, type=int, metavar=("A", "B"), help="compara duas versões"
     )
+    argv = sys.argv[1:] if argv is None else argv
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    # Toda execução vira uma linha em `ops/execucoes`, inclusive a que falha (ver execucoes).
+    with execucoes.registrar(execucoes.comando_de("pipeline", argv)):
+        _executar(args)
+
+
+def _executar(args: argparse.Namespace) -> None:
     try:
         if args.comando == "gold":
             executar_gold(get_spark(), args.em_andamento)
