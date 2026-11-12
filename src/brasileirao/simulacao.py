@@ -9,11 +9,12 @@ simulação monta, para a rodada N, um retrato dos CSVs só com o que já teria 
 - com o placar provisório dos eventos `placar_corrigido` até a rodada em que a correção chega.
 
 As filhas (gols, cartões, estatísticas) seguem as partidas do retrato. Tudo é gravado num lake
-isolado (`data_sim` por padrão), e o pipeline roda nele com a opção de temporada em andamento.
-O `./data` e o `app/dados` nunca são escritos.
+isolado (`data_sim` por padrão, ou `s3a://<bucket>/data_sim` no alvo aws), e o pipeline roda
+nele com a opção de temporada em andamento. O `./data` e o `app/dados` nunca são escritos.
 
 `python -m brasileirao.simulacao preparar [--historico]`, `... rodada N [--ate M]` e
-`... relatorio N`.
+`... relatorio N`. As etapas da rodada também rodam uma a uma, como na DAG do Airflow:
+`... retrato N`, `... lakehouse N`, `... gold N` e `... checar N`.
 """
 
 import argparse
@@ -22,7 +23,10 @@ import io
 import logging
 import os
 import shutil
+import tempfile
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
@@ -32,6 +36,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 from brasileirao import config, pipeline
+from brasileirao.ingestion import bronze
 from brasileirao.ingestion.bronze import ARQUIVOS
 from brasileirao.lake import cdf, historico
 
@@ -101,10 +106,23 @@ def carregar_eventos(texto: str | None = None) -> list[Evento]:
     return eventos
 
 
-def validar_destino(destino: str) -> Path:
-    """Recusa o lake normal (`./data`), o `app/dados` e caminho remoto como destino."""
-    if "://" in destino:
-        raise SimulacaoError(f"a simulação só grava em disco local, não em {destino}")
+def remoto(destino: str) -> bool:
+    return "://" in destino
+
+
+def validar_destino(destino: str) -> Path | str:
+    """Recusa o lake normal (`./data`), o `app/dados` e caminho remoto fora de `data_sim`.
+
+    Remoto (o alvo aws) só vale como `s3a://<bucket>/.../data_sim`: a simulação fica numa pasta
+    própria do bucket e nunca escreve por cima do lake normal que mora na raiz dele.
+    """
+    if remoto(destino):
+        partes = destino.rstrip("/").split("/")
+        if not destino.startswith("s3a://") or len(partes) < 4 or partes[-1] != DESTINO_PADRAO:
+            raise SimulacaoError(
+                f"destino {destino} recusado: remoto só como s3a://<bucket>/{DESTINO_PADRAO}"
+            )
+        return destino.rstrip("/")
     alvo = Path(destino).resolve()
     for proibido in PROIBIDOS:
         raiz = Path(proibido).resolve()
@@ -242,6 +260,109 @@ class ExecucaoRodada:
     segundos_gold: float | None
 
 
+def copiar_para_lake(spark: SparkSession, origem: Path, destino: str) -> None:
+    """Troca a pasta `destino` do lake (local ou `s3a://`) pelos arquivos de `origem`.
+
+    Usa o sistema de arquivos do Hadoop da própria sessão, o mesmo que o Spark usa para ler o
+    lake, e a mesma credencial.
+    """
+    jvm = spark.sparkContext._jvm
+    pasta = jvm.org.apache.hadoop.fs.Path(destino)
+    fs = pasta.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
+    fs.delete(pasta, True)
+    fs.mkdirs(pasta)
+    for arquivo in sorted(origem.iterdir()):
+        fs.copyFromLocalFile(
+            False,
+            True,
+            jvm.org.apache.hadoop.fs.Path(str(arquivo.resolve())),
+            jvm.org.apache.hadoop.fs.Path(f"{destino}/{arquivo.name}"),
+        )
+
+
+def apagar_do_lake(spark: SparkSession, destino: str) -> None:
+    jvm = spark.sparkContext._jvm
+    pasta = jvm.org.apache.hadoop.fs.Path(destino)
+    pasta.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration()).delete(pasta, True)
+
+
+def gravar_retrato(
+    rodada: int,
+    temporada: int = TEMPORADA_PADRAO,
+    fonte: Path = Path(FONTE_PADRAO),
+    eventos: list[Evento] | None = None,
+    spark: SparkSession | None = None,
+) -> Retrato:
+    """O retrato da rodada em `raw/` do lake de `BRASILEIRAO_DATA_ROOT`.
+
+    No disco local, direto, sem Spark. No remoto, montado numa pasta temporária e copiado pelo
+    Spark, que é quem tem a credencial do bucket.
+    """
+    raiz = str(validar_destino(config.data_root()))
+    eventos = carregar_eventos() if eventos is None else eventos
+    if not remoto(raiz):
+        return gerar_retrato(fonte, Path(raiz) / "raw", temporada, rodada, eventos)
+    if spark is None:
+        raise SimulacaoError(f"o retrato em {raiz} precisa de uma sessão Spark")
+    with tempfile.TemporaryDirectory(prefix="retrato-") as pasta:
+        retrato = gerar_retrato(fonte, Path(pasta), temporada, rodada, eventos)
+        copiar_para_lake(spark, Path(pasta), config.caminho_camada("raw"))
+    return retrato
+
+
+@contextmanager
+def rotulado(spark: SparkSession, temporada: int, rodada: int) -> Iterator[None]:
+    """Os commits feitos dentro do bloco levam o rótulo da rodada no histórico do Delta."""
+    spark.conf.set(METADADO, rotulo(temporada, rodada))
+    try:
+        yield
+    finally:
+        spark.conf.unset(METADADO)
+
+
+def processar_lakehouse(
+    spark: SparkSession, rodada: int, temporada: int = TEMPORADA_PADRAO
+) -> None:
+    """Bronze/silver da temporada a partir do retrato que está em `raw/`."""
+    validar_destino(config.data_root())
+    with rotulado(spark, temporada, rodada):
+        pipeline.lakehouse(spark, temporada, aceitar_em_andamento=True)
+
+
+def processar_gold(spark: SparkSession, rodada: int, temporada: int = TEMPORADA_PADRAO) -> None:
+    """Gold com as checagens de temporada parcial. Reprovado, levanta o erro do gold."""
+    validar_destino(config.data_root())
+    with rotulado(spark, temporada, rodada):
+        pipeline.executar_gold(spark, aceitar_em_andamento=True)
+
+
+def checar_rodada(spark: SparkSession, rodada: int, temporada: int = TEMPORADA_PADRAO) -> list[str]:
+    """Problemas da rodada depois do gold; lista vazia é rodada aprovada.
+
+    - `silver/partidas` tem as mesmas partidas da temporada que o retrato em `raw/`;
+    - o Change Data Feed da rodada bate com a comparação de versões.
+    """
+    validar_destino(config.data_root())
+    problemas = []
+    no_retrato = bronze.ler_partidas_raw(spark).where(F.col("temporada") == temporada).count()
+    caminho = config.caminho_tabela("silver", "partidas")
+    na_silver = (
+        spark.read.format("delta").load(caminho).where(F.col("temporada") == temporada).count()
+        if DeltaTable.isDeltaTable(spark, caminho)
+        else 0
+    )
+    if na_silver != no_retrato:
+        problemas.append(
+            f"{TABELA_RELATORIO} tem {na_silver} partida(s) de {temporada} e o retrato em raw/ "
+            f"tem {no_retrato}"
+        )
+    if _relatorio(spark, rodada, temporada)[1] is False:
+        problemas.append(
+            f"o Change Data Feed da rodada {rodada} não bate com a comparação de versões"
+        )
+    return problemas
+
+
 def executar_rodada(
     spark: SparkSession,
     rodada: int,
@@ -254,38 +375,38 @@ def executar_rodada(
 
     Os commits da rodada levam o rótulo `simulacao <temporada> rodada <N>` no histórico.
     """
-    raiz = config.data_root()
-    validar_destino(raiz)
-    eventos = carregar_eventos() if eventos is None else eventos
+    validar_destino(config.data_root())
     inicio = time.monotonic()
-    retrato = gerar_retrato(fonte, Path(raiz) / "raw", temporada, rodada, eventos)
+    retrato = gravar_retrato(rodada, temporada, fonte, eventos, spark)
     meio = time.monotonic()
-    spark.conf.set(METADADO, rotulo(temporada, rodada))
-    try:
-        pipeline.lakehouse(spark, temporada, aceitar_em_andamento=True)
-        fim_lakehouse = time.monotonic()
-        segundos_gold = None
-        if gold:
-            pipeline.executar_gold(spark, aceitar_em_andamento=True)
-            segundos_gold = time.monotonic() - fim_lakehouse
-    finally:
-        spark.conf.unset(METADADO)
+    processar_lakehouse(spark, rodada, temporada)
+    fim_lakehouse = time.monotonic()
+    segundos_gold = None
+    if gold:
+        processar_gold(spark, rodada, temporada)
+        segundos_gold = time.monotonic() - fim_lakehouse
     return ExecucaoRodada(retrato, meio - inicio, fim_lakehouse - meio, segundos_gold)
 
 
-def preparar(spark: SparkSession, temporada: int, fonte: Path, com_historico: bool) -> None:
-    """Apaga o lake da simulação e, com `com_historico`, carrega as outras temporadas."""
-    raiz = config.data_root()
-    validar_destino(raiz)
-    if Path(raiz).exists():
-        shutil.rmtree(raiz)
-    gerar_retrato(fonte, Path(raiz) / "raw", temporada, 0, carregar_eventos())
+def preparar(spark: SparkSession | None, temporada: int, fonte: Path, com_historico: bool) -> None:
+    """Esvazia o lake da simulação e, com `com_historico`, carrega as outras temporadas.
+
+    No disco local a pasta fica e só o conteúdo sai: ela é montada no container do Airflow, e
+    uma pasta apagada e criada de novo não aparece lá até o container reiniciar.
+    """
+    raiz = str(validar_destino(config.data_root()))
+    if remoto(raiz):
+        apagar_do_lake(spark, raiz)
+    elif Path(raiz).exists():
+        for item in Path(raiz).iterdir():
+            if item.is_dir() and not item.is_symlink():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+    gravar_retrato(0, temporada, fonte, spark=spark)
     if com_historico:
-        spark.conf.set(METADADO, rotulo(temporada, 0))
-        try:
+        with rotulado(spark, temporada, 0):
             pipeline.lakehouse(spark, None)
-        finally:
-            spark.conf.unset(METADADO)
 
 
 def versoes_da_rodada(
@@ -319,9 +440,14 @@ def _partida(r) -> str:
 def relatorio(spark: SparkSession, rodada: int, temporada: int = TEMPORADA_PADRAO) -> str:
     """O que entrou, mudou e saiu de `silver/partidas` da rodada N−1 para a N, lido do Change
     Data Feed e conferido com a comparação de versões (`lake.historico`)."""
+    return _relatorio(spark, rodada, temporada)[0]
+
+
+def _relatorio(spark: SparkSession, rodada: int, temporada: int) -> tuple[str, bool | None]:
+    """O relatório e se o feed bate com a comparação (`None` quando a rodada não gravou nada)."""
     versoes = versoes_da_rodada(spark, rodada, temporada)
     if not versoes:
-        return f"rodada {rodada}: nenhuma versão nova em {TABELA_RELATORIO}"
+        return f"rodada {rodada}: nenhuma versão nova em {TABELA_RELATORIO}", None
     inicio, fim = versoes[0], versoes[-1]
     feed = cdf.mudancas(spark, TABELA_RELATORIO, inicio, fim).collect()
     por_tipo: dict[str, list] = {}
@@ -371,7 +497,23 @@ def relatorio(spark: SparkSession, rodada: int, temporada: int = TEMPORADA_PADRA
         f"mudaram {conferencia[1]}, saíram {conferencia[2]}: "
         + ("bate com o feed" if bate else "NÃO bate com o feed")
     )
-    return "\n".join(linhas)
+    return "\n".join(linhas), bate
+
+
+def _rodada(texto: str) -> int:
+    rodada = int(texto)
+    if rodada < 1:
+        raise argparse.ArgumentTypeError(f"rodada precisa ser 1 ou mais, não {rodada}")
+    return rodada
+
+
+# Etapas da rodada que rodam sozinhas, como as tarefas da DAG `brasileirao_rodada`.
+ETAPAS = {
+    "retrato": "grava em raw/ o retrato da fonte depois da rodada N",
+    "lakehouse": "bronze/silver da temporada a partir do retrato",
+    "gold": "gold com as checagens de temporada parcial",
+    "checar": "confere silver com o retrato e o feed com as versões; sai com erro se reprovar",
+}
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -385,11 +527,13 @@ def main(argv: list[str] | None = None) -> None:
         "--historico", action="store_true", help="carrega as outras temporadas da fonte"
     )
     cmd = comandos.add_parser("rodada", help="processa a rodada N (ou de N até --ate)")
-    cmd.add_argument("n", type=int)
+    cmd.add_argument("n", type=_rodada)
     cmd.add_argument("--ate", type=int, help="última rodada, em sequência")
     cmd.add_argument("--sem-gold", action="store_true", help="só bronze e silver")
     cmd = comandos.add_parser("relatorio", help="o que mudou na silver com a rodada N")
     cmd.add_argument("n", type=int)
+    for etapa, ajuda in ETAPAS.items():
+        comandos.add_parser(etapa, help=ajuda).add_argument("n", type=_rodada)
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -398,14 +542,32 @@ def main(argv: list[str] | None = None) -> None:
     except SimulacaoError as erro:
         raise SystemExit(f"Erro: {erro}") from erro
     os.environ["BRASILEIRAO_DATA_ROOT"] = args.destino
+    fonte = Path(args.fonte)
+    if args.comando == "retrato" and not remoto(args.destino):
+        # Só arquivo: sem Spark, a tarefa não paga a subida da JVM.
+        _imprimir_retrato(gravar_retrato(args.n, args.temporada, fonte), args.temporada)
+        return
     from brasileirao.utils.spark import get_spark
 
     spark = get_spark()
-    fonte = Path(args.fonte)
     if args.comando == "preparar":
         preparar(spark, args.temporada, fonte, args.historico)
     elif args.comando == "relatorio":
         print(relatorio(spark, args.n, args.temporada))
+    elif args.comando == "retrato":
+        _imprimir_retrato(
+            gravar_retrato(args.n, args.temporada, fonte, spark=spark), args.temporada
+        )
+    elif args.comando == "lakehouse":
+        processar_lakehouse(spark, args.n, args.temporada)
+    elif args.comando == "gold":
+        processar_gold(spark, args.n, args.temporada)
+    elif args.comando == "checar":
+        print(relatorio(spark, args.n, args.temporada))
+        problemas = checar_rodada(spark, args.n, args.temporada)
+        if problemas:
+            raise SystemExit("Erro: rodada reprovada nas checagens: " + "; ".join(problemas))
+        print(f"rodada {args.n}: checagens aprovadas")
     else:
         eventos = carregar_eventos()
         for rodada in range(args.n, (args.ate or args.n) + 1):
@@ -422,6 +584,14 @@ def main(argv: list[str] | None = None) -> None:
                 f"lakehouse {execucao.segundos_lakehouse:.1f}s, gold {gold}"
             )
             print(relatorio(spark, rodada, args.temporada))
+
+
+def _imprimir_retrato(r: Retrato, temporada: int) -> None:
+    print(
+        f"rodada {r.rodada}: {r.partidas} partidas de {temporada} no retrato, "
+        f"adiadas pendentes {r.adiadas_pendentes or '-'}, "
+        f"placar provisório {r.placares_provisorios or '-'}"
+    )
 
 
 if __name__ == "__main__":

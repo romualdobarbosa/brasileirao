@@ -19,7 +19,18 @@ def _linhas(caminho: Path) -> list[dict]:
 
 
 @pytest.mark.parametrize(
-    "destino", ["data", "./data", "data/sub", ".", "app/dados", "s3a://bucket/lake"]
+    "destino",
+    [
+        "data",
+        "./data",
+        "data/sub",
+        ".",
+        "app/dados",
+        "s3a://bucket/lake",
+        "s3a://bucket",
+        "s3a://data_sim",
+        "s3://bucket/data_sim",
+    ],
 )
 def test_recusa_destino_do_lake_normal(destino):
     with pytest.raises(simulacao.SimulacaoError):
@@ -29,6 +40,53 @@ def test_recusa_destino_do_lake_normal(destino):
 def test_aceita_destino_isolado(tmp_path):
     assert simulacao.validar_destino(str(tmp_path / "data_sim")) == tmp_path / "data_sim"
     assert simulacao.validar_destino("data_sim") == Path("data_sim").resolve()
+    # Alvo aws: a pasta data_sim do bucket, longe do lake normal da raiz.
+    assert simulacao.validar_destino("s3a://brasileirao-lake-1/data_sim/") == (
+        "s3a://brasileirao-lake-1/data_sim"
+    )
+
+
+def test_cli_retrato_grava_sem_spark(tmp_path, capsys, monkeypatch):
+    # A etapa `retrato` da DAG: só arquivo, sem abrir sessão Spark.
+    def sem_spark(*_, **__):
+        raise AssertionError("o retrato local não deveria abrir o Spark")
+
+    monkeypatch.setattr("brasileirao.utils.spark.get_spark", sem_spark)
+    destino = tmp_path / "data_sim"
+    simulacao.main(
+        ["--destino", str(destino), "--fonte", str(FIXTURES_RAW_GOLD), "--temporada", "2019"]
+        + ["retrato", "3"]
+    )
+
+    assert "rodada 3: 6 partidas de 2019 no retrato" in capsys.readouterr().out
+    assert sorted(p.name for p in (destino / "raw").iterdir()) == sorted(ARQUIVOS.values())
+
+
+def test_retrato_remoto_vai_pelo_spark(monkeypatch):
+    copias = []
+    monkeypatch.setenv("BRASILEIRAO_DATA_ROOT", "s3a://brasileirao-lake-1/data_sim")
+    monkeypatch.setattr(
+        simulacao,
+        "copiar_para_lake",
+        lambda spark, origem, destino: copias.append(
+            (spark, sorted(p.name for p in origem.iterdir()), destino)
+        ),
+    )
+    sessao = object()
+
+    retrato = simulacao.gravar_retrato(3, 2019, FIXTURES_RAW_GOLD, [], spark=sessao)
+
+    assert retrato.partidas == 6
+    assert copias == [(sessao, sorted(ARQUIVOS.values()), "s3a://brasileirao-lake-1/data_sim/raw")]
+    with pytest.raises(simulacao.SimulacaoError, match="precisa de uma sessão Spark"):
+        simulacao.gravar_retrato(3, 2019, FIXTURES_RAW_GOLD, [])
+
+
+@pytest.mark.parametrize("etapa", ["retrato", "lakehouse", "gold", "checar", "rodada"])
+def test_cli_recusa_rodada_zero(etapa, capsys):
+    with pytest.raises(SystemExit):
+        simulacao.main([etapa, "0"])
+    assert "rodada precisa ser 1 ou mais" in capsys.readouterr().err
 
 
 def test_eventos_do_pacote_sao_validos():
@@ -144,3 +202,19 @@ def test_vencedor_do_placar_provisorio():
         '"0"',
         '"1"',
     ]
+
+
+def test_preparar_esvazia_sem_trocar_a_pasta(tmp_path, monkeypatch):
+    # A pasta é montada no container do Airflow: tem de continuar sendo a mesma.
+    raiz = tmp_path / "data_sim"
+    (raiz / "silver" / "partidas").mkdir(parents=True)
+    (raiz / "solto.txt").write_text("x")
+    inode = raiz.stat().st_ino
+    monkeypatch.setenv("BRASILEIRAO_DATA_ROOT", str(raiz))
+
+    simulacao.preparar(None, 2019, FIXTURES_RAW_GOLD, com_historico=False)
+
+    assert raiz.stat().st_ino == inode
+    assert [p.name for p in raiz.iterdir()] == ["raw"]
+    partidas = _linhas(raiz / "raw" / ARQUIVOS["partidas"])
+    assert all(simulacao.temporada_da_data(r["data"]) != 2019 for r in partidas)

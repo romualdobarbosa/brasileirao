@@ -31,3 +31,6 @@ backups/
 crash.log
 crash.*.log
 data_sim/
+
+# Airflow: venv dos testes da DAG (make test-dag)
+.venv-airflow/

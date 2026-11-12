@@ -32,6 +32,8 @@ make simulacao RODADA=1 ATE=38        # retrato, bronze/silver, gold e relatóri
 make relatorio-rodada RODADA=4        # só o relatório, lido do lake
 ```
 
+As etapas de uma rodada também rodam uma a uma (`python -m brasileirao.simulacao retrato|lakehouse|gold|checar N`). É assim que a DAG do Airflow chama a simulação, uma tarefa por etapa, como está no [README da orquestração](README.md).
+
 Cada commit da rodada leva o rótulo `simulacao 2025 rodada N` no histórico do Delta. É assim que o relatório acha as versões de `silver/partidas` daquela rodada.
 
 ## Relatório entre rodadas

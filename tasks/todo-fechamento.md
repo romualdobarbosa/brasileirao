@@ -75,9 +75,9 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] Rodadas 1–38 reproduzem o gold de 2025, salvo correções explicadas
 
 ## OR2: Airflow. Spec: orchestration
-- [ ] Compose e imagem em `orchestration/`, com versão fixada
-- [ ] DAG `brasileirao_rodada` com testes
-- [ ] 3 rodadas reais seguidas no alvo `local`; falha interrompe as seguintes
+- [x] Compose e imagem em `orchestration/`, com versão fixada
+- [x] DAG `brasileirao_rodada` com testes
+- [x] 3 rodadas reais seguidas no alvo `local`; falha interrompe as seguintes
 - [ ] 🚧 Execução no alvo `aws`, se AW2 passou, seguida de `destroy`
 
 ## OR3: observabilidade. Spec: orchestration

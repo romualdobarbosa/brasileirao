@@ -76,6 +76,10 @@ def simulado(spark, tmp_path_factory):
             t: spark.read.format("delta").load(config.caminho_tabela("silver", t)).collect()
             for t in ("partidas", "gols")
         }
+        sim.checagem = simulacao.checar_rodada(spark, 6, 2019)
+        # Retrato novo sem o lakehouse (a tarefa do meio que não rodou): a silver fica para trás.
+        simulacao.gravar_retrato(4, 2019, FIXTURES_RAW_GOLD, eventos)
+        sim.checagem_atrasada = simulacao.checar_rodada(spark, 6, 2019)
     sim.app_mudou = app_antes is not None and _impressao(APP_DADOS) != app_antes
     return sim
 
@@ -163,3 +167,29 @@ def test_ultima_rodada_reproduz_a_silver_normal(simulado, lake_compartilhado, sp
     for tabela, linhas in simulado.silver.items():
         esperado = spark.read.format("delta").load(str(normal / "silver" / tabela)).collect()
         assert sorted(map(str, linhas)) == sorted(map(str, esperado)), tabela
+
+
+def test_checagens_da_rodada(simulado):
+    assert simulado.checagem == []
+    assert simulado.checagem_atrasada == [
+        "silver/partidas tem 12 partida(s) de 2019 e o retrato em raw/ tem 8"
+    ]
+
+
+def test_copiar_para_lake_troca_a_pasta(spark, tmp_path):
+    # O mesmo caminho do retrato no alvo aws (`s3a://`), aqui no disco local do Hadoop.
+    origem = tmp_path / "origem"
+    origem.mkdir()
+    (origem / "a.csv").write_text("x\n1\n")
+    (origem / "b.csv").write_text("y\n2\n")
+    destino = tmp_path / "lake" / "raw"
+    destino.mkdir(parents=True)
+    (destino / "velho.csv").write_text("z\n")
+
+    simulacao.copiar_para_lake(spark, origem, str(destino))
+
+    assert sorted(p.name for p in destino.iterdir() if not p.name.startswith(".")) == [
+        "a.csv",
+        "b.csv",
+    ]
+    assert (destino / "b.csv").read_text() == "y\n2\n"

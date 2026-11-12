@@ -1,0 +1,6 @@
+# Contexto do build é a raiz do repo; só entra o que a imagem instala.
+*
+!pyproject.toml
+!README.md
+!src/
+src/**/__pycache__

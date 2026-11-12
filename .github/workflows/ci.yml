@@ -26,6 +26,19 @@ jobs:
       - run: uv sync --all-groups --locked
       - run: make lint
 
+  # A DAG do Airflow num venv à parte (make test-dag): o Airflow não entra no uv.lock nem no
+  # job `test`, e este roda em paralelo, em menos de um minuto.
+  dag:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: make test-dag
+
   terraform:
     runs-on: ubuntu-24.04
     timeout-minutes: 5

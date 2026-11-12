@@ -1,6 +1,7 @@
 .PHONY: setup download lakehouse gold exportar app explain manutencao historico serving-up serving-down carga carga-remota deploy \
 	backup-metabase test lint fmt wheel raw-aws lakehouse-aws gold-aws foto-aws \
-	simulacao-preparar simulacao relatorio-rodada
+	simulacao-preparar simulacao relatorio-rodada simulacao-preparar-aws \
+	airflow-up airflow-up-aws airflow-down airflow-rodada airflow-estado test-dag
 
 # Credenciais e destino do Postgres (fora do git; modelo em serving/.env.example).
 ifneq (,$(wildcard .env))
@@ -125,6 +126,55 @@ simulacao:
 relatorio-rodada:
 	@test -n "$(RODADA)" || { echo "use: make relatorio-rodada RODADA=N"; exit 1; }
 	uv run python -m brasileirao.simulacao relatorio $(RODADA)
+
+# A mesma preparação no lake da simulação no S3 (s3a://<lake>/data_sim), para o alvo aws da DAG.
+simulacao-preparar-aws:
+	$(AWS_ENV) uv run python -m brasileirao.simulacao --destino "$$BRASILEIRAO_DATA_ROOT/data_sim" \
+		preparar $(if $(HISTORICO),--historico)
+
+# Airflow local (orchestration/), com a DAG brasileirao_rodada. O orchestration/.env (fora do
+# git) nasce na primeira vez com o seu UID e segredos aleatórios. `down` mantém os volumes
+# (banco, logs e cache do Ivy).
+AIRFLOW_VERSION = 3.4.0
+AIRFLOW = docker compose -f orchestration/docker-compose.yml
+AIRFLOW_AWS = $(AIRFLOW) -f orchestration/docker-compose.aws.yml
+
+orchestration/.env:
+	@python3 -c 'import base64, os, secrets; print(f"AIRFLOW_UID={os.getuid()}\nAIRFLOW_PORTA=8080\nAIRFLOW_PG_SENHA={secrets.token_urlsafe(24)}\nAIRFLOW_JWT_SECRET={secrets.token_urlsafe(32)}\nAIRFLOW_FERNET_KEY={base64.urlsafe_b64encode(os.urandom(32)).decode()}")' > $@
+	@chmod 600 $@
+	@echo "criado $@ (fora do git)"
+
+airflow-up: orchestration/.env
+	@test -f data/raw/campeonato-brasileiro-full.csv || { echo "falta data/raw: rode make download"; exit 1; }
+	mkdir -p data_sim
+	$(AIRFLOW) up -d --build --wait
+
+# Portão do AWS: só com a infra do infra/main de pé e o `aws login` feito.
+airflow-up-aws: orchestration/.env
+	@test -f data/raw/campeonato-brasileiro-full.csv || { echo "falta data/raw: rode make download"; exit 1; }
+	mkdir -p data_sim
+	$(AIRFLOW_AWS) up -d --build --wait
+
+airflow-down:
+	$(AIRFLOW) down
+
+# make airflow-rodada RODADA=4 [ALVO=aws]
+airflow-rodada:
+	@test -n "$(RODADA)" || { echo "use: make airflow-rodada RODADA=N [ALVO=aws]"; exit 1; }
+	$(AIRFLOW) exec airflow-scheduler airflow dags trigger brasileirao_rodada \
+		-c '{"rodada": $(RODADA), "alvo": "$(or $(ALVO),local)"}'
+
+# Execuções da DAG e, com RUN=<run_id>, o estado de cada tarefa dela.
+airflow-estado:
+	$(AIRFLOW) exec airflow-scheduler airflow dags list-runs brasileirao_rodada
+	$(if $(RUN),$(AIRFLOW) exec airflow-scheduler airflow tasks states-for-dag-run brasileirao_rodada "$(RUN)")
+
+# Testes da DAG num venv à parte com o Airflow (e as constraints dele), fora do `make test`.
+test-dag:
+	uv venv --python 3.12 --allow-existing -q .venv-airflow
+	uv pip install --python .venv-airflow -q "apache-airflow==$(AIRFLOW_VERSION)" pytest \
+		-c https://raw.githubusercontent.com/apache/airflow/constraints-$(AIRFLOW_VERSION)/constraints-3.12.txt
+	PYTHONPATH=src .venv-airflow/bin/pytest orchestration/tests
 
 serving-up:
 	$(COMPOSE) up -d --wait

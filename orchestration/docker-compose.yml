@@ -1,0 +1,114 @@
+# Airflow local da DAG brasileirao_rodada, separado do serving (outro projeto, rede, banco e
+# volumes). LocalExecutor: as tarefas rodam como processos do scheduler, sem Redis nem worker.
+# Uso: `make airflow-up` / `make airflow-down` (lê orchestration/.env; modelo em .env.example).
+# O alvo aws soma o docker-compose.aws.yml (`make airflow-up-aws`).
+name: brasileirao-airflow
+
+x-airflow: &airflow
+  build:
+    context: ..
+    dockerfile: orchestration/Dockerfile
+  image: brasileirao-airflow:3.4.0
+  user: "${AIRFLOW_UID:?defina AIRFLOW_UID no orchestration/.env}:0"
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__PARALLELISM: "2"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?defina AIRFLOW_FERNET_KEY no orchestration/.env}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg://airflow:${AIRFLOW_PG_SENHA}@postgres/airflow
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:?defina AIRFLOW_JWT_SECRET no orchestration/.env}
+    # Sem login: a interface só escuta em 127.0.0.1 e quem chega nela é admin.
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "30"
+  volumes:
+    # `z`: rótulo do SELinux (Fedora) para o container usar o bind mount; sem efeito no Ubuntu.
+    - ./dags:/opt/airflow/dags:ro,z
+    - logs:/opt/airflow/logs
+    # A DAG roda na pasta do projeto na imagem: lê data/raw e grava em data_sim.
+    - ../data/raw:/opt/brasileirao/data/raw:ro,z
+    - ../data_sim:/opt/brasileirao/data_sim:z
+    # Jars do Delta baixados pelo Ivy na primeira sessão Spark; o volume evita baixar de novo.
+    - ivy:/home/airflow/.ivy2.5.2
+  depends_on: &airflow-depends
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_PG_SENHA:?defina AIRFLOW_PG_SENHA no orchestration/.env}
+      POSTGRES_DB: airflow
+    # Sem porta publicada: só os containers deste compose falam com ele, então não disputa a
+    # 5432 com o Postgres do serving.
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "airflow", "-d", "airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  airflow-init:
+    <<: *airflow
+    # O entrypoint da imagem migra o banco com _AIRFLOW_DB_MIGRATE e depois roda o comando.
+    command: version
+    environment:
+      <<: *airflow-env
+      _AIRFLOW_DB_MIGRATE: "true"
+
+  airflow-apiserver:
+    <<: *airflow
+    command: api-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${AIRFLOW_PORTA:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "-s", "-o", "/dev/null", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      <<: *airflow-depends
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow
+    command: scheduler
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "-s", "-o", "/dev/null", "http://localhost:8974/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      <<: *airflow-depends
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow
+    command: dag-processor
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      <<: *airflow-depends
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  postgres:
+  logs:
+  ivy:
