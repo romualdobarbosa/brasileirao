@@ -78,6 +78,26 @@ Antes do app, montei uma camada de serving com Postgres e Metabase em Docker Com
 
 O plano era publicar isso numa VM gratuita da Oracle. Só que o cadastro no Brasil me pediu CNPJ, que eu não tenho, e por isso o link público virou o Streamlit. As peças de deploy continuam no repositório, prontas e sem nunca terem rodado em produção. A história completa, os prints e como rodar estão em [docs/serving](docs/serving/README.md).
 
+## Delta além do MERGE
+
+Depois do pipeline pronto, fui usar o resto do Delta. As tabelas ganharam constraints, que recusam a escrita inválida na própria tabela, e passei por histórico, `OPTIMIZE`, Z-Order, `VACUUM` e time travel com saídas reais, no lake ou numa cópia dele. Está tudo em [docs/delta](docs/delta/README.md), inclusive o que surpreendeu e o que não fez diferença num lake deste tamanho.
+
+Também medi onde estava o tempo dos testes antes de mexer em configuração. O `make test` local caiu de 368,2 s para 198,4 s e o job de testes do CI de 580 s para 352 s, sem tirar teste e com o gold idêntico. As tentativas que pioraram o tempo também estão anotadas em [docs/tuning](docs/tuning/README.md).
+
+## O mesmo código no Databricks e na AWS
+
+Eu queria ver o pipeline rodando fora da minha máquina sem reescrever nada. No [Databricks Free Edition](docs/databricks/README.md), em compute serverless e a partir do wheel do pacote, as 22 tabelas da silver e do gold saíram iguais às locais, conferidas por sha256, sem gastar nada.
+
+Na [AWS](docs/aws/README.md), o Spark continua na minha máquina e o lake vai para um bucket S3, porque o plano gratuito bloqueia o EMR e o Glue Jobs e eu não quis liberar cobrança no cartão. Toda a infraestrutura sai do Terraform (S3, IAM, Glue Data Catalog, Athena e um budget com alerta), com `apply` e `destroy` de verdade, e o Athena consulta a silver e o gold pelo catálogo. As 22 tabelas no S3 bateram com as locais. O `plan` também rodou pelo GitHub Actions, com uma role de só leitura assumida por OIDC, sem chave guardada no repositório.
+
+## Rodada a rodada, no Airflow
+
+O dataset termina em dezembro de 2025, então não tem temporada em andamento para acompanhar. Simulei uma. O `brasileirao.simulacao` monta a fonte como ela estaria depois da rodada N de 2025, com jogo adiado e placar corrigido no meio, num lake separado em `data_sim/`, e o Change Data Feed do Delta mostra o que mudou na silver de uma rodada para a outra. Depois das 38 rodadas, as 22 tabelas da silver e do gold ficam iguais às do pipeline normal, conferidas por sha256.
+
+Cada rodada vira uma execução da DAG `brasileirao_rodada` no Airflow 3.4.0, em Docker na minha máquina, com uma tarefa por etapa. Provoquei falhas de verdade, apagando uma partida da silver, e o gold reprovou sem gravar nada e segurou as tarefas seguintes. Toda execução fica registrada na tabela Delta `ops/execucoes`, que o `make status` mostra, e a falha manda um e-mail. Uma rodada também rodou com o lake no S3, mas levou 1213 s contra 191 s no local. Os prints, as saídas e os limites estão em [docs/orchestration](docs/orchestration/README.md).
+
+![Grid da DAG no Airflow com rodadas verdes e três falhas provocadas no gold, cada uma seguida da rodada refeita](docs/orchestration/img/grid-observabilidade.png)
+
 ## O que a fonte não resolve
 
 A fonte tem buracos, e é melhor saber onde estão antes de tirar conclusão de alguma tabela.
@@ -91,6 +111,8 @@ A fonte tem buracos, e é melhor saber onde estão antes de tirar conclusão de 
 - Dois placares divergem do oficial por um gol, Athletico-PR × Criciúma em 2003 e Internacional × Criciúma em 2004. Os pontos não mudam, então deixei como veio.
 - Chapecoense × Atlético-MG, da última rodada de 2016, não foi jogada por causa da queda do avião da Chapecoense. A tabela oficial conta W.O. duplo, aqui os dois times ficam com 37 jogos. Pontos e posições são os mesmos.
 
-## Próximos passos
+## O que ficou de fora
 
-O mapa completo está em [CAPABILITY_MAP.md](CAPABILITY_MAP.md), e cada módulo tem a sua spec na raiz do repositório. O mesmo pipeline já rodou no Databricks ([docs/databricks](docs/databricks/README.md)), sem reescrever o código. O próximo é a AWS, com a infraestrutura em Terraform, o lake no S3 e a consulta pelo Athena. O EMR ficou de fora porque o plano gratuito da AWS bloqueia esse serviço. O enriquecimento com a Base dos Dados ficou de fora, porque a licença do dado está registrada como desconhecida ([sondagem](docs/enriquecimento/sondagem.md)).
+O enriquecimento com a Base dos Dados não entrou, porque a licença do dado está registrada como desconhecida e o dado foi raspado do Transfermarkt ([sondagem](docs/enriquecimento/sondagem.md)). Cluster, streaming e serving em produção também ficaram de fora, porque o volume (uns 10 MB no lake inteiro) não justifica.
+
+O mapa dos módulos está em [CAPABILITY_MAP.md](CAPABILITY_MAP.md), e cada um tem a sua spec na raiz do repositório.

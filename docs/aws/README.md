@@ -130,4 +130,8 @@ Depois do AW3, com o pipeline completo rodado duas vezes no S3, as consultas no 
 
 No `destroy` final do AW3 saíram os 38 recursos do `infra/main`. Na conta ficaram só o bucket do state, o provider OIDC e a role `brasileirao-github-plan`, que são do bootstrap e não custam nada. O plan pelo GitHub rodou com a stack de pé e deu `No changes`.
 
+Em 12/11/2026, depois da [rodada no Airflow com o lake no S3](../orchestration/README.md), fechei a conta do projeto. Destruí o `infra/main` de novo e depois o bootstrap, com o bucket do state esvaziado antes (ele é versionado e não tem `force_destroy`), o provider OIDC e a role. Conferi que só a role do projeto confiava no OIDC antes de apagar. Na listagem final não sobrou bucket, role, policy, banco do Glue nem budget do projeto. O workflow de plan pelo GitHub parou de funcionar junto com a role.
+
+O saldo final ficou em **US$ 119,85**. Estava em US$ 119,95 quando comecei a parte da AWS, então o projeto gastou US$ 0,10 de crédito, sem nenhum dinheiro de verdade.
+
 ![Os três alertas do budget brasileirao-cost-guard](img/budget-alertas.png)

@@ -8,12 +8,12 @@
 | `gold` | Tabelas analíticas (classificação por rodada, mandante/visitante, sequências, ranking histórico, disciplina, artilharia, gols por minuto, resumo da temporada) e explain plans documentados | lakehouse | [SPEC-gold.md](SPEC-gold.md) |
 | `serving` | Postgres + Metabase (Docker Compose), só local; carga JDBC do gold; usuário read-only; dashboard local | gold | [SPEC-serving.md](SPEC-serving.md) |
 | `vitrine` | 10 tabelas gold novas, exportação para Parquet e app Streamlit público no Community Cloud | gold | [SPEC-vitrine.md](SPEC-vitrine.md) |
-| `ci` | GitHub Actions: ruff + pytest com Spark local em PR; checks de Terraform quando `cloud-aws` existir | lakehouse | [SPEC-ci.md](SPEC-ci.md) |
+| `ci` | GitHub Actions: ruff + pytest com Spark local e Postgres; `fmt` e `validate` do Terraform; testes da DAG do Airflow num venv à parte; `plan` com OIDC por `workflow_dispatch` | lakehouse | [SPEC-ci.md](SPEC-ci.md) |
 | `otimizacao` | Tuning medido, constraints e manutenção do Delta (OPTIMIZE, VACUUM, Z-Order, time travel) | gold | [SPEC-otimizacao.md](SPEC-otimizacao.md) |
 | `enrichment` | ~~Base dos Dados via BigQuery, juntando com o silver~~ Cancelado em 10/11/2026: licença do dado desconhecida ([sondagem](docs/enriquecimento/sondagem.md)) | lakehouse | [SPEC-enrichment.md](SPEC-enrichment.md) |
 | `databricks` | O mesmo pipeline rodando no Databricks Free Edition | gold | [SPEC-databricks.md](SPEC-databricks.md) |
 | `cloud-aws` | Terraform (S3, IAM, Glue Catalog, Athena, Budgets, state remoto, OIDC), com o Spark local gravando o lake no S3 (o Free plan bloqueia o EMR) | gold | [SPEC-cloud-aws.md](SPEC-cloud-aws.md) |
-| `orchestration` | Dado que muda (simulação), Airflow local e observabilidade | gold | [SPEC-orchestration.md](SPEC-orchestration.md) |
+| `orchestration` | Dado que muda (simulação com Change Data Feed), Airflow local (alvos `local` e `aws`) e observabilidade (`ops/execucoes`, `make status`, alerta por e-mail) | gold | [SPEC-orchestration.md](SPEC-orchestration.md) |
 
 **Ordem de construção:** `lakehouse` (+ `ci` em paralelo) → `gold` → `serving` (local) → `vitrine` → `otimizacao` → ~~`enrichment`~~ → `databricks` → `cloud-aws` → `orchestration`. Plano e tickets em [tasks/plan-fechamento.md](tasks/plan-fechamento.md).
 

@@ -87,9 +87,9 @@ Plano e regras: [plan-fechamento.md](plan-fechamento.md). Um subagente por ticke
 - [x] `docs/orchestration/README.md` com saídas reais e screenshots
 
 ## FIM: fechamento. Executado pela orquestradora
-- [ ] README e `CAPABILITY_MAP.md` batem com o que rodou; toda afirmação tem evidência
-- [ ] Textos públicos passam pela `voz-romualdo`; 🚧 Romualdo revisa
-- [ ] Conferir `destroy` da AWS, incluindo o bucket do state, e créditos gastos
-- [ ] Limpar o que sobrou da nuvem cancelada no Makefile (`deploy`, `carga-remota`, `backup-metabase`), se não tiver uso
+- [x] README e `CAPABILITY_MAP.md` batem com o que rodou; toda afirmação tem evidência
+- [x] Textos públicos passam pela `voz-romualdo`; 🚧 Romualdo revisa
+- [x] Conferir `destroy` da AWS, incluindo o bucket do state, e créditos gastos
+- [x] Limpar o que sobrou da nuvem cancelada no Makefile (`deploy`, `carga-remota`, `backup-metabase`), se não tiver uso (mantidos: documentados em docs/serving como peças prontas que nunca rodaram)
 - [ ] Fatos enviados à sessão `resume-studio`; 🚧 Romualdo decide o que entra no currículo
 - [ ] CI verde; projeto declarado pronto
